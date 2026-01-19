@@ -61,7 +61,10 @@ async fn create_genomebin(
     ecobins: PathBuf,
     output: PathBuf,
 ) -> Result<()> {
-    crate::info(&format!("Creating genomeBin for {} v{} (Rust)", primal, version));
+    crate::info(&format!(
+        "Creating genomeBin for {} v{} (Rust)",
+        primal, version
+    ));
 
     // Use Pure Rust implementation
     let builder = GenomeBinBuilder::new(&primal, &version)
@@ -79,7 +82,10 @@ async fn create_genomebin(
 }
 
 async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
-    crate::info(&format!("Testing genomeBin: {} (Rust)", genomebin.display()));
+    crate::info(&format!(
+        "Testing genomeBin: {} (Rust)",
+        genomebin.display()
+    ));
 
     if !genomebin.exists() {
         anyhow::bail!("genomeBin not found: {}", genomebin.display());
@@ -87,20 +93,25 @@ async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
 
     // Use Pure Rust validator
     let validator = Validator::new(&genomebin);
-    let results = validator.validate().await?;
 
-    // Display results
+    // Run all tests (always returns results, never fails early)
+    let results = validator.run_all_tests().await;
+
+    // Display all results
+    println!("\nValidation Results:");
+    println!("═══════════════════");
     for result in &results {
         if result.passed {
-            crate::success(&format!("✓ {}", result.name));
+            println!("  ✓ {}", result.name);
         } else {
-            crate::error(&format!(
-                "✗ {}: {}",
+            println!(
+                "  ✗ {}: {}",
                 result.name,
                 result.message.as_deref().unwrap_or("unknown error")
-            ));
+            );
         }
     }
+    println!();
 
     let passed = results.iter().filter(|r| r.passed).count();
     let total = results.len();
@@ -109,7 +120,8 @@ async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
         crate::success(&format!("All tests passed ({passed}/{total})"));
         Ok(())
     } else {
-        anyhow::bail!("Some tests failed ({passed}/{total})");
+        crate::error(&format!("Some tests failed ({passed}/{total})"));
+        anyhow::bail!("Validation failed: {passed}/{total} tests passed");
     }
 }
 

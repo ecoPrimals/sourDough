@@ -54,12 +54,10 @@ impl Validator {
         }
     }
 
-    /// Run all validation tests.
+    /// Run all validation tests and return results.
     ///
-    /// # Errors
-    ///
-    /// Returns an error if validation fails.
-    pub async fn validate(&self) -> Result<Vec<ValidationResult>> {
+    /// Returns all test results regardless of pass/fail status.
+    pub async fn run_all_tests(&self) -> Vec<ValidationResult> {
         info!("Starting genomeBin validation");
 
         let mut results = Vec::new();
@@ -76,6 +74,20 @@ impl Validator {
         let total = results.len();
 
         info!("Validation complete: {passed}/{total} tests passed");
+
+        results
+    }
+
+    /// Run all validation tests.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if validation fails.
+    pub async fn validate(&self) -> Result<Vec<ValidationResult>> {
+        let results = self.run_all_tests().await;
+
+        let passed = results.iter().filter(|r| r.passed).count();
+        let total = results.len();
 
         if passed != total {
             return Err(GenomeBinError::validation(format!(
@@ -130,9 +142,13 @@ impl Validator {
     }
 
     async fn test_payload_boundary(&self) -> ValidationResult {
-        match tokio::fs::read_to_string(&self.genomebin_path).await {
+        match tokio::fs::read(&self.genomebin_path).await {
             Ok(content) => {
-                if content.contains("__EMBEDDED_PAYLOAD__") {
+                // Search for marker in bytes (binary-safe)
+                if content
+                    .windows(b"__EMBEDDED_PAYLOAD__".len())
+                    .any(|window| window == b"__EMBEDDED_PAYLOAD__")
+                {
                     ValidationResult::pass("Payload boundary found")
                 } else {
                     ValidationResult::fail("Payload boundary found", "Marker not found")
@@ -177,17 +193,27 @@ impl Validator {
     }
 
     async fn extract_and_parse_metadata(&self) -> Result<Metadata> {
-        let content = tokio::fs::read_to_string(&self.genomebin_path).await?;
+        let content = tokio::fs::read(&self.genomebin_path).await?;
 
-        // Find metadata section
+        // Find metadata section (binary-safe search)
+        let start_marker = b"__METADATA_START__";
+        let end_marker = b"__METADATA_END__";
+
         let metadata_start = content
-            .find("__METADATA_START__")
+            .windows(start_marker.len())
+            .position(|window| window == start_marker)
             .ok_or_else(|| GenomeBinError::validation("Metadata start marker not found"))?;
+
         let metadata_end = content
-            .find("__METADATA_END__")
+            .windows(end_marker.len())
+            .position(|window| window == end_marker)
             .ok_or_else(|| GenomeBinError::validation("Metadata end marker not found"))?;
 
-        let metadata_toml = &content[metadata_start + "__METADATA_START__".len()..metadata_end];
+        // Extract metadata bytes and convert to string
+        let metadata_bytes = &content[metadata_start + start_marker.len()..metadata_end];
+        let metadata_toml = std::str::from_utf8(metadata_bytes)
+            .map_err(|e| GenomeBinError::validation(format!("Metadata not valid UTF-8: {e}")))?;
+
         Metadata::from_toml(metadata_toml.trim())
     }
 
