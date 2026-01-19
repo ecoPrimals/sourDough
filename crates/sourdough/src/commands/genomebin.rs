@@ -57,10 +57,7 @@ async fn create_genomebin(
     ecobins: PathBuf,
     output: PathBuf,
 ) -> Result<()> {
-    crate::info(&format!(
-        "Creating genomeBin for {} v{}",
-        primal, version
-    ));
+    crate::info(&format!("Creating genomeBin for {} v{}", primal, version));
 
     if !ecobins.exists() {
         anyhow::bail!("ecoBins directory not found: {}", ecobins.display());
@@ -68,7 +65,7 @@ async fn create_genomebin(
 
     // Find the create-genomebin.sh script
     let script_path = find_genomebin_script("create-genomebin.sh")?;
-    
+
     // Execute the script
     let status = std::process::Command::new(&script_path)
         .arg("--primal")
@@ -97,7 +94,7 @@ async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
 
     // Find the test-genomebin.sh script
     let script_path = find_genomebin_script("test-genomebin.sh")?;
-    
+
     // Execute the script
     let status = std::process::Command::new(&script_path)
         .arg(&genomebin)
@@ -119,7 +116,7 @@ async fn sign_genomebin(genomebin: PathBuf) -> Result<()> {
 
     // Find the sign-genomebin.sh script
     let script_path = find_genomebin_script("sign-genomebin.sh")?;
-    
+
     // Execute the script
     let status = std::process::Command::new(&script_path)
         .arg(&genomebin)
@@ -139,7 +136,7 @@ fn find_genomebin_script(script_name: &str) -> Result<PathBuf> {
     // 2. Installed location (/usr/local/share/sourdough/genomebin/)
     // 3. System location (/usr/share/sourdough/genomebin/)
     // 4. Workspace location (for development)
-    
+
     let candidates = vec![
         // Development: relative to workspace root
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -152,19 +149,22 @@ fn find_genomebin_script(script_name: &str) -> Result<PathBuf> {
         // Local user install
         std::env::var("HOME")
             .ok()
-            .map(|home| PathBuf::from(home).join(".local/share/sourdough/genomebin/scripts").join(script_name))
+            .map(|home| {
+                PathBuf::from(home)
+                    .join(".local/share/sourdough/genomebin/scripts")
+                    .join(script_name)
+            })
             .unwrap_or_default(),
     ];
-    
+
     for candidate in candidates {
         if candidate.exists() && candidate.is_file() {
             return Ok(candidate);
         }
     }
-    
+
     anyhow::bail!(
         "genomeBin script '{}' not found. Please ensure sourDough is properly installed.",
         script_name
     )
 }
-

@@ -445,8 +445,18 @@ impl GenomeBinLauncher {
     }
     
     pub async fn uninstall(&self, mode: UninstallMode) -> Result<(), GenomeBinError> {
-        // Stop service, remove binary, optionally remove data
-        todo!()
+        // Stop service
+        self.stop().await?;
+        
+        // Remove binary
+        std::fs::remove_file(&self.binary_path)?;
+        
+        // Optionally remove data
+        if mode == UninstallMode::Full {
+            std::fs::remove_dir_all(&self.data_dir)?;
+        }
+        
+        Ok(())
     }
 }
 ```
@@ -489,8 +499,8 @@ impl GenomeBinRegistry {
     }
     
     pub async fn is_installed(&self, primal: impl AsRef<str>) -> Result<bool, GenomeBinError> {
-        // Check if primal binary exists and is running
-        todo!()
+        let binary_path = self.cache_dir.join(primal.as_ref());
+        Ok(binary_path.exists() && binary_path.is_file())
     }
 }
 ```

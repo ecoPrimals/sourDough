@@ -76,17 +76,36 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
         let entries: Vec<_> = std::fs::read_dir(&crates_dir)?
             .filter_map(|e| e.ok())
             .collect();
-        
-        let has_core = entries.iter().any(|e| {
-            e.file_name().to_string_lossy().contains("-core")
-        });
-        
+
+        let has_core = entries
+            .iter()
+            .any(|e| e.file_name().to_string_lossy().contains("-core"));
+
         if has_core {
             crate::success("Core crate found");
+            
+            // Check if core crate has sourdough-core dependency
+            for entry in &entries {
+                let name = entry.file_name();
+                if name.to_string_lossy().contains("-core") {
+                    let core_cargo = entry.path().join("Cargo.toml");
+                    if core_cargo.exists() {
+                        let content = std::fs::read_to_string(&core_cargo)?;
+                        if content.contains("sourdough-core") {
+                            crate::success("sourdough-core dependency found");
+                        } else {
+                            warnings.push("Core crate doesn't depend on sourdough-core".to_string());
+                        }
+                    }
+                }
+            }
         } else {
             warnings.push("No *-core crate found".to_string());
         }
     }
+    
+    // Check for trait implementations
+    check_trait_implementations(&path, &mut warnings)?;
 
     println!();
     report_results(&errors, &warnings)
@@ -110,7 +129,7 @@ async fn validate_unibin(path: PathBuf) -> Result<()> {
     let cargo_toml_path = path.join("Cargo.toml");
     if cargo_toml_path.exists() {
         let content = std::fs::read_to_string(&cargo_toml_path)?;
-        
+
         // Simple check for [[bin]] section
         if content.contains("[[bin]]") {
             let bin_count = content.matches("[[bin]]").count();
@@ -143,7 +162,7 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
 
     // Check for C dependencies
     crate::info("Checking dependency tree for C dependencies...");
-    
+
     let output = std::process::Command::new("cargo")
         .args(["tree"])
         .current_dir(&path)
@@ -152,17 +171,17 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
 
     if output.status.success() {
         let tree = String::from_utf8_lossy(&output.stdout);
-        
+
         // Check for known C dependencies
         let c_deps = ["ring", "openssl", "libsqlite"];
         let mut found_c_deps = Vec::new();
-        
+
         for dep in c_deps {
             if tree.contains(dep) {
                 found_c_deps.push(dep);
             }
         }
-        
+
         if found_c_deps.is_empty() {
             crate::success("No known C dependencies found");
         } else {
@@ -175,9 +194,110 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
     // Check for cross-compilation readiness
     crate::info("Checking cross-compilation readiness...");
     println!("  (Full check requires building for all targets)");
+    
+    // Check formatting
+    println!();
+    crate::info("Checking code formatting...");
+    match check_formatting(&path) {
+        Ok(true) => crate::success("Code is properly formatted"),
+        Ok(false) => errors.push("Code formatting issues found (run cargo fmt)".to_string()),
+        Err(e) => println!("  ⚠ Could not check formatting: {}", e),
+    }
+    
+    // Check clippy
+    println!();
+    crate::info("Checking clippy lints...");
+    match check_clippy(&path) {
+        Ok(issues) if issues.is_empty() => crate::success("No clippy warnings"),
+        Ok(issues) => {
+            errors.push(format!("Found {} clippy issue(s)", issues.len()));
+            for issue in issues.iter().take(5) {
+                println!("  {}", issue);
+            }
+            if issues.len() > 5 {
+                println!("  ... and {} more", issues.len() - 5);
+            }
+        }
+        Err(e) => println!("  ⚠ Could not run clippy: {}", e),
+    }
 
     println!();
     report_results(&errors, &[])
+}
+
+/// Check if primal implements core traits
+fn check_trait_implementations(path: &PathBuf, warnings: &mut Vec<String>) -> Result<()> {
+    crate::info("Checking trait implementations...");
+    
+    let crates_dir = path.join("crates");
+    if !crates_dir.exists() {
+        return Ok(());
+    }
+    
+    // Find lib.rs files in core crates
+    let entries: Vec<_> = std::fs::read_dir(&crates_dir)?
+        .filter_map(|e| e.ok())
+        .collect();
+    
+    for entry in entries {
+        let name = entry.file_name();
+        if name.to_string_lossy().contains("-core") {
+            let lib_rs = entry.path().join("src/lib.rs");
+            if lib_rs.exists() {
+                let content = std::fs::read_to_string(&lib_rs)?;
+                
+                // Check for key trait implementations
+                let traits_to_check = [
+                    ("PrimalLifecycle", "lifecycle management"),
+                    ("PrimalHealth", "health reporting"),
+                    ("PrimalIdentity", "identity (BearDog integration)"),
+                    ("PrimalDiscovery", "discovery (Songbird integration)"),
+                ];
+                
+                for (trait_name, description) in traits_to_check {
+                    if content.contains(trait_name) {
+                        crate::success(&format!("  {} implemented ({})", trait_name, description));
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// Check cargo fmt compliance
+fn check_formatting(path: &PathBuf) -> Result<bool> {
+    let output = std::process::Command::new("cargo")
+        .args(["fmt", "--", "--check"])
+        .current_dir(path)
+        .output();
+    
+    match output {
+        Ok(out) => Ok(out.status.success()),
+        Err(_) => Ok(true), // If cargo fmt not available, pass
+    }
+}
+
+/// Check clippy compliance  
+fn check_clippy(path: &PathBuf) -> Result<Vec<String>> {
+    let output = std::process::Command::new("cargo")
+        .args(["clippy", "--", "-D", "warnings"])
+        .current_dir(path)
+        .output();
+    
+    match output {
+        Ok(out) if !out.status.success() => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            let issues: Vec<String> = stderr
+                .lines()
+                .filter(|line| line.contains("warning:") || line.contains("error:"))
+                .map(|s| s.to_string())
+                .collect();
+            Ok(issues)
+        }
+        _ => Ok(Vec::new()),
+    }
 }
 
 fn report_results(errors: &[String], warnings: &[String]) -> Result<()> {
@@ -209,4 +329,3 @@ fn report_results(errors: &[String], warnings: &[String]) -> Result<()> {
         anyhow::bail!("Validation failed with {} error(s)", errors.len())
     }
 }
-

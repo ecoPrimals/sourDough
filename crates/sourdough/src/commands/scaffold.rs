@@ -54,12 +54,10 @@ async fn create_primal(name: String, description: String, output: Option<PathBuf
     crate::info(&format!("Creating new primal: {}", name));
 
     // Determine output directory
-    let output_dir = output
-        .unwrap_or_else(|| PathBuf::from("..").join(&name));
+    let output_dir = output.unwrap_or_else(|| PathBuf::from("..").join(&name));
 
     // Create directory structure
-    std::fs::create_dir_all(&output_dir)
-        .context("Failed to create primal directory")?;
+    std::fs::create_dir_all(&output_dir).context("Failed to create primal directory")?;
 
     // Create workspace Cargo.toml
     create_workspace_cargo_toml(&output_dir, &name, &description)?;
@@ -99,8 +97,7 @@ async fn create_crate(primal: String, crate_name: String, path: Option<PathBuf>)
         crate_name, primal
     ));
 
-    let primal_dir = path
-        .unwrap_or_else(|| PathBuf::from("..").join(&primal));
+    let primal_dir = path.unwrap_or_else(|| PathBuf::from("..").join(&primal));
 
     if !primal_dir.exists() {
         anyhow::bail!("Primal directory not found: {}", primal_dir.display());
@@ -148,7 +145,8 @@ fn create_workspace_cargo_toml(dir: &Path, name: &str, _description: &str) -> Re
         // Using a sibling directory assumption as the most common case
         r#"sourdough-core = { path = "../../sourDough/crates/sourdough-core" }
 # NOTE: Adjust the path above to point to your sourDough installation
-# OR use: sourdough-core = "0.1.0"  (once published)"#.to_string()
+# OR use: sourdough-core = "0.1.0"  (once published)"#
+            .to_string()
     };
 
     let content = format!(
@@ -201,14 +199,14 @@ fn find_sourdough_core_path(target_dir: &Path) -> Result<Option<String>> {
     // 1. ../sourDough (sibling directory)
     // 2. ../../sourDough (parent's sibling)
     // 3. Via SOURDOUGH_PATH environment variable
-    
+
     if let Ok(env_path) = std::env::var("SOURDOUGH_PATH") {
         let core_path = PathBuf::from(&env_path).join("crates/sourdough-core");
         if core_path.exists() {
             return Ok(Some(core_path.to_string_lossy().to_string()));
         }
     }
-    
+
     // Try common relative paths
     for candidate in &["../sourDough", "../../sourDough", "../../../sourDough"] {
         let abs_candidate = target_dir.join(candidate).join("crates/sourdough-core");
@@ -219,7 +217,7 @@ fn find_sourdough_core_path(target_dir: &Path) -> Result<Option<String>> {
             }
         }
     }
-    
+
     Ok(None)
 }
 
@@ -227,7 +225,7 @@ fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
     let core_crate_name = format!("{}-core", name.to_lowercase());
     let crate_dir = crates_dir.join(&core_crate_name);
     let src_dir = crate_dir.join("src");
-    
+
     std::fs::create_dir_all(&src_dir)?;
 
     // Create Cargo.toml
@@ -361,9 +359,14 @@ mod tests {{
     }}
 }}
 "#,
-            name, 
+            name,
             // Capitalize first letter for struct name
-            name.chars().next().unwrap().to_uppercase().collect::<String>() + &name[1..]
+            name.chars()
+                .next()
+                .unwrap()
+                .to_uppercase()
+                .collect::<String>()
+                + &name[1..]
         ),
     )?;
 
@@ -458,7 +461,7 @@ cargo test
 
 fn create_conventions_file(dir: &Path) -> Result<()> {
     let conventions = dir.join("CONVENTIONS.md");
-    
+
     // For now, create a simple reference
     std::fs::write(
         &conventions,
@@ -514,8 +517,10 @@ thiserror = {{ workspace = true }}
 
 fn update_workspace_members(_primal_dir: &PathBuf, crate_name: &str) -> Result<()> {
     // Simple append to members array (in production, would parse TOML properly)
-    crate::info(&format!("Add 'crates/{}' to workspace members in Cargo.toml", crate_name));
-    
+    crate::info(&format!(
+        "Add 'crates/{}' to workspace members in Cargo.toml",
+        crate_name
+    ));
+
     Ok(())
 }
-

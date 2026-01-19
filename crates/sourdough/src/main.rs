@@ -18,7 +18,9 @@ mod commands;
 #[command(name = "sourdough")]
 #[command(about = "🍞 SourDough - The reference UniBin for ecoPrimals")]
 #[command(version)]
-#[command(long_about = "SourDough provides tooling for creating, validating, and deploying ecoPrimals.\n\nUse 'sourdough <command> --help' for more information on a specific command.")]
+#[command(
+    long_about = "SourDough provides tooling for creating, validating, and deploying ecoPrimals.\n\nUse 'sourdough <command> --help' for more information on a specific command."
+)]
 struct Cli {
     /// Verbose output
     #[arg(short, long, global = true)]
@@ -117,4 +119,3 @@ pub fn warning(msg: &str) {
 pub fn info(msg: &str) {
     println!("{} {}", "ℹ".blue().bold(), msg);
 }
-

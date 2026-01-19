@@ -177,7 +177,10 @@ mod tests {
     fn error_dependency() {
         let err = PrimalError::dependency("database", "connection failed");
         assert!(matches!(err, PrimalError::Dependency { .. }));
-        assert_eq!(err.to_string(), "dependency error: database: connection failed");
+        assert_eq!(
+            err.to_string(),
+            "dependency error: database: connection failed"
+        );
     }
 
     #[test]
@@ -192,7 +195,7 @@ mod tests {
         assert!(PrimalError::Network("timeout".to_string()).is_retryable());
         assert!(PrimalError::Timeout("slow".to_string()).is_retryable());
         assert!(PrimalError::dependency("db", "down").is_retryable());
-        
+
         assert!(!PrimalError::Config("bad".to_string()).is_retryable());
         assert!(!PrimalError::InvalidInput("wrong".to_string()).is_retryable());
         assert!(!PrimalError::PermissionDenied("forbidden".to_string()).is_retryable());
@@ -234,9 +237,8 @@ mod tests {
                 Err(PrimalError::config("value must be positive"))
             }
         }
-        
+
         assert_eq!(test_function(42).unwrap(), 42);
         assert!(test_function(-1).is_err());
     }
 }
-

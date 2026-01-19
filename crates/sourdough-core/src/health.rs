@@ -261,9 +261,8 @@ mod tests {
 
     #[test]
     fn dependency_health_builder() {
-        let dep = DependencyHealth::healthy("postgres", "database")
-            .with_latency(50);
-        
+        let dep = DependencyHealth::healthy("postgres", "database").with_latency(50);
+
         assert_eq!(dep.name, "postgres");
         assert_eq!(dep.dependency_type, "database");
         assert!(dep.status.is_healthy());
@@ -273,7 +272,7 @@ mod tests {
     #[test]
     fn dependency_health_unhealthy() {
         let dep = DependencyHealth::unhealthy("redis", "cache", "connection refused");
-        
+
         assert_eq!(dep.name, "redis");
         assert_eq!(dep.dependency_type, "cache");
         assert!(!dep.status.is_healthy());
@@ -285,7 +284,7 @@ mod tests {
             .with_status(HealthStatus::Healthy)
             .with_dependency(DependencyHealth::healthy("db", "database"))
             .with_detail("uptime", "1h");
-        
+
         assert_eq!(report.name, "test-primal");
         assert_eq!(report.version, "1.0.0");
         assert!(report.status.is_healthy());
@@ -296,14 +295,12 @@ mod tests {
 
     #[test]
     fn health_report_sets_readiness() {
-        let report = HealthReport::new("test", "1.0.0")
-            .with_status(HealthStatus::Healthy);
+        let report = HealthReport::new("test", "1.0.0").with_status(HealthStatus::Healthy);
         assert!(report.readiness);
-        
-        let report = HealthReport::new("test", "1.0.0")
-            .with_status(HealthStatus::Unhealthy {
-                reason: "failed".to_string(),
-            });
+
+        let report = HealthReport::new("test", "1.0.0").with_status(HealthStatus::Unhealthy {
+            reason: "failed".to_string(),
+        });
         assert!(!report.readiness);
     }
 
@@ -332,21 +329,22 @@ mod tests {
         }
 
         async fn health_check(&self) -> Result<HealthReport, PrimalError> {
-            Ok(HealthReport::new("mock", "1.0.0")
-                .with_status(HealthStatus::Unhealthy {
+            Ok(
+                HealthReport::new("mock", "1.0.0").with_status(HealthStatus::Unhealthy {
                     reason: "test failure".to_string(),
-                }))
+                }),
+            )
         }
     }
 
     #[tokio::test]
     async fn trait_healthy_primal() {
         let primal = MockHealthyPrimal;
-        
+
         assert!(primal.health_status().is_healthy());
         assert!(primal.is_ready());
         assert!(primal.is_live());
-        
+
         let report = primal.health_check().await.unwrap();
         assert!(report.status.is_healthy());
     }
@@ -354,11 +352,11 @@ mod tests {
     #[tokio::test]
     async fn trait_unhealthy_primal() {
         let primal = MockUnhealthyPrimal;
-        
+
         assert!(!primal.health_status().is_healthy());
         assert!(!primal.is_ready());
         assert!(primal.is_live()); // Still alive, just unhealthy
-        
+
         let report = primal.health_check().await.unwrap();
         assert!(!report.status.is_healthy());
         assert!(!report.readiness);

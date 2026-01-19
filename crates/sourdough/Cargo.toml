@@ -47,4 +47,7 @@ chrono = "0.4"
 tempfile = "3.12"
 assert_cmd = "2.0"
 predicates = "3.1"
+tokio-util = { workspace = true, features = ["codec"] }
+tokio-serde = { workspace = true, features = ["bincode"] }
+bincode = { workspace = true }
 

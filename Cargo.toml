@@ -37,3 +37,13 @@ blake3 = "1.5"
 # Configuration
 config = "0.14"
 
+# RPC
+tarpc = { version = "0.34", features = ["tokio1", "serde1", "serde-transport"] }
+futures = "0.3"
+bytes = "1.11"
+serde_bytes = "0.11"
+tokio-util = { version = "0.7", features = ["codec"] }
+tokio-serde = { version = "0.8", features = ["bincode"] }
+bincode = "1.3"
+
+

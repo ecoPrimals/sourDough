@@ -258,13 +258,13 @@ mod tests {
     #[tokio::test]
     async fn lifecycle_start_stop() {
         let mut primal = MockPrimal::new();
-        
+
         assert_eq!(primal.state(), PrimalState::Created);
-        
+
         primal.start().await.unwrap();
         assert_eq!(primal.state(), PrimalState::Running);
         assert_eq!(primal.start_count, 1);
-        
+
         primal.stop().await.unwrap();
         assert_eq!(primal.state(), PrimalState::Stopped);
         assert_eq!(primal.stop_count, 1);
@@ -274,14 +274,14 @@ mod tests {
     async fn lifecycle_invalid_transitions() {
         let mut primal = MockPrimal::new();
         primal.state = PrimalState::Running;
-        
+
         // Can't start when already running
         let result = primal.start().await;
         assert!(result.is_err());
-        
+
         // Reset
         primal.state = PrimalState::Created;
-        
+
         // Can't stop when not running
         let result = primal.stop().await;
         assert!(result.is_err());
@@ -291,12 +291,12 @@ mod tests {
     async fn lifecycle_reload() {
         let mut primal = MockPrimal::new();
         primal.start().await.unwrap();
-        
+
         assert_eq!(primal.start_count, 1);
         assert_eq!(primal.stop_count, 0);
-        
+
         primal.reload().await.unwrap();
-        
+
         assert_eq!(primal.start_count, 2);
         assert_eq!(primal.stop_count, 1);
         assert_eq!(primal.state(), PrimalState::Running);
@@ -306,9 +306,9 @@ mod tests {
     async fn lifecycle_shutdown() {
         let mut primal = MockPrimal::new();
         primal.start().await.unwrap();
-        
+
         primal.shutdown().await.unwrap();
-        
+
         assert_eq!(primal.state(), PrimalState::Stopped);
         assert_eq!(primal.stop_count, 1);
     }

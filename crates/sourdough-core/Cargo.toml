@@ -10,11 +10,14 @@ authors.workspace = true
 [dependencies]
 # Async
 tokio = { workspace = true }
+futures = { workspace = true }
 
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
 toml = { workspace = true }
+bytes = { workspace = true }
+serde_bytes = { workspace = true }
 
 # Error handling
 thiserror = { workspace = true }
@@ -24,6 +27,12 @@ tracing = { workspace = true }
 
 # Config
 config = { workspace = true }
+
+# Cryptography
+blake3 = { workspace = true }
+
+# RPC
+tarpc = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }

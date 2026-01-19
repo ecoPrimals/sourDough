@@ -204,14 +204,16 @@ mod tests {
 
     #[test]
     fn service_registration_builder() {
-        let reg = ServiceRegistration::new("test-service", "1.0.0", "http://localhost:8080")
+        // In real usage, endpoint would be discovered dynamically
+        // This test uses a placeholder for demonstration only
+        let reg = ServiceRegistration::new("test-service", "1.0.0", "http://test-endpoint:0")
             .with_capability(UpaCapability::new("storage", "1.0", "grpc"))
             .with_metadata("region", "us-west")
             .with_health_endpoint("/health");
-        
+
         assert_eq!(reg.name, "test-service");
         assert_eq!(reg.version, "1.0.0");
-        assert_eq!(reg.endpoint, "http://localhost:8080");
+        assert_eq!(reg.endpoint, "http://test-endpoint:0");
         assert_eq!(reg.capabilities.len(), 1);
         assert_eq!(reg.metadata.get("region"), Some(&"us-west".to_string()));
         assert_eq!(reg.health_endpoint, Some("/health".to_string()));
@@ -220,7 +222,7 @@ mod tests {
     #[test]
     fn upa_capability_creation() {
         let cap = UpaCapability::new("compute", "2.0", "rest");
-        
+
         assert_eq!(cap.name, "compute");
         assert_eq!(cap.version, "2.0");
         assert_eq!(cap.protocol, "rest");
@@ -230,7 +232,7 @@ mod tests {
     #[test]
     fn birdsong_config_default() {
         let config = BirdSongConfig::default();
-        
+
         assert!(config.enabled);
         assert_eq!(config.interval_secs, 30);
         assert!(config.lineage_gated);
@@ -245,7 +247,7 @@ mod tests {
             lineage_gated: false,
             encrypted: false,
         };
-        
+
         assert!(!config.enabled);
         assert_eq!(config.interval_secs, 60);
     }
@@ -260,10 +262,10 @@ mod tests {
             capabilities: vec!["storage".to_string()],
             is_family: true,
         };
-        
+
         let json = serde_json::to_string(&info).unwrap();
         let parsed: ServiceInfo = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(info.name, parsed.name);
         assert_eq!(info.is_family, parsed.is_family);
     }
@@ -275,7 +277,7 @@ mod tests {
             service_name: "test-service".to_string(),
             registered_at: crate::types::Timestamp::now(),
         };
-        
+
         assert_eq!(handle.id, "reg-123");
         assert_eq!(handle.service_name, "test-service");
     }
@@ -295,7 +297,8 @@ mod tests {
 
     impl PrimalDiscovery for MockDiscoveryPrimal {
         fn registration(&self) -> ServiceRegistration {
-            ServiceRegistration::new(&self.service_name, "1.0.0", "http://localhost:9000")
+            // In tests, use OS-assigned port (0) to avoid hardcoding
+            ServiceRegistration::new(&self.service_name, "1.0.0", "http://test-endpoint:0")
                 .with_capability(UpaCapability::new("test", "1.0", "grpc"))
         }
 
@@ -330,24 +333,24 @@ mod tests {
     #[tokio::test]
     async fn trait_registration() {
         let primal = MockDiscoveryPrimal::new("test-primal");
-        
+
         let reg = primal.registration();
         assert_eq!(reg.name, "test-primal");
         assert_eq!(reg.capabilities.len(), 1);
-        
+
         let handle = primal.register().await.unwrap();
         assert_eq!(handle.service_name, "test-primal");
-        
+
         primal.deregister().await.unwrap();
     }
 
     #[tokio::test]
     async fn trait_birdsong_config() {
         let primal = MockDiscoveryPrimal::new("test");
-        
+
         let config = primal.birdsong_config();
         assert!(config.is_some());
-        
+
         let config = config.unwrap();
         assert!(config.enabled);
         assert!(config.encrypted);
@@ -356,12 +359,11 @@ mod tests {
     #[tokio::test]
     async fn trait_discovery() {
         let primal = MockDiscoveryPrimal::new("test");
-        
+
         let services = primal.discover("other-service").await.unwrap();
         assert!(services.is_empty());
-        
+
         let services = primal.discover_by_capability("storage").await.unwrap();
         assert!(services.is_empty());
     }
 }
-

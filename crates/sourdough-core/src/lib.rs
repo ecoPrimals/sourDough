@@ -48,6 +48,7 @@ pub mod error;
 pub mod health;
 pub mod identity;
 pub mod lifecycle;
+pub mod rpc;
 pub mod types;
 
 // Re-exports for convenience

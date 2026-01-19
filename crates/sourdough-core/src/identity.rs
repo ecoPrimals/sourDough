@@ -256,12 +256,8 @@ mod tests {
 
     #[test]
     fn signature_creation() {
-        let sig = Signature::new(
-            vec![1, 2, 3, 4],
-            "Ed25519",
-            "key-123",
-        );
-        
+        let sig = Signature::new(vec![1, 2, 3, 4], "Ed25519", "key-123");
+
         assert_eq!(sig.bytes, vec![1, 2, 3, 4]);
         assert_eq!(sig.algorithm, "Ed25519");
         assert_eq!(sig.key_id, "key-123");
@@ -271,7 +267,7 @@ mod tests {
     fn signature_debug() {
         let sig = Signature::new(vec![1, 2, 3], "Ed25519", "key-1");
         let debug_str = format!("{sig:?}");
-        
+
         assert!(debug_str.contains("Ed25519"));
         assert!(debug_str.contains("key-1"));
         assert!(debug_str.contains("3 bytes"));
@@ -289,7 +285,7 @@ mod tests {
         let sig = Signature::new(vec![1, 2, 3], "Ed25519", "key-123");
         let json = serde_json::to_string(&sig).unwrap();
         let parsed: Signature = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(sig.bytes, parsed.bytes);
         assert_eq!(sig.algorithm, parsed.algorithm);
         assert_eq!(sig.key_id, parsed.key_id);
@@ -303,7 +299,7 @@ mod tests {
             depth: 2,
             proof: vec![1, 2, 3, 4],
         };
-        
+
         assert_eq!(proof.depth, 2);
         assert!(proof.parent.is_some());
     }
@@ -316,7 +312,7 @@ mod tests {
             depth: 0,
             proof: vec![],
         };
-        
+
         assert_eq!(proof.depth, 0);
         assert!(proof.parent.is_none());
     }
@@ -329,10 +325,10 @@ mod tests {
             depth: 1,
             proof: vec![1, 2, 3],
         };
-        
+
         let json = serde_json::to_string(&proof).unwrap();
         let parsed: LineageProof = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(proof.depth, parsed.depth);
     }
 
@@ -343,9 +339,7 @@ mod tests {
 
     impl MockIdentityPrimal {
         fn new(did: impl Into<String>) -> Self {
-            Self {
-                did: Did::new(did),
-            }
+            Self { did: Did::new(did) }
         }
     }
 
@@ -355,11 +349,7 @@ mod tests {
         }
 
         async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError> {
-            Ok(Signature::new(
-                data.to_vec(),
-                "Ed25519",
-                "mock-key",
-            ))
+            Ok(Signature::new(data.to_vec(), "Ed25519", "mock-key"))
         }
 
         async fn verify(
@@ -384,7 +374,7 @@ mod tests {
     #[tokio::test]
     async fn trait_identity() {
         let primal = MockIdentityPrimal::new("did:key:test123");
-        
+
         let did = primal.did();
         assert_eq!(did.as_str(), "did:key:test123");
     }
@@ -392,10 +382,10 @@ mod tests {
     #[tokio::test]
     async fn trait_sign() {
         let primal = MockIdentityPrimal::new("did:key:signer");
-        
+
         let data = b"test message";
         let sig = primal.sign(data).await.unwrap();
-        
+
         assert_eq!(sig.bytes, data.to_vec());
         assert_eq!(sig.algorithm, "Ed25519");
     }
@@ -404,13 +394,13 @@ mod tests {
     async fn trait_verify() {
         let primal = MockIdentityPrimal::new("did:key:verifier");
         let signer = Did::new("did:key:signer");
-        
+
         let data = b"test message";
         let sig = Signature::new(data.to_vec(), "Ed25519", "key");
-        
+
         let valid = primal.verify(data, &sig, &signer).await.unwrap();
         assert!(valid);
-        
+
         let different_data = b"different";
         let invalid = primal.verify(different_data, &sig, &signer).await.unwrap();
         assert!(!invalid);
@@ -419,10 +409,10 @@ mod tests {
     #[tokio::test]
     async fn trait_lineage_proof() {
         let primal = MockIdentityPrimal::new("did:key:test");
-        
+
         let proof = primal.lineage_proof().await.unwrap();
         assert!(proof.is_some());
-        
+
         let proof = proof.unwrap();
         assert_eq!(proof.depth, 0);
         assert!(proof.parent.is_none());

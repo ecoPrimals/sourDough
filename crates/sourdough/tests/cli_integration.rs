@@ -13,7 +13,7 @@ use tempfile::TempDir;
 fn test_help() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("--help");
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("SourDough"))
@@ -28,7 +28,7 @@ fn test_help() {
 fn test_version() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("--version");
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("sourdough"));
@@ -39,7 +39,7 @@ fn test_version() {
 fn test_doctor_basic() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("doctor");
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Health Check"))
@@ -51,7 +51,7 @@ fn test_doctor_basic() {
 fn test_doctor_comprehensive() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.args(["doctor", "--comprehensive"]);
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("comprehensive checks"));
@@ -62,7 +62,7 @@ fn test_doctor_comprehensive() {
 fn test_scaffold_new_primal() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "testPrimal";
-    
+
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("scaffold")
         .arg("new-primal")
@@ -70,12 +70,12 @@ fn test_scaffold_new_primal() {
         .arg("Test primal description")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Creating new primal"))
         .stdout(predicate::str::contains("Created primal"));
-    
+
     // Verify structure was created
     let primal_path = temp_dir.path().join(primal_name);
     assert!(primal_path.exists());
@@ -83,13 +83,13 @@ fn test_scaffold_new_primal() {
     assert!(primal_path.join("README.md").exists());
     assert!(primal_path.join("crates").exists());
     assert!(primal_path.join("specs").exists());
-    
+
     // Verify core crate exists
     let core_crate = primal_path.join("crates").join("testprimal-core");
     assert!(core_crate.exists());
     assert!(core_crate.join("Cargo.toml").exists());
     assert!(core_crate.join("src").join("lib.rs").exists());
-    
+
     // Verify generated code is valid Rust
     let lib_rs = std::fs::read_to_string(core_crate.join("src").join("lib.rs")).unwrap();
     assert!(lib_rs.contains("PrimalLifecycle"));
@@ -101,7 +101,7 @@ fn test_scaffold_new_primal() {
 #[test]
 fn test_scaffold_invalid_primal_name() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("scaffold")
         .arg("new-primal")
@@ -109,7 +109,7 @@ fn test_scaffold_invalid_primal_name() {
         .arg("Description")
         .arg("--output")
         .arg(temp_dir.path());
-    
+
     // Should handle empty name gracefully (current implementation may create it,
     // but in production should validate)
     let result = cmd.output().unwrap();
@@ -122,24 +122,27 @@ fn test_scaffold_invalid_primal_name() {
 fn test_validate_primal_valid() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "validPrimal";
-    
+
     // First create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("Test primal")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     // Now validate it
     let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
-    validate_cmd.arg("validate")
+    validate_cmd
+        .arg("validate")
         .arg("primal")
         .arg(temp_dir.path().join(primal_name));
-    
-    validate_cmd.assert()
+
+    validate_cmd
+        .assert()
         .success()
         .stdout(predicate::str::contains("Validating primal"))
         .stdout(predicate::str::contains("Cargo.toml found"))
@@ -150,14 +153,12 @@ fn test_validate_primal_valid() {
 #[test]
 fn test_validate_primal_invalid() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
-    cmd.arg("validate")
-        .arg("primal")
-        .arg("/nonexistent/path");
-    
-    cmd.assert()
-        .failure()
-        .stdout(predicate::str::contains("Missing Cargo.toml")
-            .or(predicate::str::contains("Missing crates/")));
+    cmd.arg("validate").arg("primal").arg("/nonexistent/path");
+
+    cmd.assert().failure().stdout(
+        predicate::str::contains("Missing Cargo.toml")
+            .or(predicate::str::contains("Missing crates/")),
+    );
 }
 
 /// Test validate unibin command
@@ -165,23 +166,25 @@ fn test_validate_primal_invalid() {
 fn test_validate_unibin() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "unibinPrimal";
-    
+
     // Create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("UniBin test")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     // Validate as UniBin
     let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
-    validate_cmd.arg("validate")
+    validate_cmd
+        .arg("validate")
         .arg("unibin")
         .arg(temp_dir.path().join(primal_name));
-    
+
     // Should complete (may have warnings about missing [[bin]] section)
     let output = validate_cmd.output().unwrap();
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -193,23 +196,25 @@ fn test_validate_unibin() {
 fn test_validate_ecobin() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "ecobinPrimal";
-    
+
     // Create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("EcoBin test")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     // Validate as ecoBin
     let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
-    validate_cmd.arg("validate")
+    validate_cmd
+        .arg("validate")
         .arg("ecobin")
         .arg(temp_dir.path().join(primal_name));
-    
+
     // Should complete (will check for C dependencies)
     let output = validate_cmd.output().unwrap();
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -222,13 +227,21 @@ fn test_genomebin_create() {
     let temp_dir = TempDir::new().unwrap();
     let ecobins_dir = temp_dir.path().join("ecobins");
     std::fs::create_dir_all(&ecobins_dir).unwrap();
-    
+
     // Create dummy ecoBin files
-    std::fs::write(ecobins_dir.join("testPrimal-x86_64-unknown-linux-musl"), "#!/bin/sh\necho test").unwrap();
-    std::fs::write(ecobins_dir.join("testPrimal-aarch64-unknown-linux-musl"), "#!/bin/sh\necho test").unwrap();
-    
+    std::fs::write(
+        ecobins_dir.join("testPrimal-x86_64-unknown-linux-musl"),
+        "#!/bin/sh\necho test",
+    )
+    .unwrap();
+    std::fs::write(
+        ecobins_dir.join("testPrimal-aarch64-unknown-linux-musl"),
+        "#!/bin/sh\necho test",
+    )
+    .unwrap();
+
     let output_path = temp_dir.path().join("test.genome");
-    
+
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("genomebin")
         .arg("create")
@@ -240,12 +253,12 @@ fn test_genomebin_create() {
         .arg(&ecobins_dir)
         .arg("--output")
         .arg(&output_path);
-    
+
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Creating genomeBin"))
         .stdout(predicate::str::contains("Found 2 ecoBin"));
-    
+
     // Verify genomeBin was created
     assert!(output_path.exists());
 }
@@ -254,7 +267,7 @@ fn test_genomebin_create() {
 #[test]
 fn test_genomebin_create_missing_dir() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
     cmd.arg("genomebin")
         .arg("create")
@@ -266,7 +279,7 @@ fn test_genomebin_create_missing_dir() {
         .arg("/nonexistent/dir")
         .arg("--output")
         .arg(temp_dir.path().join("test.genome"));
-    
+
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("not found"));
@@ -276,9 +289,8 @@ fn test_genomebin_create_missing_dir() {
 #[test]
 fn test_verbose_flag() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
-    cmd.arg("--verbose")
-        .arg("doctor");
-    
+    cmd.arg("--verbose").arg("doctor");
+
     cmd.assert().success();
 }
 
@@ -286,9 +298,8 @@ fn test_verbose_flag() {
 #[test]
 fn test_quiet_flag() {
     let mut cmd = Command::cargo_bin("sourdough").unwrap();
-    cmd.arg("--quiet")
-        .arg("doctor");
-    
+    cmd.arg("--quiet").arg("doctor");
+
     cmd.assert().success();
 }
 
@@ -297,30 +308,35 @@ fn test_quiet_flag() {
 fn test_generated_primal_structure() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "buildablePrimal";
-    
+
     // Create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("Buildable test")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     let primal_path = temp_dir.path().join(primal_name);
-    
+
     // Verify workspace Cargo.toml is valid TOML
     let workspace_cargo = std::fs::read_to_string(primal_path.join("Cargo.toml")).unwrap();
-    let _: toml::Value = toml::from_str(&workspace_cargo).expect("Workspace Cargo.toml should be valid TOML");
-    
+    let _: toml::Value =
+        toml::from_str(&workspace_cargo).expect("Workspace Cargo.toml should be valid TOML");
+
     // Verify crate Cargo.toml is valid TOML
     let crate_cargo_path = primal_path.join("crates/buildableprimal-core/Cargo.toml");
     let crate_cargo = std::fs::read_to_string(crate_cargo_path).unwrap();
-    let _: toml::Value = toml::from_str(&crate_cargo).expect("Crate Cargo.toml should be valid TOML");
-    
+    let _: toml::Value =
+        toml::from_str(&crate_cargo).expect("Crate Cargo.toml should be valid TOML");
+
     // Verify lib.rs is valid Rust syntax (basic check)
-    let lib_rs = std::fs::read_to_string(primal_path.join("crates/buildableprimal-core/src/lib.rs")).unwrap();
+    let lib_rs =
+        std::fs::read_to_string(primal_path.join("crates/buildableprimal-core/src/lib.rs"))
+            .unwrap();
     assert!(lib_rs.contains("pub struct"));
     assert!(lib_rs.contains("impl PrimalLifecycle"));
     assert!(lib_rs.contains("#[cfg(test)]"));
@@ -331,26 +347,28 @@ fn test_generated_primal_structure() {
 fn test_generated_primal_has_tests() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "testablePrimal";
-    
+
     // Create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("Testable primal")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     // Verify test code exists
     let primal_path = temp_dir.path().join(primal_name);
-    let lib_rs = std::fs::read_to_string(primal_path.join("crates/testableprimal-core/src/lib.rs")).unwrap();
-    
+    let lib_rs =
+        std::fs::read_to_string(primal_path.join("crates/testableprimal-core/src/lib.rs")).unwrap();
+
     // Should have test module
     assert!(lib_rs.contains("#[cfg(test)]"));
     assert!(lib_rs.contains("mod tests"));
     assert!(lib_rs.contains("#[tokio::test]"));
-    
+
     // Verify the test code is syntactically reasonable
     assert!(lib_rs.contains("fn test_"));
 }
@@ -359,11 +377,11 @@ fn test_generated_primal_has_tests() {
 #[test]
 fn test_subcommand_help() {
     let subcommands = ["scaffold", "validate", "doctor", "genomebin"];
-    
+
     for subcmd in subcommands {
         let mut cmd = Command::cargo_bin("sourdough").unwrap();
         cmd.arg(subcmd).arg("--help");
-        
+
         cmd.assert()
             .success()
             .stdout(predicate::str::contains(subcmd));
@@ -375,33 +393,37 @@ fn test_subcommand_help() {
 fn test_scaffold_new_crate() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "cratePrimal";
-    
+
     // First create a primal
     let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
-    create_cmd.arg("scaffold")
+    create_cmd
+        .arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
         .arg("Test for new crate")
         .arg("--output")
         .arg(temp_dir.path().join(primal_name));
     create_cmd.assert().success();
-    
+
     // Add a new crate
     let mut add_crate_cmd = Command::cargo_bin("sourdough").unwrap();
-    add_crate_cmd.arg("scaffold")
+    add_crate_cmd
+        .arg("scaffold")
         .arg("new-crate")
         .arg(primal_name)
         .arg("crateprimal-storage")
         .arg("--path")
         .arg(temp_dir.path().join(primal_name));
-    
-    add_crate_cmd.assert()
+
+    add_crate_cmd
+        .assert()
         .success()
         .stdout(predicate::str::contains("Adding crate"))
         .stdout(predicate::str::contains("Created crate"));
-    
+
     // Verify crate was created
-    let crate_path = temp_dir.path()
+    let crate_path = temp_dir
+        .path()
         .join(primal_name)
         .join("crates")
         .join("crateprimal-storage");
@@ -409,4 +431,3 @@ fn test_scaffold_new_crate() {
     assert!(crate_path.join("Cargo.toml").exists());
     assert!(crate_path.join("src").join("lib.rs").exists());
 }
-

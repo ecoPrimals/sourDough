@@ -444,7 +444,7 @@ sourDough is the definitive reference implementation and tooling platform.
 
 - `SOURDOUGH_SPECIFICATION.md` - What sourDough is
 - `ARCHITECTURE.md` - How sourDough is built
-- `DEVELOPMENT.md` - How to develop with sourDough (TODO)
+- [`DEVELOPMENT.md`](../DEVELOPMENT.md) - How to develop with sourDough ✅
 
 ---
 
