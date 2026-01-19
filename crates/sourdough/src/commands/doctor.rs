@@ -1,25 +1,25 @@
-//! Health diagnostics for SourDough and the ecosystem.
+//! Health diagnostics for `SourDough` and the ecosystem.
 
 use anyhow::Result;
 
-pub async fn run(comprehensive: bool) -> Result<()> {
+pub fn run(comprehensive: bool) -> Result<()> {
     crate::info("🏥 SourDough Health Check");
     println!();
 
     // Check SourDough binary
-    check_sourdough_binary()?;
+    check_sourdough_binary();
 
     // Check dependencies
     check_rust_toolchain()?;
 
     // Check for common tools
-    check_common_tools()?;
+    check_common_tools();
 
     if comprehensive {
         println!();
         crate::info("Running comprehensive checks...");
-        check_cross_compilation_targets()?;
-        check_genome_bin_tools()?;
+        check_cross_compilation_targets();
+        check_genome_bin_tools();
     }
 
     println!();
@@ -28,14 +28,13 @@ pub async fn run(comprehensive: bool) -> Result<()> {
     Ok(())
 }
 
-fn check_sourdough_binary() -> Result<()> {
+fn check_sourdough_binary() {
     crate::info("Checking SourDough binary...");
 
     let version = env!("CARGO_PKG_VERSION");
-    println!("  Version: {}", version);
+    println!("  Version: {version}");
 
     crate::success("Binary OK");
-    Ok(())
 }
 
 fn check_rust_toolchain() -> Result<()> {
@@ -68,7 +67,7 @@ fn check_rust_toolchain() -> Result<()> {
     Ok(())
 }
 
-fn check_common_tools() -> Result<()> {
+fn check_common_tools() {
     crate::info("Checking common tools...");
 
     let tools = [
@@ -81,18 +80,16 @@ fn check_common_tools() -> Result<()> {
 
         match output {
             Ok(out) if out.status.success() => {
-                println!("  ✓ {} ({})", tool, description);
+                println!("  ✓ {tool} ({description})");
             }
             _ => {
-                println!("  ⚠ {} ({}) - not found", tool, description);
+                println!("  ⚠ {tool} ({description}) - not found");
             }
         }
     }
-
-    Ok(())
 }
 
-fn check_cross_compilation_targets() -> Result<()> {
+fn check_cross_compilation_targets() {
     crate::info("Checking cross-compilation targets...");
 
     let targets = [
@@ -102,28 +99,25 @@ fn check_cross_compilation_targets() -> Result<()> {
         "aarch64-apple-darwin",
     ];
 
-    for target in targets {
-        let output = std::process::Command::new("rustup")
-            .args(["target", "list", "--installed"])
-            .output()?;
-
+    if let Ok(output) = std::process::Command::new("rustup")
+        .args(["target", "list", "--installed"])
+        .output()
+    {
         if output.status.success() {
             let installed = String::from_utf8_lossy(&output.stdout);
-            if installed.contains(target) {
-                println!("  ✓ {}", target);
-            } else {
-                println!("  ⚠ {} - not installed", target);
+            for target in targets {
+                if installed.contains(target) {
+                    println!("  ✓ {target}");
+                } else {
+                    println!("  ⚠ {target} - not installed");
+                }
             }
         }
     }
-
-    Ok(())
 }
 
-fn check_genome_bin_tools() -> Result<()> {
+fn check_genome_bin_tools() {
     crate::info("Checking genomeBin tools...");
 
     println!("  ⚠ genomeBin tools not yet implemented");
-
-    Ok(())
 }

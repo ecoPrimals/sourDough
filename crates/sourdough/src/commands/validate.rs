@@ -27,15 +27,15 @@ pub enum ValidateCommand {
     },
 }
 
-pub async fn run(cmd: ValidateCommand) -> Result<()> {
+pub fn run(cmd: ValidateCommand) -> Result<()> {
     match cmd {
-        ValidateCommand::Primal { path } => validate_primal(path).await,
-        ValidateCommand::UniBin { path } => validate_unibin(path).await,
-        ValidateCommand::EcoBin { path } => validate_ecobin(path).await,
+        ValidateCommand::Primal { path } => validate_primal(path),
+        ValidateCommand::UniBin { path } => validate_unibin(path),
+        ValidateCommand::EcoBin { path } => validate_ecobin(path),
     }
 }
 
-async fn validate_primal(path: PathBuf) -> Result<()> {
+fn validate_primal(path: PathBuf) -> Result<()> {
     crate::info(&format!("Validating primal at: {}", path.display()));
     println!();
 
@@ -83,7 +83,7 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
 
         if has_core {
             crate::success("Core crate found");
-            
+
             // Check if core crate has sourdough-core dependency
             for entry in &entries {
                 let name = entry.file_name();
@@ -94,7 +94,8 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
                         if content.contains("sourdough-core") {
                             crate::success("sourdough-core dependency found");
                         } else {
-                            warnings.push("Core crate doesn't depend on sourdough-core".to_string());
+                            warnings
+                                .push("Core crate doesn't depend on sourdough-core".to_string());
                         }
                     }
                 }
@@ -103,7 +104,7 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
             warnings.push("No *-core crate found".to_string());
         }
     }
-    
+
     // Check for trait implementations
     check_trait_implementations(&path)?;
 
@@ -111,7 +112,7 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
     report_results(&errors, &warnings)
 }
 
-async fn validate_unibin(path: PathBuf) -> Result<()> {
+fn validate_unibin(path: PathBuf) -> Result<()> {
     crate::info(&format!("Validating UniBin at: {}", path.display()));
     println!();
 
@@ -120,7 +121,7 @@ async fn validate_unibin(path: PathBuf) -> Result<()> {
 
     // First run basic primal validation
     crate::info("Running basic primal validation...");
-    validate_primal(path.clone()).await?;
+    validate_primal(path.clone())?;
 
     println!();
     crate::info("Checking UniBin compliance...");
@@ -147,12 +148,12 @@ async fn validate_unibin(path: PathBuf) -> Result<()> {
     report_results(&errors, &warnings)
 }
 
-async fn validate_ecobin(path: PathBuf) -> Result<()> {
+fn validate_ecobin(path: PathBuf) -> Result<()> {
     crate::info(&format!("Validating ecoBin at: {}", path.display()));
     println!();
 
     // Run UniBin validation first
-    validate_unibin(path.clone()).await?;
+    validate_unibin(path.clone())?;
 
     println!();
     crate::info("Checking ecoBin compliance (Pure Rust)...");
@@ -194,7 +195,7 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
     // Check for cross-compilation readiness
     crate::info("Checking cross-compilation readiness...");
     println!("  (Full check requires building for all targets)");
-    
+
     // Check formatting
     println!();
     crate::info("Checking code formatting...");
@@ -203,7 +204,7 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
         Ok(false) => errors.push("Code formatting issues found (run cargo fmt)".to_string()),
         Err(e) => println!("  ⚠ Could not check formatting: {}", e),
     }
-    
+
     // Check clippy
     println!();
     crate::info("Checking clippy lints...");
@@ -228,24 +229,24 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
 /// Check if primal implements core traits
 fn check_trait_implementations(path: &Path) -> Result<()> {
     crate::info("Checking trait implementations...");
-    
+
     let crates_dir = path.join("crates");
     if !crates_dir.exists() {
         return Ok(());
     }
-    
+
     // Find lib.rs files in core crates
     let entries: Vec<_> = std::fs::read_dir(&crates_dir)?
         .filter_map(|e| e.ok())
         .collect();
-    
+
     for entry in entries {
         let name = entry.file_name();
         if name.to_string_lossy().contains("-core") {
             let lib_rs = entry.path().join("src/lib.rs");
             if lib_rs.exists() {
                 let content = std::fs::read_to_string(&lib_rs)?;
-                
+
                 // Check for key trait implementations
                 let traits_to_check = [
                     ("PrimalLifecycle", "lifecycle management"),
@@ -253,7 +254,7 @@ fn check_trait_implementations(path: &Path) -> Result<()> {
                     ("PrimalIdentity", "identity (via universal adapter)"),
                     ("PrimalDiscovery", "discovery (via universal adapter)"),
                 ];
-                
+
                 for (trait_name, description) in traits_to_check {
                     if content.contains(trait_name) {
                         crate::success(&format!("  {} implemented ({})", trait_name, description));
@@ -262,7 +263,7 @@ fn check_trait_implementations(path: &Path) -> Result<()> {
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -272,7 +273,7 @@ fn check_formatting(path: &Path) -> Result<bool> {
         .args(["fmt", "--", "--check"])
         .current_dir(path)
         .output();
-    
+
     match output {
         Ok(out) => Ok(out.status.success()),
         Err(_) => Ok(true), // If cargo fmt not available, pass
@@ -285,7 +286,7 @@ fn check_clippy(path: &Path) -> Result<Vec<String>> {
         .args(["clippy", "--", "-D", "warnings"])
         .current_dir(path)
         .output();
-    
+
     match output {
         Ok(out) if !out.status.success() => {
             let stderr = String::from_utf8_lossy(&out.stderr);

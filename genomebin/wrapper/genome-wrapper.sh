@@ -73,7 +73,13 @@ extract_payload() {
     
     # Extract embedded archive from this script
     # The archive is appended after the "GENOME_PAYLOAD_BOUNDARY" marker
-    awk '/EMBEDDED_PAYLOAD/ {found=1; next} found' "$0" | tar -xzf - -C "$temp_dir"
+    # We need to skip past the wrapper script to get to the binary data
+    # Find the line number where EMBEDDED_PAYLOAD appears, then skip to the next line
+    local payload_line=$(grep -a -n "^# === EMBEDDED_PAYLOAD ===$" "$0" | cut -d: -f1)
+    local start_line=$((payload_line + 1))
+    
+    # Extract from the line after the marker
+    tail -n +"$start_line" "$0" | tar -xzf - -C "$temp_dir"
 }
 
 # === METADATA PARSING ===
@@ -100,9 +106,17 @@ select_binary() {
     local ecobins_dir="$1"
     local binary_file=""
     
-    # Look for matching ecoBin
+    # Look for matching ecoBin (exact match)
     local pattern="${PRIMAL_NAME}-${GENOME_TARGET}"
     binary_file=$(find "$ecobins_dir" -name "$pattern" -type f | head -n1)
+    
+    if [[ -z "$binary_file" ]] || [[ ! -f "$binary_file" ]]; then
+        # Try musl variant (common for static binaries)
+        if [[ "$GENOME_OS" == "linux" ]]; then
+            pattern="${PRIMAL_NAME}-${GENOME_ARCH}-unknown-linux-musl"
+            binary_file=$(find "$ecobins_dir" -name "$pattern" -type f | head -n1)
+        fi
+    fi
     
     if [[ -z "$binary_file" ]] || [[ ! -f "$binary_file" ]]; then
         # Try without libc suffix for macOS
@@ -110,6 +124,12 @@ select_binary() {
             pattern="${PRIMAL_NAME}-${GENOME_ARCH}-apple-darwin"
             binary_file=$(find "$ecobins_dir" -name "$pattern" -type f | head -n1)
         fi
+    fi
+    
+    if [[ -z "$binary_file" ]] || [[ ! -f "$binary_file" ]]; then
+        # Try simplified pattern (just arch-musl)
+        pattern="${PRIMAL_NAME}-${GENOME_ARCH}-musl"
+        binary_file=$(find "$ecobins_dir" -name "$pattern" -type f | head -n1)
     fi
     
     if [[ -z "$binary_file" ]] || [[ ! -f "$binary_file" ]]; then

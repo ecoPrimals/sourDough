@@ -1,4 +1,4 @@
-//! GenomeBin creation and management commands.
+//! `GenomeBin` creation and management commands.
 
 use anyhow::Result;
 use clap::Subcommand;

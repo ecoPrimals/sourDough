@@ -146,10 +146,10 @@ test_local() {
     fi
     
     # Test 7: Can extract metadata (dry-run)
-    run_test "Metadata extraction" "bash -c 'awk \"/EMBEDDED_PAYLOAD/ {found=1; next} found\" \"$GENOME_FILE\" | tar -tzf - metadata.toml 2>/dev/null | grep -q metadata.toml'"
+    run_test "Metadata extraction" "line=\$(grep -a -n '^# === EMBEDDED_PAYLOAD ===$' '$GENOME_FILE' | cut -d: -f1) && tail -n +\$((line + 1)) '$GENOME_FILE' | tar -tzf - > /tmp/genome-test-list.$$ 2>&1 && grep -q metadata.toml /tmp/genome-test-list.$$ && rm -f /tmp/genome-test-list.$$"
     
     # Test 8: Has ecobins directory in archive
-    run_test "Contains ecobins" "bash -c 'awk \"/EMBEDDED_PAYLOAD/ {found=1; next} found\" \"$GENOME_FILE\" | tar -tzf - 2>/dev/null | grep -q ecobins/'"
+    run_test "Contains ecobins" "line=\$(grep -a -n '^# === EMBEDDED_PAYLOAD ===$' '$GENOME_FILE' | cut -d: -f1) && tail -n +\$((line + 1)) '$GENOME_FILE' | tar -tzf - > /tmp/genome-test-list.$$ 2>&1 && grep -q ecobins /tmp/genome-test-list.$$ && rm -f /tmp/genome-test-list.$$"
     
     echo ""
 }

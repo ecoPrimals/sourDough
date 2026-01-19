@@ -1,4 +1,4 @@
-//! Command modules for the SourDough CLI.
+//! Command modules for the `SourDough` CLI.
 
 pub mod doctor;
 pub mod genomebin;

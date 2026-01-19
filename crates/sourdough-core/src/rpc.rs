@@ -3,12 +3,7 @@
 //! This module provides tarpc-based RPC interfaces for primals to communicate.
 //! All primals expose common RPC endpoints for health, lifecycle, and discovery.
 
-use crate::{
-    error::PrimalError,
-    health::HealthReport,
-    identity::Did,
-    lifecycle::PrimalState,
-};
+use crate::{error::PrimalError, health::HealthReport, identity::Did, lifecycle::PrimalState};
 use serde::{Deserialize, Serialize};
 
 /// Common RPC service that all primals must implement.
@@ -141,6 +136,68 @@ mod tests {
 
         assert!(json.contains("test"));
     }
+
+    #[test]
+    fn rpc_request_with_empty_params() {
+        let req = RpcRequest::new("empty", "method", vec![]);
+        assert_eq!(req.params.len(), 0);
+    }
+
+    #[test]
+    fn rpc_request_with_large_params() {
+        let large_params = vec![42u8; 1000];
+        let req = RpcRequest::new("large", "bulk_operation", large_params.clone());
+        assert_eq!(req.params.len(), 1000);
+        assert_eq!(req.params, large_params);
+    }
+
+    #[test]
+    fn rpc_response_error_with_long_message() {
+        let long_error = "E".repeat(500);
+        let resp = RpcResponse::error("err", &long_error);
+        assert_eq!(resp.error, Some(long_error));
+        assert!(resp.result.is_none());
+    }
+
+    #[test]
+    fn primal_error_to_string_conversion() {
+        let err = PrimalError::lifecycle("Test lifecycle error");
+        let err_string: String = err.into();
+        assert!(err_string.contains("lifecycle"));
+    }
+
+    #[test]
+    fn rpc_request_roundtrip_serialization() {
+        let req = RpcRequest::new("roundtrip", "test_method", vec![1, 2, 3, 4, 5]);
+        let json = serde_json::to_string(&req).unwrap();
+        let deserialized: RpcRequest = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(deserialized.id, req.id);
+        assert_eq!(deserialized.method, req.method);
+        assert_eq!(deserialized.params, req.params);
+    }
+
+    #[test]
+    fn rpc_response_success_roundtrip() {
+        let resp = RpcResponse::success("round", vec![10, 20, 30]);
+        let json = serde_json::to_string(&resp).unwrap();
+        let deserialized: RpcResponse = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(deserialized.id, resp.id);
+        assert_eq!(deserialized.result, resp.result);
+        assert!(deserialized.error.is_none());
+    }
+
+    #[test]
+    fn rpc_response_error_roundtrip() {
+        let resp = RpcResponse::error("err-round", "Error message");
+        let json = serde_json::to_string(&resp).unwrap();
+        let deserialized: RpcResponse = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(deserialized.id, resp.id);
+        assert!(deserialized.result.is_none());
+        assert_eq!(deserialized.error, resp.error);
+    }
 }
 
 /// RPC client helper for connecting to primals.
@@ -223,7 +280,7 @@ pub mod server {
 
 #[cfg(test)]
 mod client_server_tests {
-    use super::server;
+    use super::{client, server};
 
     #[tokio::test]
     async fn server_config_default() {
@@ -248,5 +305,58 @@ mod client_server_tests {
 
         assert_eq!(addr.ip().to_string(), "127.0.0.1");
         assert_eq!(addr.port(), 0);
+    }
+
+    #[tokio::test]
+    async fn server_config_socket_addr_with_port() {
+        let config = server::ServerConfig::new("0.0.0.0", 9000);
+        let addr = config.socket_addr().unwrap();
+
+        assert_eq!(addr.ip().to_string(), "0.0.0.0");
+        assert_eq!(addr.port(), 9000);
+    }
+
+    #[tokio::test]
+    async fn server_config_socket_addr_invalid() {
+        let config = server::ServerConfig::new("invalid-address", 8000);
+        let result = config.socket_addr();
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn server_config_clone() {
+        let config1 = server::ServerConfig::new("192.0.2.1", 3000);
+        let config2 = config1.clone();
+
+        assert_eq!(config1.bind_addr, config2.bind_addr);
+        assert_eq!(config1.port, config2.port);
+    }
+
+    #[tokio::test]
+    async fn client_connect_to_localhost() {
+        // Test that client can resolve localhost
+        let result = client::PrimalRpcClient::connect("127.0.0.1:8080").await;
+        
+        assert!(result.is_ok());
+        let client = result.unwrap();
+        assert_eq!(client.addr().ip().to_string(), "127.0.0.1");
+        assert_eq!(client.addr().port(), 8080);
+    }
+
+    #[tokio::test]
+    async fn client_connect_with_port_zero() {
+        let result = client::PrimalRpcClient::connect("localhost:0").await;
+        
+        assert!(result.is_ok());
+        let client = result.unwrap();
+        assert_eq!(client.addr().port(), 0);
+    }
+
+    #[tokio::test]
+    async fn client_connect_invalid_address() {
+        let result = client::PrimalRpcClient::connect("").await;
+        
+        assert!(result.is_err());
     }
 }

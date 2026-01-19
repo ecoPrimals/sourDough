@@ -1,6 +1,6 @@
-//! # SourDough UniBin CLI
+//! # `SourDough` `UniBin` CLI
 //!
-//! The reference UniBin implementation for ecoPrimals.
+//! The reference `UniBin` implementation for ecoPrimals.
 //!
 //! This binary provides tooling for:
 //! - Scaffolding new primals
@@ -90,10 +90,10 @@ async fn main() -> Result<()> {
             commands::genomebin::run(genomebin_cmd).await?;
         }
         Commands::Validate { validate_cmd } => {
-            commands::validate::run(validate_cmd).await?;
+            commands::validate::run(validate_cmd)?;
         }
         Commands::Doctor { comprehensive } => {
-            commands::doctor::run(comprehensive).await?;
+            commands::doctor::run(comprehensive)?;
         }
     }
 

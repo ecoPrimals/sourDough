@@ -1,8 +1,6 @@
-//! Integration tests for the SourDough CLI.
+//! Integration tests for the `SourDough` CLI.
 //!
-//! These tests verify end-to-end functionality of the UniBin CLI.
-
-#![allow(deprecated)]
+//! These tests verify end-to-end functionality of the `UniBin` CLI.
 
 use assert_cmd::Command;
 use predicates::prelude::*;

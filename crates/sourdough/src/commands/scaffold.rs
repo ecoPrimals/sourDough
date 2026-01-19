@@ -223,13 +223,13 @@ fn find_sourdough_core_path(target_dir: &Path) -> Result<Option<String>> {
 
 fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
     let core_crate_name = format!("{}-core", name.to_lowercase());
-    let crate_dir = crates_dir.join(&core_crate_name);
-    let src_dir = crate_dir.join("src");
+    let core_dir = crates_dir.join(&core_crate_name);
+    let src_dir = core_dir.join("src");
 
     std::fs::create_dir_all(&src_dir)?;
 
     // Create Cargo.toml
-    let cargo_toml = crate_dir.join("Cargo.toml");
+    let cargo_toml = core_dir.join("Cargo.toml");
     std::fs::write(
         &cargo_toml,
         format!(
@@ -382,7 +382,7 @@ fn create_specs_directory(dir: &Path, name: &str, description: &str) -> Result<(
     std::fs::write(
         &spec_file,
         format!(
-            r#"# {} - Specification
+            r"# {} - Specification
 
 **Version**: 0.1.0  
 **Date**: {}  
@@ -406,7 +406,7 @@ fn create_specs_directory(dir: &Path, name: &str, description: &str) -> Result<(
 
 **Date**: {}  
 **Version**: 0.1.0
-"#,
+",
             name,
             chrono::Local::now().format("%B %d, %Y"),
             description,
@@ -422,7 +422,7 @@ fn create_readme(dir: &Path, name: &str, description: &str) -> Result<()> {
     std::fs::write(
         &readme,
         format!(
-            r#"# {}
+            r"# {}
 
 **Status**: Draft  
 **Purpose**: {}
@@ -448,7 +448,7 @@ cargo test
 ---
 
 **Created with SourDough** 🍞
-"#,
+",
             name,
             description,
             name,
@@ -465,7 +465,7 @@ fn create_conventions_file(dir: &Path) -> Result<()> {
     // For now, create a simple reference
     std::fs::write(
         &conventions,
-        r#"# Coding Conventions
+        r"# Coding Conventions
 
 This primal follows the ecoPrimals coding conventions.
 
@@ -482,7 +482,7 @@ See: `../sourDough/CONVENTIONS.md` for complete guidelines.
 ---
 
 *Consistency is the foundation of collaboration.*
-"#,
+",
     )?;
 
     Ok(())
