@@ -79,13 +79,22 @@ info!(user = %user_id, action = "login", "user logged in");
 
 ## 3. API Conventions
 
-### gRPC Services
+### RPC Communication (Primary)
 
-- Package: `{primalname}.v1`
-- Service name: `{PrimalName}`
-- Use streaming for large data
+- Use `tarpc` for type-safe inter-primal communication
+- Define service traits with `#[tarpc::service]`
+- All RPC methods are async
+- Use zero-copy types (`bytes::Bytes`) for large payloads
+- Implement `PrimalRpc` trait for standard methods
 
-### REST APIs
+```rust
+#[tarpc::service]
+pub trait MyPrimalRpc {
+    async fn my_method(data: Vec<u8>) -> Result<Response, String>;
+}
+```
+
+### REST APIs (Optional)
 
 - Versioned paths: `/api/v1/...`
 - JSON responses
@@ -99,6 +108,13 @@ info!(user = %user_id, action = "login", "user logged in");
 | `GET /health` | Health check |
 | `GET /ready` | Readiness check |
 | `GET /metrics` | Prometheus metrics |
+
+### Service Discovery
+
+- No hardcoded endpoints
+- Use port 0 for OS-assigned ephemeral ports
+- Register with Songbird on startup
+- Discover other primals at runtime via Songbird
 
 ---
 
@@ -119,13 +135,13 @@ instance_id = "auto"
 log_level = "info"
 data_dir = "./data"
 listen_addr = "0.0.0.0"
-listen_port = 8080
+listen_port = 0  # OS assigns ephemeral port, discovered via Songbird
 
-# BearDog integration
-beardog_endpoint = "http://localhost:9000"
+# BearDog integration (discovered at runtime)
+# No hardcoded endpoints - use service discovery
 
-# Songbird integration
-songbird_endpoint = "http://localhost:8080"
+# Songbird integration (discovered at runtime)
+# No hardcoded endpoints - use service discovery
 
 # Primal-specific configuration
 [primal]
@@ -266,10 +282,13 @@ serde = { version = "1.0", features = ["derive"] }
 ### Required Dependencies
 
 All primals should use:
-- `sourdough-core` — Common traits
+- `sourdough-core` — Common traits and RPC layer
 - `tokio` — Async runtime
+- `tarpc` — RPC communication
 - `serde` — Serialization
-- `thiserror` — Error handling
+- `bytes` — Zero-copy buffers
+- `thiserror` — Error handling (libraries)
+- `anyhow` — Error handling (applications)
 - `tracing` — Logging
 
 ---
@@ -345,9 +364,11 @@ Optional traits:
 
 ### Songbird Integration
 
-- Register with UPA on startup
+- Register with Songbird on startup
 - Deregister on shutdown
-- Use BirdSong for discovery
+- Discover other primals at runtime
+- No compile-time primal dependencies
+- Use capability-based addressing (no hardcoded ports)
 
 ---
 
