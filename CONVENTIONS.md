@@ -111,10 +111,11 @@ pub trait MyPrimalRpc {
 
 ### Service Discovery
 
-- No hardcoded endpoints
+- **Zero hardcoding** - no primal names, service names, ports, or endpoints
 - Use port 0 for OS-assigned ephemeral ports
-- Register with Songbird on startup
-- Discover other primals at runtime via Songbird
+- Register with discovery service on startup (discovered via universal adapter)
+- Discover other services at runtime via universal adapter
+- Primal knows only itself, discovers everything else like an infant learning its environment
 
 ---
 
@@ -356,19 +357,21 @@ Optional traits:
 | `PrimalIdentity` | BearDog integration |
 | `PrimalDiscovery` | Songbird integration |
 
-### BearDog Integration
+### Identity Service Integration
 
 - Use DIDs for identity
-- Sign important actions
+- Sign important actions via identity service (discovered at runtime)
 - Verify external signatures
+- No hardcoded identity service names or endpoints
 
-### Songbird Integration
+### Discovery Service Integration
 
-- Register with Songbird on startup
+- Register with discovery service on startup (discovered via universal adapter)
 - Deregister on shutdown
-- Discover other primals at runtime
-- No compile-time primal dependencies
+- Discover other services at runtime
+- **Zero compile-time dependencies** on other primals or services
 - Use capability-based addressing (no hardcoded ports)
+- Infant-like awakening: start with zero knowledge, learn environment
 
 ---
 

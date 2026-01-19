@@ -250,8 +250,8 @@ fn check_trait_implementations(path: &PathBuf, warnings: &mut Vec<String>) -> Re
                 let traits_to_check = [
                     ("PrimalLifecycle", "lifecycle management"),
                     ("PrimalHealth", "health reporting"),
-                    ("PrimalIdentity", "identity (BearDog integration)"),
-                    ("PrimalDiscovery", "discovery (Songbird integration)"),
+                    ("PrimalIdentity", "identity (via universal adapter)"),
+                    ("PrimalDiscovery", "discovery (via universal adapter)"),
                 ];
                 
                 for (trait_name, description) in traits_to_check {

@@ -243,10 +243,10 @@ mod client_server_tests {
 
     #[tokio::test]
     async fn server_config_socket_addr() {
-        let config = server::ServerConfig::new("127.0.0.1", 9000);
+        let config = server::ServerConfig::new("127.0.0.1", 0); // Port 0 = OS-assigned
         let addr = config.socket_addr().unwrap();
 
         assert_eq!(addr.ip().to_string(), "127.0.0.1");
-        assert_eq!(addr.port(), 9000);
+        assert_eq!(addr.port(), 0);
     }
 }

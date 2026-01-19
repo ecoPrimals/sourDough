@@ -23,7 +23,7 @@ check_interval_secs = 30
 
 [discovery]
 enabled = true
-# songbird_endpoint = "http://127.0.0.1:7878"
+# discovery_service_endpoint discovered at runtime via universal adapter (no hardcoding)
 announce_interval_secs = 60
 
 [security]

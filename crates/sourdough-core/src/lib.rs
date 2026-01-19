@@ -5,8 +5,8 @@
 //! `SourDough` provides the minimal, agnostic foundation for building new primals.
 //! It makes no assumptions about what your primal does—only that it needs to:
 //!
-//! - Have an identity (`BearDog` integration)
-//! - Be discoverable (`Songbird` integration)
+//! - Have an identity (identity service via universal adapter)
+//! - Be discoverable (discovery service via universal adapter)
 //! - Have a lifecycle (start, stop, reload)
 //! - Be observable (health checks)
 //! - Be configurable

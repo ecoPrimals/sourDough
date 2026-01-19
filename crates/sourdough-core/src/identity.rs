@@ -1,7 +1,7 @@
-//! Identity traits for `BearDog` integration.
+//! Identity traits for universal adapter integration.
 //!
 //! Every primal needs an identity—a way to prove who it is and sign its actions.
-//! This module provides the traits for integrating with `BearDog`'s identity system.
+//! This module provides the traits for integrating with identity services via the universal adapter.
 
 use crate::error::PrimalError;
 use serde::{Deserialize, Serialize};
@@ -111,7 +111,7 @@ impl std::fmt::Debug for Signature {
 
 /// Identity trait for primals.
 ///
-/// Implement this trait to integrate with `BearDog` for identity and signing.
+/// Implement this trait to integrate with identity services via the universal adapter.
 ///
 /// # Example
 ///
@@ -120,7 +120,7 @@ impl std::fmt::Debug for Signature {
 ///
 /// struct MyPrimal {
 ///     did: Did,
-///     // ... BearDog client
+///     // ... identity service client (discovered at runtime)
 /// }
 ///
 /// #[async_trait::async_trait]
@@ -130,13 +130,13 @@ impl std::fmt::Debug for Signature {
 ///     }
 ///
 ///     async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError> {
-///         // Use BearDog to sign
+///         // Use identity service to sign (discovered at runtime)
 ///     }
 ///
 ///     async fn verify(&self, data: &[u8], signature: &Signature, signer: &Did)
 ///         -> Result<bool, PrimalError>
 ///     {
-///         // Use BearDog to verify
+///         // Use identity service to verify (discovered at runtime)
 ///     }
 /// }
 /// ```
@@ -168,7 +168,7 @@ pub trait PrimalIdentity: Send + Sync {
 
     /// Get lineage proof (optional).
     ///
-    /// Returns proof of this primal's lineage in the `BearDog` trust hierarchy.
+    /// Returns proof of this primal's lineage in the identity service trust hierarchy.
     /// Not all primals need this.
     fn lineage_proof(
         &self,
@@ -177,7 +177,7 @@ pub trait PrimalIdentity: Send + Sync {
     }
 }
 
-/// Proof of lineage in the `BearDog` trust hierarchy.
+/// Proof of lineage in the identity service trust hierarchy.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LineageProof {
     /// The subject of this proof (this primal's DID).

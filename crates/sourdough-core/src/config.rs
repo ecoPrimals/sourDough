@@ -22,10 +22,10 @@ pub struct CommonConfig {
     pub listen_addr: String,
     /// Listen port (0 = OS assigns ephemeral port, discovered via service registration).
     pub listen_port: u16,
-    /// `BearDog` endpoint (discovered at runtime via `Songbird`).
-    pub beardog_endpoint: Option<String>,
-    /// `Songbird` endpoint (discovered at runtime via UDP multicast or config).
-    pub songbird_endpoint: Option<String>,
+    /// Identity service endpoint (discovered at runtime via universal adapter).
+    pub identity_service_endpoint: Option<String>,
+    /// Discovery service endpoint (discovered at runtime via universal adapter or multicast).
+    pub discovery_service_endpoint: Option<String>,
 }
 
 impl Default for CommonConfig {
@@ -36,11 +36,11 @@ impl Default for CommonConfig {
             log_level: "info".to_string(),
             data_dir: "./data".to_string(),
             listen_addr: "0.0.0.0".to_string(),
-            // Port 0 = OS assigns available port, discovered via Songbird registration
+            // Port 0 = OS assigns available port, discovered via universal adapter
             listen_port: 0,
-            // Endpoints discovered at runtime via Songbird, not hardcoded
-            beardog_endpoint: None,
-            songbird_endpoint: None,
+            // All service endpoints discovered at runtime via universal adapter (zero hardcoding)
+            identity_service_endpoint: None,
+            discovery_service_endpoint: None,
         }
     }
 }
@@ -179,8 +179,8 @@ mod tests {
         assert_eq!(config.data_dir, "./data");
         assert_eq!(config.listen_addr, "0.0.0.0");
         assert_eq!(config.listen_port, 0); // OS-assigned port
-        assert!(config.beardog_endpoint.is_none());
-        assert!(config.songbird_endpoint.is_none());
+        assert!(config.identity_service_endpoint.is_none());
+        assert!(config.discovery_service_endpoint.is_none());
         assert!(!config.instance_id.is_empty());
     }
 

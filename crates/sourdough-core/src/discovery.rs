@@ -1,14 +1,14 @@
-//! Discovery traits for `Songbird` integration.
+//! Discovery traits for universal adapter integration.
 //!
 //! Every primal needs to be discoverable. This module provides traits for
-//! registering with `Songbird`'s Universal Port Authority (UPA) and broadcasting
-//! presence via `BirdSong`.
+//! registering with discovery services via the universal adapter and broadcasting
+//! presence to the network.
 
 use crate::error::PrimalError;
 use crate::identity::Did;
 use serde::{Deserialize, Serialize};
 
-/// Service registration for UPA.
+/// Service registration for discovery services.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServiceRegistration {
     /// Service name (e.g., "rhizocrypt", "loamspine").
@@ -121,7 +121,7 @@ impl Default for BirdSongConfig {
 
 /// Discovery trait for primals.
 ///
-/// Implement this trait to integrate with Songbird for service discovery.
+/// Implement this trait to integrate with discovery services via the universal adapter.
 pub trait PrimalDiscovery: Send + Sync {
     /// Get the service registration for UPA.
     fn registration(&self) -> ServiceRegistration;

@@ -100,7 +100,7 @@ pub trait PrimalLifecycle: Send + Sync {
     /// This should:
     /// 1. Initialize resources
     /// 2. Start background tasks
-    /// 3. Register with Songbird (if applicable)
+    /// 3. Register with discovery service (if applicable, via universal adapter)
     ///
     /// # Errors
     ///
@@ -110,7 +110,7 @@ pub trait PrimalLifecycle: Send + Sync {
     /// Stop the primal.
     ///
     /// This should:
-    /// 1. Deregister from Songbird
+    /// 1. Deregister from discovery service (via universal adapter)
     /// 2. Stop background tasks
     /// 3. Clean up resources
     ///

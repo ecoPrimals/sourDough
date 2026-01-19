@@ -15,6 +15,7 @@ SourDough serves **three critical functions** in the ecoPrimals ecosystem:
 
 Like biological sourdough starter, SourDough provides the essential "culture" from which new primals are born:
 - **Core Traits**: `PrimalLifecycle`, `PrimalHealth`, `PrimalIdentity`, `PrimalDiscovery`, `PrimalConfig`
+- **Universal Adapter Pattern**: Zero hardcoding, runtime service discovery
 - **Common Patterns**: Error handling, logging, configuration, async runtime
 - **Scaffolding**: One command to create complete primal projects
 
@@ -220,9 +221,9 @@ impl PrimalHealth for MyPrimal {
 }
 ```
 
-### `PrimalIdentity` — BearDog Integration
+### `PrimalIdentity` — Identity Service Integration
 
-Every primal needs identity:
+Every primal needs identity (discovered via universal adapter):
 
 ```rust
 use sourdough_core::identity::{PrimalIdentity, Did, Signature};
@@ -233,29 +234,29 @@ impl PrimalIdentity for MyPrimal {
     }
     
     async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError> {
-        // Cryptographic signing via BearDog
+        // Cryptographic signing via identity service (discovered at runtime)
         self.identity.sign(data).await
     }
 }
 ```
 
-### `PrimalDiscovery` — Songbird Integration
+### `PrimalDiscovery` — Discovery Service Integration
 
-Every primal needs to be discoverable:
+Every primal needs to be discoverable (discovered via universal adapter):
 
 ```rust
 use sourdough_core::discovery::{PrimalDiscovery, ServiceRegistration};
 
 impl PrimalDiscovery for MyPrimal {
     fn registration(&self) -> ServiceRegistration {
-        // Register with Songbird for runtime service discovery
-        // Port is OS-assigned (listen_port: 0), discovered via Songbird
+        // Register with discovery service for runtime service discovery
+        // Port is OS-assigned (listen_port: 0), discovered via universal adapter
         ServiceRegistration::new("myPrimal", "1.0.0", &self.endpoint)
             .with_capability(UpaCapability::new("storage", "1.0", "tarpc"))
     }
     
     async fn register(&self) -> Result<(), PrimalError> {
-        // Actual registration with Songbird happens here
+        // Actual registration via universal adapter happens here
         Ok(())
     }
 }
@@ -322,15 +323,17 @@ Pass Rate: 100%
 
 ---
 
-## 🌟 Primals Created with SourDough
+## 🌟 Ecosystem Principles
 
-| Primal | Status | Purpose |
-|--------|--------|---------|
-| 🐻🐕 **BearDog** | In Development | Identity, cryptography, HSM integration |
-| 🐦 **Songbird** | Planned | Discovery and coordination |
-| 🏰 **NestGate** | Planned | Edge orchestration |
-| 🍄 **ToadStool** | Planned | Configuration management |
-| 🌸 **PetalTongue** | Planned | Visualization UI |
+### Universal Adapter Pattern
+
+Every primal:
+- **Knows only itself** at compile time
+- **Discovers others** at runtime via universal adapter
+- **Zero hardcoding** of service names, ports, or endpoints
+- **Infant-like awakening** - starts with zero knowledge, learns environment
+
+Example: A compute primal may utilize a service mesh connecting to storage, which provides data to analysis, but each only knows itself. The universal adapter provides network effects without 2^n hardcoded connections.
 
 *Each primal saves ~30 hours with SourDough scaffolding!*
 
@@ -353,8 +356,10 @@ SourDough makes no assumptions about:
 - ❌ What data structures it uses
 - ❌ What protocols it speaks
 - ❌ What storage it needs
+- ❌ What other primals exist
+- ❌ What external services are available
 
-These decisions belong to each primal.
+These decisions belong to each primal. Discovery happens at runtime, not compile time.
 
 ### Composable by Nature
 

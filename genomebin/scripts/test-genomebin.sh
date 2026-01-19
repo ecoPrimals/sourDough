@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default values
 GENOME_FILE=""
-TEST_MODE="local"  # local, docker, all
+TEST_MODE="local"  # local, container, all
 
 # Usage
 usage() {
@@ -34,17 +34,17 @@ ARGUMENTS:
     GENOME_FILE        Path to the genomeBin file to test
 
 OPTIONS:
-    --mode MODE        Test mode: local, docker, all (default: local)
+    --mode MODE        Test mode: local, container, all (default: local)
     -h, --help         Show this help
 
 TEST MODES:
     local              Test on current system only
-    docker             Test using Docker containers for multiple distros
+    container          Test using container runtime for multiple distros
     all                Run all available tests
 
 EXAMPLE:
     $0 beardog.genome
-    $0 --mode docker beardog.genome
+    $0 --mode container myprimal.genome
 EOF
 }
 
@@ -154,14 +154,19 @@ test_local() {
     echo ""
 }
 
-# Docker-based tests
-test_docker() {
-    if ! command -v docker &>/dev/null; then
-        echo -e "${YELLOW}Docker not available, skipping Docker tests${NC}"
+# Container-based tests (supports Docker/Podman/etc)
+test_container() {
+    # Detect available container runtime
+    if command -v podman &>/dev/null; then
+        CONTAINER_CMD="podman"
+    elif command -v docker &>/dev/null; then
+        CONTAINER_CMD="docker"
+    else
+        echo -e "${YELLOW}No container runtime available, skipping container tests${NC}"
         return 0
     fi
     
-    echo -e "${BLUE}=== Docker-based Multi-Platform Tests ===${NC}"
+    echo -e "${BLUE}=== Container-based Multi-Platform Tests (using ${CONTAINER_CMD}) ===${NC}"
     
     # Test distros
     local distros=(
@@ -191,7 +196,7 @@ INNER_EOF
         chmod +x "$test_script"
         
         # Run in container
-        if docker run --rm \
+        if ${CONTAINER_CMD} run --rm \
             -v "$GENOME_FILE:/genome:ro" \
             -v "$test_script:/test.sh:ro" \
             "$distro" \
@@ -216,12 +221,12 @@ case "$TEST_MODE" in
     local)
         test_local
         ;;
-    docker)
-        test_docker
+    container)
+        test_container
         ;;
     all)
         test_local
-        test_docker
+        test_container
         ;;
     *)
         echo -e "${RED}ERROR: Invalid test mode: $TEST_MODE${NC}" >&2
