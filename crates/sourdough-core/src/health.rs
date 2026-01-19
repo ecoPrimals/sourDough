@@ -81,11 +81,17 @@ impl DependencyHealth {
 
     /// Create an unhealthy dependency.
     #[must_use]
-    pub fn unhealthy(name: impl Into<String>, dep_type: impl Into<String>, reason: impl Into<String>) -> Self {
+    pub fn unhealthy(
+        name: impl Into<String>,
+        dep_type: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Self {
         Self {
             name: name.into(),
             dependency_type: dep_type.into(),
-            status: HealthStatus::Unhealthy { reason: reason.into() },
+            status: HealthStatus::Unhealthy {
+                reason: reason.into(),
+            },
             latency_ms: None,
             last_check: crate::types::Timestamp::now(),
         }
@@ -203,3 +209,165 @@ pub trait PrimalHealth: Send + Sync {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn health_status_healthy() {
+        let status = HealthStatus::Healthy;
+        assert!(status.is_healthy());
+        assert!(status.is_serving());
+        assert_eq!(status.to_string(), "healthy");
+    }
+
+    #[test]
+    fn health_status_degraded() {
+        let status = HealthStatus::Degraded {
+            reason: "slow".to_string(),
+        };
+        assert!(!status.is_healthy());
+        assert!(status.is_serving()); // Degraded can still serve
+        assert_eq!(status.to_string(), "degraded: slow");
+    }
+
+    #[test]
+    fn health_status_unhealthy() {
+        let status = HealthStatus::Unhealthy {
+            reason: "database down".to_string(),
+        };
+        assert!(!status.is_healthy());
+        assert!(!status.is_serving());
+        assert_eq!(status.to_string(), "unhealthy: database down");
+    }
+
+    #[test]
+    fn health_status_unknown() {
+        let status = HealthStatus::Unknown;
+        assert!(!status.is_healthy());
+        assert!(!status.is_serving());
+        assert_eq!(status.to_string(), "unknown");
+    }
+
+    #[test]
+    fn health_status_serialization() {
+        let status = HealthStatus::Degraded {
+            reason: "slow response".to_string(),
+        };
+        let json = serde_json::to_string(&status).unwrap();
+        let deserialized: HealthStatus = serde_json::from_str(&json).unwrap();
+        assert_eq!(status, deserialized);
+    }
+
+    #[test]
+    fn dependency_health_builder() {
+        let dep = DependencyHealth::healthy("postgres", "database")
+            .with_latency(50);
+        
+        assert_eq!(dep.name, "postgres");
+        assert_eq!(dep.dependency_type, "database");
+        assert!(dep.status.is_healthy());
+        assert_eq!(dep.latency_ms, Some(50));
+    }
+
+    #[test]
+    fn dependency_health_unhealthy() {
+        let dep = DependencyHealth::unhealthy("redis", "cache", "connection refused");
+        
+        assert_eq!(dep.name, "redis");
+        assert_eq!(dep.dependency_type, "cache");
+        assert!(!dep.status.is_healthy());
+    }
+
+    #[test]
+    fn health_report_builder() {
+        let report = HealthReport::new("test-primal", "1.0.0")
+            .with_status(HealthStatus::Healthy)
+            .with_dependency(DependencyHealth::healthy("db", "database"))
+            .with_detail("uptime", "1h");
+        
+        assert_eq!(report.name, "test-primal");
+        assert_eq!(report.version, "1.0.0");
+        assert!(report.status.is_healthy());
+        assert!(report.readiness);
+        assert_eq!(report.dependencies.len(), 1);
+        assert_eq!(report.details.get("uptime"), Some(&"1h".to_string()));
+    }
+
+    #[test]
+    fn health_report_sets_readiness() {
+        let report = HealthReport::new("test", "1.0.0")
+            .with_status(HealthStatus::Healthy);
+        assert!(report.readiness);
+        
+        let report = HealthReport::new("test", "1.0.0")
+            .with_status(HealthStatus::Unhealthy {
+                reason: "failed".to_string(),
+            });
+        assert!(!report.readiness);
+    }
+
+    // Mock implementation for testing
+    struct MockHealthyPrimal;
+
+    impl PrimalHealth for MockHealthyPrimal {
+        fn health_status(&self) -> HealthStatus {
+            HealthStatus::Healthy
+        }
+
+        async fn health_check(&self) -> Result<HealthReport, PrimalError> {
+            Ok(HealthReport::new("mock", "1.0.0")
+                .with_status(HealthStatus::Healthy)
+                .with_detail("test", "pass"))
+        }
+    }
+
+    struct MockUnhealthyPrimal;
+
+    impl PrimalHealth for MockUnhealthyPrimal {
+        fn health_status(&self) -> HealthStatus {
+            HealthStatus::Unhealthy {
+                reason: "test failure".to_string(),
+            }
+        }
+
+        async fn health_check(&self) -> Result<HealthReport, PrimalError> {
+            Ok(HealthReport::new("mock", "1.0.0")
+                .with_status(HealthStatus::Unhealthy {
+                    reason: "test failure".to_string(),
+                }))
+        }
+    }
+
+    #[tokio::test]
+    async fn trait_healthy_primal() {
+        let primal = MockHealthyPrimal;
+        
+        assert!(primal.health_status().is_healthy());
+        assert!(primal.is_ready());
+        assert!(primal.is_live());
+        
+        let report = primal.health_check().await.unwrap();
+        assert!(report.status.is_healthy());
+    }
+
+    #[tokio::test]
+    async fn trait_unhealthy_primal() {
+        let primal = MockUnhealthyPrimal;
+        
+        assert!(!primal.health_status().is_healthy());
+        assert!(!primal.is_ready());
+        assert!(primal.is_live()); // Still alive, just unhealthy
+        
+        let report = primal.health_check().await.unwrap();
+        assert!(!report.status.is_healthy());
+        assert!(!report.readiness);
+    }
+
+    #[tokio::test]
+    async fn trait_dependency_health_default() {
+        let primal = MockHealthyPrimal;
+        let deps = primal.dependency_health().await.unwrap();
+        assert!(deps.is_empty()); // Default implementation returns empty
+    }
+}

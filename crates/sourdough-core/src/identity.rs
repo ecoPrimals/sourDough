@@ -1,7 +1,7 @@
-//! Identity traits for BearDog integration.
+//! Identity traits for `BearDog` integration.
 //!
 //! Every primal needs an identity—a way to prove who it is and sign its actions.
-//! This module provides the traits for integrating with BearDog's identity system.
+//! This module provides the traits for integrating with `BearDog`'s identity system.
 
 use crate::error::PrimalError;
 use serde::{Deserialize, Serialize};
@@ -111,7 +111,7 @@ impl std::fmt::Debug for Signature {
 
 /// Identity trait for primals.
 ///
-/// Implement this trait to integrate with BearDog for identity and signing.
+/// Implement this trait to integrate with `BearDog` for identity and signing.
 ///
 /// # Example
 ///
@@ -168,7 +168,7 @@ pub trait PrimalIdentity: Send + Sync {
 
     /// Get lineage proof (optional).
     ///
-    /// Returns proof of this primal's lineage in the BearDog trust hierarchy.
+    /// Returns proof of this primal's lineage in the `BearDog` trust hierarchy.
     /// Not all primals need this.
     fn lineage_proof(
         &self,
@@ -177,7 +177,7 @@ pub trait PrimalIdentity: Send + Sync {
     }
 }
 
-/// Proof of lineage in the BearDog trust hierarchy.
+/// Proof of lineage in the `BearDog` trust hierarchy.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LineageProof {
     /// The subject of this proof (this primal's DID).
@@ -200,5 +200,231 @@ mod tests {
         assert!(did.is_key_did());
         assert!(!did.is_web_did());
     }
-}
 
+    #[test]
+    fn did_web() {
+        let did = Did::new("did:web:example.com");
+        assert!(did.is_web_did());
+        assert!(!did.is_key_did());
+    }
+
+    #[test]
+    fn did_other_method() {
+        let did = Did::new("did:other:abc123");
+        assert!(!did.is_key_did());
+        assert!(!did.is_web_did());
+    }
+
+    #[test]
+    fn did_as_str() {
+        let did = Did::new("did:key:test");
+        assert_eq!(did.as_str(), "did:key:test");
+    }
+
+    #[test]
+    fn did_from_string() {
+        let s = String::from("did:key:test");
+        let did: Did = s.into();
+        assert_eq!(did.as_str(), "did:key:test");
+    }
+
+    #[test]
+    fn did_from_str() {
+        let did: Did = "did:web:example.com".into();
+        assert!(did.is_web_did());
+    }
+
+    #[test]
+    fn did_display() {
+        let did = Did::new("did:key:z6Mk");
+        assert_eq!(format!("{did}"), "did:key:z6Mk");
+    }
+
+    #[test]
+    fn did_debug() {
+        let did = Did::new("did:key:z6Mk");
+        let debug_str = format!("{did:?}");
+        assert!(debug_str.contains("did:key:z6Mk"));
+    }
+
+    #[test]
+    fn did_clone_and_equality() {
+        let did1 = Did::new("did:key:test");
+        let did2 = did1.clone();
+        assert_eq!(did1, did2);
+    }
+
+    #[test]
+    fn signature_creation() {
+        let sig = Signature::new(
+            vec![1, 2, 3, 4],
+            "Ed25519",
+            "key-123",
+        );
+        
+        assert_eq!(sig.bytes, vec![1, 2, 3, 4]);
+        assert_eq!(sig.algorithm, "Ed25519");
+        assert_eq!(sig.key_id, "key-123");
+    }
+
+    #[test]
+    fn signature_debug() {
+        let sig = Signature::new(vec![1, 2, 3], "Ed25519", "key-1");
+        let debug_str = format!("{sig:?}");
+        
+        assert!(debug_str.contains("Ed25519"));
+        assert!(debug_str.contains("key-1"));
+        assert!(debug_str.contains("3 bytes"));
+    }
+
+    #[test]
+    fn signature_clone_and_equality() {
+        let sig1 = Signature::new(vec![1, 2], "Ed25519", "key-1");
+        let sig2 = sig1.clone();
+        assert_eq!(sig1, sig2);
+    }
+
+    #[test]
+    fn signature_serialization() {
+        let sig = Signature::new(vec![1, 2, 3], "Ed25519", "key-123");
+        let json = serde_json::to_string(&sig).unwrap();
+        let parsed: Signature = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(sig.bytes, parsed.bytes);
+        assert_eq!(sig.algorithm, parsed.algorithm);
+        assert_eq!(sig.key_id, parsed.key_id);
+    }
+
+    #[test]
+    fn lineage_proof_creation() {
+        let proof = LineageProof {
+            subject: Did::new("did:key:child"),
+            parent: Some(Did::new("did:key:parent")),
+            depth: 2,
+            proof: vec![1, 2, 3, 4],
+        };
+        
+        assert_eq!(proof.depth, 2);
+        assert!(proof.parent.is_some());
+    }
+
+    #[test]
+    fn lineage_proof_genesis() {
+        let proof = LineageProof {
+            subject: Did::new("did:key:genesis"),
+            parent: None,
+            depth: 0,
+            proof: vec![],
+        };
+        
+        assert_eq!(proof.depth, 0);
+        assert!(proof.parent.is_none());
+    }
+
+    #[test]
+    fn lineage_proof_serialization() {
+        let proof = LineageProof {
+            subject: Did::new("did:key:test"),
+            parent: Some(Did::new("did:key:parent")),
+            depth: 1,
+            proof: vec![1, 2, 3],
+        };
+        
+        let json = serde_json::to_string(&proof).unwrap();
+        let parsed: LineageProof = serde_json::from_str(&json).unwrap();
+        
+        assert_eq!(proof.depth, parsed.depth);
+    }
+
+    // Mock implementation for testing trait
+    struct MockIdentityPrimal {
+        did: Did,
+    }
+
+    impl MockIdentityPrimal {
+        fn new(did: impl Into<String>) -> Self {
+            Self {
+                did: Did::new(did),
+            }
+        }
+    }
+
+    impl PrimalIdentity for MockIdentityPrimal {
+        fn did(&self) -> &Did {
+            &self.did
+        }
+
+        async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError> {
+            Ok(Signature::new(
+                data.to_vec(),
+                "Ed25519",
+                "mock-key",
+            ))
+        }
+
+        async fn verify(
+            &self,
+            data: &[u8],
+            signature: &Signature,
+            _signer: &Did,
+        ) -> Result<bool, PrimalError> {
+            Ok(signature.bytes == data)
+        }
+
+        async fn lineage_proof(&self) -> Result<Option<LineageProof>, PrimalError> {
+            Ok(Some(LineageProof {
+                subject: self.did.clone(),
+                parent: None,
+                depth: 0,
+                proof: vec![],
+            }))
+        }
+    }
+
+    #[tokio::test]
+    async fn trait_identity() {
+        let primal = MockIdentityPrimal::new("did:key:test123");
+        
+        let did = primal.did();
+        assert_eq!(did.as_str(), "did:key:test123");
+    }
+
+    #[tokio::test]
+    async fn trait_sign() {
+        let primal = MockIdentityPrimal::new("did:key:signer");
+        
+        let data = b"test message";
+        let sig = primal.sign(data).await.unwrap();
+        
+        assert_eq!(sig.bytes, data.to_vec());
+        assert_eq!(sig.algorithm, "Ed25519");
+    }
+
+    #[tokio::test]
+    async fn trait_verify() {
+        let primal = MockIdentityPrimal::new("did:key:verifier");
+        let signer = Did::new("did:key:signer");
+        
+        let data = b"test message";
+        let sig = Signature::new(data.to_vec(), "Ed25519", "key");
+        
+        let valid = primal.verify(data, &sig, &signer).await.unwrap();
+        assert!(valid);
+        
+        let different_data = b"different";
+        let invalid = primal.verify(different_data, &sig, &signer).await.unwrap();
+        assert!(!invalid);
+    }
+
+    #[tokio::test]
+    async fn trait_lineage_proof() {
+        let primal = MockIdentityPrimal::new("did:key:test");
+        
+        let proof = primal.lineage_proof().await.unwrap();
+        assert!(proof.is_some());
+        
+        let proof = proof.unwrap();
+        assert_eq!(proof.depth, 0);
+        assert!(proof.parent.is_none());
+    }
+}

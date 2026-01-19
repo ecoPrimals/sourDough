@@ -22,9 +22,9 @@ pub struct CommonConfig {
     pub listen_addr: String,
     /// Listen port.
     pub listen_port: u16,
-    /// BearDog endpoint.
+    /// `BearDog` endpoint.
     pub beardog_endpoint: Option<String>,
-    /// Songbird endpoint.
+    /// `Songbird` endpoint.
     pub songbird_endpoint: Option<String>,
 }
 
@@ -72,6 +72,10 @@ pub trait ConfigLoader: Sized {
 }
 
 /// Default configuration loader implementation for any deserializable type.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read or if the TOML cannot be parsed.
 pub fn load_toml<T: DeserializeOwned>(path: impl AsRef<Path>) -> Result<T, PrimalError> {
     let contents = std::fs::read_to_string(path.as_ref())
         .map_err(|e| PrimalError::config(format!("failed to read config: {e}")))?;
@@ -143,21 +147,138 @@ impl ConfigWatcher {
 
     /// Check if the config file has changed.
     pub fn has_changed(&mut self) -> bool {
-        let metadata = match std::fs::metadata(&self.path) {
-            Ok(m) => m,
-            Err(_) => return false,
+        let Ok(metadata) = std::fs::metadata(&self.path) else {
+            return false;
         };
 
-        let modified = match metadata.modified() {
-            Ok(m) => m,
-            Err(_) => return false,
+        let Ok(modified) = metadata.modified() else {
+            return false;
         };
 
-        let changed = self.last_modified.map_or(true, |last| modified != last);
+        let changed = self.last_modified != Some(modified);
         if changed {
             self.last_modified = Some(modified);
         }
         changed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn common_config_default() {
+        let config = CommonConfig::default();
+        
+        assert_eq!(config.name, "primal");
+        assert_eq!(config.log_level, "info");
+        assert_eq!(config.data_dir, "./data");
+        assert_eq!(config.listen_addr, "0.0.0.0");
+        assert_eq!(config.listen_port, 8080);
+        assert!(config.beardog_endpoint.is_none());
+        assert!(config.songbird_endpoint.is_none());
+        assert!(!config.instance_id.is_empty());
+    }
+
+    #[test]
+    fn common_config_unique_instance_ids() {
+        let config1 = CommonConfig::default();
+        let config2 = CommonConfig::default();
+        
+        // Instance IDs should be unique (based on timestamp)
+        assert_ne!(config1.instance_id, config2.instance_id);
+    }
+
+    #[test]
+    fn common_config_serialization() {
+        let config = CommonConfig::default();
+        let toml_str = toml::to_string(&config).unwrap();
+        let parsed: CommonConfig = toml::from_str(&toml_str).unwrap();
+        
+        assert_eq!(config.name, parsed.name);
+        assert_eq!(config.log_level, parsed.log_level);
+    }
+
+    #[test]
+    fn load_toml_valid() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+        
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        writeln!(file, r#"
+            name = "test-primal"
+            log_level = "debug"
+        "#).unwrap();
+        
+        let config: std::collections::HashMap<String, String> = 
+            load_toml(&config_path).unwrap();
+        
+        assert_eq!(config.get("name"), Some(&"test-primal".to_string()));
+        assert_eq!(config.get("log_level"), Some(&"debug".to_string()));
+    }
+
+    #[test]
+    fn load_toml_invalid_path() {
+        let result: Result<CommonConfig, _> = load_toml("/nonexistent/config.toml");
+        assert!(result.is_err());
+        
+        if let Err(e) = result {
+            assert!(matches!(e, PrimalError::Config(_)));
+        }
+    }
+
+    #[test]
+    fn load_toml_invalid_syntax() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("bad.toml");
+        
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        writeln!(file, "invalid toml syntax [[[").unwrap();
+        
+        let result: Result<CommonConfig, _> = load_toml(&config_path);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn config_watcher_detects_change() {
+        use std::thread;
+        use std::time::Duration;
+        
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("watch.toml");
+        
+        // Create initial file
+        std::fs::write(&config_path, "test").unwrap();
+        thread::sleep(Duration::from_millis(10));
+        
+        let mut watcher = ConfigWatcher::new(&config_path);
+        
+        // First check should detect change (no previous modified time)
+        assert!(watcher.has_changed());
+        
+        // Second immediate check should not detect change
+        assert!(!watcher.has_changed());
+        
+        // Modify file
+        thread::sleep(Duration::from_millis(10));
+        std::fs::write(&config_path, "modified").unwrap();
+        thread::sleep(Duration::from_millis(10));
+        
+        // Should detect the modification
+        assert!(watcher.has_changed());
+        
+        // No more changes
+        assert!(!watcher.has_changed());
+    }
+
+    #[test]
+    fn config_watcher_nonexistent_file() {
+        let mut watcher = ConfigWatcher::new("/nonexistent/file.toml");
+        
+        // Should return false for nonexistent files
+        assert!(!watcher.has_changed());
     }
 }
 

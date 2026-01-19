@@ -136,10 +136,107 @@ impl PrimalError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            Self::Network(_)
-                | Self::Timeout(_)
-                | Self::Dependency { .. }
+            Self::Network(_) | Self::Timeout(_) | Self::Dependency { .. }
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_config() {
+        let err = PrimalError::config("invalid setting");
+        assert!(matches!(err, PrimalError::Config(_)));
+        assert_eq!(err.to_string(), "configuration error: invalid setting");
+    }
+
+    #[test]
+    fn error_identity() {
+        let err = PrimalError::identity("invalid DID");
+        assert!(matches!(err, PrimalError::Identity(_)));
+        assert_eq!(err.to_string(), "identity error: invalid DID");
+    }
+
+    #[test]
+    fn error_discovery() {
+        let err = PrimalError::discovery("service not found");
+        assert!(matches!(err, PrimalError::Discovery(_)));
+        assert_eq!(err.to_string(), "discovery error: service not found");
+    }
+
+    #[test]
+    fn error_lifecycle() {
+        let err = PrimalError::lifecycle("cannot start");
+        assert!(matches!(err, PrimalError::Lifecycle(_)));
+        assert_eq!(err.to_string(), "lifecycle error: cannot start");
+    }
+
+    #[test]
+    fn error_dependency() {
+        let err = PrimalError::dependency("database", "connection failed");
+        assert!(matches!(err, PrimalError::Dependency { .. }));
+        assert_eq!(err.to_string(), "dependency error: database: connection failed");
+    }
+
+    #[test]
+    fn error_domain() {
+        let err = PrimalError::domain("custom", "domain error");
+        assert!(matches!(err, PrimalError::Domain { .. }));
+        assert_eq!(err.to_string(), "custom error: domain error");
+    }
+
+    #[test]
+    fn error_retryable() {
+        assert!(PrimalError::Network("timeout".to_string()).is_retryable());
+        assert!(PrimalError::Timeout("slow".to_string()).is_retryable());
+        assert!(PrimalError::dependency("db", "down").is_retryable());
+        
+        assert!(!PrimalError::Config("bad".to_string()).is_retryable());
+        assert!(!PrimalError::InvalidInput("wrong".to_string()).is_retryable());
+        assert!(!PrimalError::PermissionDenied("forbidden".to_string()).is_retryable());
+    }
+
+    #[test]
+    fn error_from_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let err: PrimalError = io_err.into();
+        assert!(matches!(err, PrimalError::Io(_)));
+    }
+
+    #[test]
+    fn error_variants_coverage() {
+        // Ensure all variants can be created
+        let _ = PrimalError::Config("test".to_string());
+        let _ = PrimalError::Identity("test".to_string());
+        let _ = PrimalError::Discovery("test".to_string());
+        let _ = PrimalError::Lifecycle("test".to_string());
+        let _ = PrimalError::Health("test".to_string());
+        let _ = PrimalError::Serialization("test".to_string());
+        let _ = PrimalError::Network("test".to_string());
+        let _ = PrimalError::Storage("test".to_string());
+        let _ = PrimalError::Timeout("test".to_string());
+        let _ = PrimalError::Cancelled("test".to_string());
+        let _ = PrimalError::NotFound("test".to_string());
+        let _ = PrimalError::AlreadyExists("test".to_string());
+        let _ = PrimalError::PermissionDenied("test".to_string());
+        let _ = PrimalError::InvalidInput("test".to_string());
+        let _ = PrimalError::Internal("test".to_string());
+    }
+
+    #[test]
+    fn result_type_alias() {
+        fn test_function(val: i32) -> PrimalResult<i32> {
+            if val > 0 {
+                Ok(val)
+            } else {
+                Err(PrimalError::config("value must be positive"))
+            }
+        }
+        
+        assert_eq!(test_function(42).unwrap(), 42);
+        assert!(test_function(-1).is_err());
     }
 }
 

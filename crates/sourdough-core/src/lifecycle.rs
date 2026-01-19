@@ -172,3 +172,144 @@ pub enum LifecycleReason {
     Error(String),
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn state_transitions() {
+        assert!(PrimalState::Created.can_start());
+        assert!(!PrimalState::Created.can_stop());
+        assert!(!PrimalState::Created.is_running());
+
+        assert!(!PrimalState::Running.can_start());
+        assert!(PrimalState::Running.can_stop());
+        assert!(PrimalState::Running.is_running());
+
+        assert!(PrimalState::Stopped.can_start());
+        assert!(!PrimalState::Stopped.can_stop());
+
+        assert!(PrimalState::Failed.can_start());
+        assert!(!PrimalState::Failed.can_stop());
+    }
+
+    #[test]
+    fn state_display() {
+        assert_eq!(PrimalState::Created.to_string(), "created");
+        assert_eq!(PrimalState::Running.to_string(), "running");
+        assert_eq!(PrimalState::Failed.to_string(), "failed");
+    }
+
+    #[test]
+    fn state_serialization() {
+        let state = PrimalState::Running;
+        let json = serde_json::to_string(&state).unwrap();
+        let deserialized: PrimalState = serde_json::from_str(&json).unwrap();
+        assert_eq!(state, deserialized);
+    }
+
+    // Mock implementation for testing trait
+    struct MockPrimal {
+        state: PrimalState,
+        start_count: usize,
+        stop_count: usize,
+    }
+
+    impl MockPrimal {
+        fn new() -> Self {
+            Self {
+                state: PrimalState::Created,
+                start_count: 0,
+                stop_count: 0,
+            }
+        }
+    }
+
+    impl PrimalLifecycle for MockPrimal {
+        fn state(&self) -> PrimalState {
+            self.state
+        }
+
+        async fn start(&mut self) -> Result<(), PrimalError> {
+            if !self.state.can_start() {
+                return Err(PrimalError::lifecycle(format!(
+                    "cannot start from state: {}",
+                    self.state
+                )));
+            }
+            self.state = PrimalState::Running;
+            self.start_count += 1;
+            Ok(())
+        }
+
+        async fn stop(&mut self) -> Result<(), PrimalError> {
+            if !self.state.can_stop() {
+                return Err(PrimalError::lifecycle(format!(
+                    "cannot stop from state: {}",
+                    self.state
+                )));
+            }
+            self.state = PrimalState::Stopped;
+            self.stop_count += 1;
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn lifecycle_start_stop() {
+        let mut primal = MockPrimal::new();
+        
+        assert_eq!(primal.state(), PrimalState::Created);
+        
+        primal.start().await.unwrap();
+        assert_eq!(primal.state(), PrimalState::Running);
+        assert_eq!(primal.start_count, 1);
+        
+        primal.stop().await.unwrap();
+        assert_eq!(primal.state(), PrimalState::Stopped);
+        assert_eq!(primal.stop_count, 1);
+    }
+
+    #[tokio::test]
+    async fn lifecycle_invalid_transitions() {
+        let mut primal = MockPrimal::new();
+        primal.state = PrimalState::Running;
+        
+        // Can't start when already running
+        let result = primal.start().await;
+        assert!(result.is_err());
+        
+        // Reset
+        primal.state = PrimalState::Created;
+        
+        // Can't stop when not running
+        let result = primal.stop().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn lifecycle_reload() {
+        let mut primal = MockPrimal::new();
+        primal.start().await.unwrap();
+        
+        assert_eq!(primal.start_count, 1);
+        assert_eq!(primal.stop_count, 0);
+        
+        primal.reload().await.unwrap();
+        
+        assert_eq!(primal.start_count, 2);
+        assert_eq!(primal.stop_count, 1);
+        assert_eq!(primal.state(), PrimalState::Running);
+    }
+
+    #[tokio::test]
+    async fn lifecycle_shutdown() {
+        let mut primal = MockPrimal::new();
+        primal.start().await.unwrap();
+        
+        primal.shutdown().await.unwrap();
+        
+        assert_eq!(primal.state(), PrimalState::Stopped);
+        assert_eq!(primal.stop_count, 1);
+    }
+}
