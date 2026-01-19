@@ -105,7 +105,7 @@ async fn validate_primal(path: PathBuf) -> Result<()> {
     }
     
     // Check for trait implementations
-    check_trait_implementations(&path, &mut warnings)?;
+    check_trait_implementations(&path)?;
 
     println!();
     report_results(&errors, &warnings)
@@ -226,7 +226,7 @@ async fn validate_ecobin(path: PathBuf) -> Result<()> {
 }
 
 /// Check if primal implements core traits
-fn check_trait_implementations(path: &PathBuf, warnings: &mut Vec<String>) -> Result<()> {
+fn check_trait_implementations(path: &Path) -> Result<()> {
     crate::info("Checking trait implementations...");
     
     let crates_dir = path.join("crates");
@@ -267,7 +267,7 @@ fn check_trait_implementations(path: &PathBuf, warnings: &mut Vec<String>) -> Re
 }
 
 /// Check cargo fmt compliance
-fn check_formatting(path: &PathBuf) -> Result<bool> {
+fn check_formatting(path: &Path) -> Result<bool> {
     let output = std::process::Command::new("cargo")
         .args(["fmt", "--", "--check"])
         .current_dir(path)
@@ -279,8 +279,8 @@ fn check_formatting(path: &PathBuf) -> Result<bool> {
     }
 }
 
-/// Check clippy compliance  
-fn check_clippy(path: &PathBuf) -> Result<Vec<String>> {
+/// Check clippy compliance
+fn check_clippy(path: &Path) -> Result<Vec<String>> {
     let output = std::process::Command::new("cargo")
         .args(["clippy", "--", "-D", "warnings"])
         .current_dir(path)
