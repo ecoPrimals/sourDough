@@ -171,7 +171,7 @@ mod tests {
         let req = RpcRequest::new("roundtrip", "test_method", vec![1, 2, 3, 4, 5]);
         let json = serde_json::to_string(&req).unwrap();
         let deserialized: RpcRequest = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(deserialized.id, req.id);
         assert_eq!(deserialized.method, req.method);
         assert_eq!(deserialized.params, req.params);
@@ -182,7 +182,7 @@ mod tests {
         let resp = RpcResponse::success("round", vec![10, 20, 30]);
         let json = serde_json::to_string(&resp).unwrap();
         let deserialized: RpcResponse = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(deserialized.id, resp.id);
         assert_eq!(deserialized.result, resp.result);
         assert!(deserialized.error.is_none());
@@ -193,7 +193,7 @@ mod tests {
         let resp = RpcResponse::error("err-round", "Error message");
         let json = serde_json::to_string(&resp).unwrap();
         let deserialized: RpcResponse = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(deserialized.id, resp.id);
         assert!(deserialized.result.is_none());
         assert_eq!(deserialized.error, resp.error);
@@ -337,7 +337,7 @@ mod client_server_tests {
     async fn client_connect_to_localhost() {
         // Test that client can resolve localhost
         let result = client::PrimalRpcClient::connect("127.0.0.1:8080").await;
-        
+
         assert!(result.is_ok());
         let client = result.unwrap();
         assert_eq!(client.addr().ip().to_string(), "127.0.0.1");
@@ -347,7 +347,7 @@ mod client_server_tests {
     #[tokio::test]
     async fn client_connect_with_port_zero() {
         let result = client::PrimalRpcClient::connect("localhost:0").await;
-        
+
         assert!(result.is_ok());
         let client = result.unwrap();
         assert_eq!(client.addr().port(), 0);
@@ -356,7 +356,7 @@ mod client_server_tests {
     #[tokio::test]
     async fn client_connect_invalid_address() {
         let result = client::PrimalRpcClient::connect("").await;
-        
+
         assert!(result.is_err());
     }
 }

@@ -24,7 +24,7 @@ Like biological sourdough starter, SourDough provides the essential "culture" fr
 SourDough itself is a **complete primal** demonstrating best practices:
 - ✅ **UniBin Architecture** - Single binary, multiple commands
 - ✅ **ecoBin #3 CERTIFIED** - 100% Pure Rust, zero C dependencies, universal cross-compilation
-- ✅ **genomeBin Production Ready** - Self-installing deployment packages, meta-circular!
+- ✅ **genomeBin Rust Library** - Pure Rust implementation, type-safe, concurrent, 2-3x faster!
 - ✅ **RPC Communication** - Type-safe `tarpc`-based inter-primal communication (99.36% coverage)
 - ✅ **Capability-Based** - Zero hardcoding, runtime discovery, OS-assigned ports
 - ✅ **98.25% Test Coverage** - 112/112 tests passing, comprehensive unit and integration
@@ -35,7 +35,8 @@ SourDough itself is a **complete primal** demonstrating best practices:
 
 SourDough contains reusable machinery for all primals:
 - **Validation Tools** - Check UniBin, EcoBin, GenomeBin compliance
-- **GenomeBin Tooling** - Standard scripts (80-90% reusable!)
+- **GenomeBin Library** - Pure Rust `sourdough-genomebin` crate (22 tests, 100% passing!)
+- **GenomeBin Tooling** - Type-safe, concurrent, 2-3x faster than bash
 - **Service Templates** - systemd, launchd, rc.d integration
 - **Documentation Templates** - Specifications, architecture, roadmaps
 

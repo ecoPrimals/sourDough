@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/sourdough-core",
-    "crates/sourdough",
+    "crates/sourdough", "crates/sourdough-genomebin",
 ]
 
 [workspace.package]

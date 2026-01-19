@@ -1,7 +1,11 @@
 //! `GenomeBin` creation and management commands.
+//!
+//! This module provides genomeBin operations using the Pure Rust `sourdough-genomebin`
+//! library. The bash script fallback is maintained for compatibility during migration.
 
 use anyhow::Result;
 use clap::Subcommand;
+use sourdough_genomebin::{GenomeBinBuilder, Validator};
 use std::path::PathBuf;
 
 #[derive(Subcommand)]
@@ -57,54 +61,56 @@ async fn create_genomebin(
     ecobins: PathBuf,
     output: PathBuf,
 ) -> Result<()> {
-    crate::info(&format!("Creating genomeBin for {} v{}", primal, version));
+    crate::info(&format!("Creating genomeBin for {} v{} (Rust)", primal, version));
 
-    if !ecobins.exists() {
-        anyhow::bail!("ecoBins directory not found: {}", ecobins.display());
-    }
+    // Use Pure Rust implementation
+    let builder = GenomeBinBuilder::new(&primal, &version)
+        .ecobins_dir(&ecobins)
+        .output(&output)
+        .parallel(true);
 
-    // Find the create-genomebin.sh script
-    let script_path = find_genomebin_script("create-genomebin.sh")?;
+    let genome = builder.build().await?;
+    let output_path = genome.create().await?;
 
-    // Execute the script
-    let status = std::process::Command::new(&script_path)
-        .arg("--primal")
-        .arg(&primal)
-        .arg("--version")
-        .arg(&version)
-        .arg("--ecobins")
-        .arg(&ecobins)
-        .arg("--output")
-        .arg(&output)
-        .status()?;
-
-    if !status.success() {
-        anyhow::bail!("genomeBin creation failed");
-    }
+    crate::success(&format!("genomeBin created: {}", output_path.display()));
+    crate::info(&format!("Targets: {}", genome.targets().join(", ")));
 
     Ok(())
 }
 
 async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
-    crate::info(&format!("Testing genomeBin: {}", genomebin.display()));
+    crate::info(&format!("Testing genomeBin: {} (Rust)", genomebin.display()));
 
     if !genomebin.exists() {
         anyhow::bail!("genomeBin not found: {}", genomebin.display());
     }
 
-    // Find the test-genomebin.sh script
-    let script_path = find_genomebin_script("test-genomebin.sh")?;
+    // Use Pure Rust validator
+    let validator = Validator::new(&genomebin);
+    let results = validator.validate().await?;
 
-    // Execute the script
-    let status = std::process::Command::new(&script_path)
-        .arg(&genomebin)
-        .status()?;
-
-    if !status.success() {
-        anyhow::bail!("genomeBin testing failed");
+    // Display results
+    for result in &results {
+        if result.passed {
+            crate::success(&format!("✓ {}", result.name));
+        } else {
+            crate::error(&format!(
+                "✗ {}: {}",
+                result.name,
+                result.message.as_deref().unwrap_or("unknown error")
+            ));
+        }
     }
 
-    Ok(())
+    let passed = results.iter().filter(|r| r.passed).count();
+    let total = results.len();
+
+    if passed == total {
+        crate::success(&format!("All tests passed ({passed}/{total})"));
+        Ok(())
+    } else {
+        anyhow::bail!("Some tests failed ({passed}/{total})");
+    }
 }
 
 async fn sign_genomebin(genomebin: PathBuf) -> Result<()> {
@@ -113,6 +119,11 @@ async fn sign_genomebin(genomebin: PathBuf) -> Result<()> {
     if !genomebin.exists() {
         anyhow::bail!("genomeBin not found: {}", genomebin.display());
     }
+
+    // GPG signing is currently disabled (requires C dependencies)
+    // Future: Implement Pure Rust signing via sequoia-openpgp
+    crate::warning("GPG signing not yet implemented in Rust");
+    crate::info("Falling back to bash script for signing...");
 
     // Find the sign-genomebin.sh script
     let script_path = find_genomebin_script("sign-genomebin.sh")?;
