@@ -11,7 +11,7 @@
 - **Quality**: ⭐⭐⭐⭐⭐
 - **Test Coverage**: 92.13%
 - **Tests**: 98/98 passing
-- **Clippy**: 3 warnings (non-blocking, pedantic mode)
+- **Clippy**: 0 warnings (pedantic mode, -D warnings) ✅
 - **Build**: Release binary 3.2 MB
 
 ---
@@ -84,23 +84,27 @@
 
 ## Recent Activity
 
-### January 19, 2026 - RPC Layer & Capability-Based Architecture
+### January 19, 2026 - RPC Layer & Zero-Knowledge Architecture
 
 **Completed**:
 1. ✅ Implemented complete `tarpc`-based RPC communication layer
-2. ✅ Eliminated all hardcoding (ports, endpoints)
-3. ✅ Achieved capability-based architecture (OS-assigned ports)
-4. ✅ Created comprehensive DEVELOPMENT.md (471 lines)
-5. ✅ Fixed ARCHITECTURE.md examples (replaced `todo!()`)
-6. ✅ Enhanced validation commands (trait checks, formatting, clippy)
-7. ✅ 92.13% test coverage, 98 tests passing
+2. ✅ Eliminated ALL hardcoding (primal names, vendors, ports, endpoints)
+3. ✅ Achieved zero-knowledge startup (infant-like awakening model)
+4. ✅ Universal adapter pattern (primal sovereignty)
+5. ✅ Created comprehensive DEVELOPMENT.md (471 lines)
+6. ✅ Fixed ARCHITECTURE.md examples (replaced `todo!()`)
+7. ✅ Enhanced validation commands (trait checks, formatting, clippy)
+8. ✅ Fixed all clippy warnings (3 → 0)
+9. ✅ 92.13% test coverage, 98/98 tests passing
 
 **Major Architectural Changes**:
 - Added RPC layer: `PrimalRpc` trait, client/server helpers
 - Zero-copy foundations: `bytes`, `serde_bytes`
-- Port 8080 → Port 0 (OS-assigned, discovered via Songbird)
+- Port 8080 → Port 0 (OS-assigned, discovered via universal adapter)
+- All primal names removed (BearDog, Songbird → generic services)
+- All vendor names removed (Docker → container runtime)
 - All test endpoints now dynamic and capability-based
-- Primal sovereignty enforced: self-knowledge only
+- Primal sovereignty enforced: self-knowledge only, zero compile-time coupling
 
 ---
 

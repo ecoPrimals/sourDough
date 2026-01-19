@@ -304,7 +304,7 @@ Pass Rate: 100%
 ### Code Quality
 
 ```
-✅ Clippy:              0 errors, 3 warnings (non-blocking, pedantic mode)
+✅ Clippy:              0 warnings (pedantic mode, -D warnings)
 ✅ Format:              100% formatted (rustfmt)
 ✅ Documentation:       100% public API documented
 ✅ Unsafe Code:         0 blocks
