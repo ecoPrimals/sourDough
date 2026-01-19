@@ -2,7 +2,7 @@
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Subcommand)]
 pub enum ValidateCommand {
