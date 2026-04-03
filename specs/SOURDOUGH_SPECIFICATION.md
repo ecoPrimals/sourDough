@@ -1,53 +1,59 @@
 # sourDough Specification
 
-**Version**: 0.1.0  
-**Date**: April 3, 2026  
-**Status**: Reference Implementation  
+**Version**: 0.1.0
+**Date**: April 3, 2026
+**Status**: Reference Implementation
 **Role**: Nascent Primal (Budding Primal) + Standardization Framework
 
 ---
 
-## 🎯 Purpose
+## Purpose
 
-**SourDough** serves three critical functions in the ecoPrimals ecosystem:
+sourDough serves three functions in the ecoPrimals ecosystem:
 
-### 1. **Starter Culture** (Original Role)
+### 1. Nascent Primal (Budding Primal)
 
-Like biological sourdough starter, sourDough provides the essential "culture" from which new primals are born:
-- Core traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalIdentity`, etc.)
-- Common patterns (config, error handling, logging)
-- Scaffolding templates (new primal, new crate)
+sourDough scaffolds new primals that are **self-contained and independent**.
+When sourDough creates a new primal, the result has its own inlined core traits,
+its own workspace, and zero runtime dependency on sourDough. Like biological
+budding, the offspring is complete.
 
-### 2. **Reference Implementation** (NEW)
+Core traits provided to scaffolded primals:
+- `PrimalLifecycle` (state machine: Created, Starting, Running, Stopping, Stopped, Failed)
+- `PrimalHealth` (observability: Healthy, Degraded, Unhealthy)
+- `PrimalState`, `PrimalError`, `HealthStatus`, `HealthReport`
 
-sourDough itself is a **TRUE primal** that demonstrates:
-- ✅ **UniBin** architecture (multiple modes, single binary)
-- ✅ **ecoBin** compliance (100% Pure Rust, cross-compilation)
-- ✅ **genomeBin** tooling (creates genomeBins for other primals)
+### 2. Reference Implementation
 
-**Principle**: New primals can reference sourDough as the canonical example!
+sourDough itself is a primal demonstrating ecoPrimals standards:
+- UniBin architecture (single binary, multiple subcommands)
+- ecoBin compliance (Pure Rust, zero C dependencies, cross-compilation)
+- JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
+- tarpc secondary high-throughput IPC
+- Capability-based discovery, zero hardcoding
+- `#![forbid(unsafe_code)]` on all crates
 
-### 3. **Standardization Framework** (NEW)
+### 3. Standardization Framework
 
-sourDough contains standardized machinery:
-- `genomebin/` - Standard genomeBin scaffolding
-- Validation tools - Check primal compliance
-- Documentation templates - Standard docs structure
+sourDough provides tooling for the ecosystem:
+- Validation tools: check primal, UniBin, ecoBin compliance
+- genomeBin library: Pure Rust platform detection, metadata, archive, validation
+- Documentation templates for specifications, architecture, roadmaps
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-### **sourDough as UniBin**
+### sourDough as UniBin
 
-**Single binary, multiple modes**:
+Single binary, multiple modes:
 
 ```bash
-# Scaffolding
-sourdough scaffold new-primal <name> "<description>"
+# Scaffolding (output is self-contained, no sourDough dependency)
+sourdough scaffold new-primal <name> "<description>" [--output <dir>]
 sourdough scaffold new-crate <primal> <crate>
 
-# genomeBin Creation
+# genomeBin operations (Pure Rust)
 sourdough genomebin create --primal <name> --version <ver> --ecobins <dir>
 sourdough genomebin test <genomeBin>
 sourdough genomebin sign <genomeBin>
@@ -57,41 +63,30 @@ sourdough validate primal <primal-dir>
 sourdough validate unibin <primal-dir>
 sourdough validate ecobin <primal-dir>
 
-# Health & Info
-sourdough doctor
-sourdough version
-sourdough help
+# Diagnostics
+sourdough doctor [--comprehensive]
 ```
 
-**All functionality in ONE binary!**
+### sourDough as ecoBin
 
-### **sourDough as ecoBin**
-
-**100% Pure Rust**:
-- ✅ Zero C dependencies
-- ✅ Cross-compiles to x86_64, ARM64, RISC-V
-- ✅ Static linking (musl)
-- ✅ Self-contained binary
-
-**Available as ecoBin**:
-```
-sourdough-x86_64-linux-musl
-sourdough-aarch64-linux-musl
-sourdough-x86_64-macos
-sourdough-aarch64-macos
-```
+- Zero C dependencies (Pure Rust)
+- Cross-compiles to x86_64, ARM64, RISC-V (musl targets)
+- Static linking
+- Self-contained binary
 
 ---
 
-## 📦 Components
+## Components
 
-### **1. sourdough-core** (Library)
+### 1. sourdough-core (Library)
 
-**Purpose**: Core traits for all primals
+Core traits for all primals. Note: scaffolded primals receive **inlined copies**
+of essential traits, not a dependency on this crate. This crate is sourDough's
+own implementation.
 
 **Exports**:
+
 ```rust
-// Lifecycle
 pub trait PrimalLifecycle {
     fn state(&self) -> PrimalState;
     async fn start(&mut self) -> Result<(), PrimalError>;
@@ -99,27 +94,23 @@ pub trait PrimalLifecycle {
     async fn reload(&mut self) -> Result<(), PrimalError>;
 }
 
-// Health
 pub trait PrimalHealth {
     fn health_status(&self) -> HealthStatus;
     async fn health_check(&self) -> Result<HealthReport, PrimalError>;
 }
 
-// Identity (BearDog integration)
 pub trait PrimalIdentity {
     fn did(&self) -> &Did;
     async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError>;
     async fn verify(&self, data: &[u8], sig: &Signature) -> Result<bool, PrimalError>;
 }
 
-// Discovery (Songbird integration)
 pub trait PrimalDiscovery {
     fn capabilities(&self) -> Vec<UpaCapability>;
     async fn register(&self) -> Result<ServiceRegistration, PrimalError>;
     async fn announce(&self) -> Result<(), PrimalError>;
 }
 
-// Configuration
 pub trait PrimalConfig {
     type Config;
     fn load(path: &Path) -> Result<Self::Config, PrimalError>;
@@ -127,397 +118,163 @@ pub trait PrimalConfig {
 }
 ```
 
-**Usage**: All primals depend on `sourdough-core` and implement these traits.
+Also provides:
+- JSON-RPC 2.0 IPC (`ipc.rs`): newline-delimited, `domain.verb` naming, circuit breaker
+- tarpc RPC (`rpc.rs`): type-safe binary IPC for high-throughput paths
+- Common types (`types.rs`): `Did`, `ContentHash`, `Timestamp`
 
-### **2. sourdough** (UniBin)
+### 2. sourdough (UniBin CLI)
 
-**Purpose**: Command-line tool for primal management
+Command-line tool for primal management. Scaffolding produces self-contained
+primals with inlined trait definitions and no external sourdough-core dependency.
 
-**Modes**:
+### 3. sourdough-genomebin (Pure Rust Library)
 
-#### **Scaffolding**
-```bash
-# Create new primal
-sourdough scaffold new-primal rhizoCrypt "Ephemeral Data Graph"
+Pure Rust genomeBin operations:
 
-# Creates:
-# ../rhizoCrypt/
-#   ├── Cargo.toml (workspace)
-#   ├── crates/rhizocrypt-core/ (implements sourdough-core traits)
-#   ├── specs/ (specification docs)
-#   └── README.md
-
-# Add crate to existing primal
-sourdough scaffold new-crate rhizoCrypt rhizocrypt-storage
-```
-
-#### **genomeBin Creation**
-```bash
-# Create genomeBin from ecoBins
-sourdough genomebin create \
-    --primal beardog \
-    --version 1.0.0 \
-    --ecobins plasmidBin/primals/beardog/v1.0.0/ \
-    --output beardog.genome
-
-# Test genomeBin
-sourdough genomebin test beardog.genome
-
-# Sign genomeBin
-sourdough genomebin sign beardog.genome
-```
-
-#### **Validation**
-```bash
-# Validate primal structure
-sourdough validate primal /path/to/primal
-
-# Check UniBin compliance
-sourdough validate unibin /path/to/primal
-
-# Check ecoBin compliance
-sourdough validate ecobin /path/to/primal
-```
-
-#### **Health & Info**
-```bash
-# Health check
-sourdough doctor
-
-# Version info
-sourdough version
-
-# Help
-sourdough help [command]
-```
-
-### **3. sourdough-genomebin** (Pure Rust Library)
-
-**Purpose**: Pure Rust genomeBin operations (replaces former `genomebin/` bash scripts, now archived)
-
-**Structure**:
-```
-crates/sourdough-genomebin/
-├── src/
-│   ├── lib.rs                   # Public API
-│   ├── platform.rs              # Runtime platform detection
-│   ├── metadata.rs              # Type-safe metadata parsing
-│   ├── archive.rs               # Pure Rust tar/gzip
-│   ├── builder.rs               # genomeBin creation
-│   ├── validator.rs             # Comprehensive validation
-│   └── error.rs                 # Structured error types
-├── examples/
-│   ├── platform_detection.rs    # Platform detection example
-│   └── create_and_validate.rs   # Create and validate example
-└── Cargo.toml
-```
-
-**Usage**: Pure Rust replacement for former bash scripts; all genomeBin operations are type-safe and concurrent
+| Module | Purpose |
+|--------|---------|
+| `platform.rs` | Runtime OS/arch/libc detection, target triple generation |
+| `metadata.rs` | Type-safe TOML metadata parsing |
+| `archive.rs` | Pure Rust tar/gzip operations |
+| `builder.rs` | genomeBin creation pipeline |
+| `validator.rs` | Comprehensive genomeBin validation |
+| `error.rs` | Structured error types |
 
 ---
 
-## 🔄 Workflow: New Primal Lifecycle
+## Scaffold Independence
 
-### **Phase 1: Nascent** (sourDough scaffold)
+When sourDough scaffolds a new primal:
+
+1. A workspace is generated with the primal's own `-core` crate
+2. Core traits are **inlined** into the generated code (not imported from sourdough-core)
+3. Each additional crate uses a path dependency to the primal's own core
+4. Generated `Cargo.toml` uses granular tokio features
+5. Generated `CONVENTIONS.md` and `README.md` reference self-contained structure
+
+The scaffolded primal is immediately buildable and testable with `cargo build`
+and `cargo test`, with zero knowledge of sourDough's existence.
+
+---
+
+## Workflow: New Primal Lifecycle
+
+### Phase 1: Nascent (sourDough scaffold)
 
 ```bash
-# Developer creates new primal
-sourdough scaffold new-primal myPrimal "Description"
-
-# Result: myPrimal/ with:
-#   - Implements sourdough-core traits
-#   - Has basic specs/
-#   - Ready for development
+sourdough scaffold new-primal myPrimal "Description" --output ../myPrimal
+# Result: self-contained workspace with inlined core traits
 ```
 
-### **Phase 2: Development** (Build functionality)
+### Phase 2: Development
 
 ```bash
-# Developer implements primal logic
 cd myPrimal/
-cargo build
-cargo test
-
-# Primal-specific work here!
+cargo build    # Builds immediately, no external dependencies on sourDough
+cargo test     # Tests pass out of the box
 ```
 
-### **Phase 3: UniBin** (Consolidate to single binary)
+### Phase 3: UniBin (single binary)
 
 ```bash
-# Validate UniBin compliance
 sourdough validate unibin myPrimal/
-
-# Checklist:
-# - One binary per primal ✓
-# - Multiple modes (subcommands) ✓
-# - Professional CLI (--help, --version) ✓
 ```
 
-### **Phase 4: ecoBin** (Achieve Pure Rust)
+### Phase 4: ecoBin (Pure Rust)
 
 ```bash
-# Validate ecoBin compliance
 sourdough validate ecobin myPrimal/
-
-# Checklist:
-# - UniBin architecture ✓
-# - 100% Pure Rust ✓
-# - Cross-compilation ✓
-# - Static linking ✓
 ```
 
-### **Phase 5: genomeBin** (Add deployment wrapper)
+### Phase 5: genomeBin (deployment wrapper)
 
 ```bash
-# Create genomeBin (ONE command!)
-sourdough genomebin create \
-    --primal myPrimal \
-    --version 1.0.0 \
-    --ecobins plasmidBin/primals/myPrimal/v1.0.0/ \
-    --output myPrimal.genome
-
-# Test
+sourdough genomebin create --primal myPrimal --version 1.0.0 --ecobins ./ecobins/ --output myPrimal.genome
 sourdough genomebin test myPrimal.genome
-
-# Sign
 sourdough genomebin sign myPrimal.genome
-
-# Distribute!
 ```
-
-### **Result**: New primal went from idea → production-ready genomeBin!
 
 ---
 
-## 🎯 sourDough Self-Compliance
+## sourDough Self-Compliance
 
-### **UniBin** ✅
+### UniBin
 
-- **Binary**: `sourdough`
-- **Modes**: `scaffold`, `genomebin`, `validate`, `doctor`, `version`, `help`
-- **CLI**: Professional (`--help`, `--version`, consistent UX)
+- Binary: `sourdough`
+- Modes: scaffold, genomebin, validate, doctor
+- CLI: `--help`, `--version`, consistent UX
 
-### **ecoBin** ✅
+### ecoBin
 
-- **Pure Rust**: 100% (zero C dependencies)
-- **Dependencies**:
-  ```
-  sourdough-core v0.1.0
-  ├── tokio (Pure Rust)
-  ├── serde/serde_json (Pure Rust)
-  ├── toml (Pure Rust)
-  ├── thiserror (Pure Rust)
-  ├── tracing (Pure Rust)
-  ├── tarpc (Pure Rust)
-  └── bytes (Pure Rust)
-  ```
-- **Cross-compilation**: x86_64, ARM64 (validated)
-- **Static linking**: musl
+- Pure Rust: zero C dependencies
+- Dependencies: tokio, serde, tarpc, bytes, blake3 (pure), thiserror, clap, tracing
+- Cross-compilation: x86_64, ARM64 (musl targets)
 
-### **genomeBin** 📝 (Future)
+### Quality
 
-sourDough can create its own genomeBin:
-```bash
-sourdough genomebin create \
-    --primal sourdough \
-    --version 0.1.0 \
-    --ecobins plasmidBin/primals/sourdough/v0.1.0/ \
-    --output sourdough.genome
-```
-
-**Meta**: sourDough uses itself to create its genomeBin! 🎉
+- 229 tests, 94.40% coverage (llvm-cov)
+- `#![forbid(unsafe_code)]` on all crates
+- `clippy::pedantic` + `clippy::nursery` clean (`-D warnings`)
+- All `#[expect(reason)]`, zero `#[allow()]`
 
 ---
 
-## 📊 Traits Provided
+## Validation Criteria
 
-### **Essential Traits** (All Primals Should Implement)
+### UniBin Validation (`sourdough validate unibin`)
 
-#### **PrimalLifecycle**
-```rust
-pub trait PrimalLifecycle {
-    fn state(&self) -> PrimalState;
-    async fn start(&mut self) -> Result<(), PrimalError>;
-    async fn stop(&mut self) -> Result<(), PrimalError>;
-    async fn reload(&mut self) -> Result<(), PrimalError>;
-}
-```
+- Single binary exists
+- Multiple modes via subcommands
+- `--help` and `--version` flags work
+- Consistent CLI UX
 
-**Why**: Every primal has a lifecycle (start, run, stop, reload)
+### ecoBin Validation (`sourdough validate ecobin`)
 
-#### **PrimalHealth**
-```rust
-pub trait PrimalHealth {
-    fn health_status(&self) -> HealthStatus;
-    async fn health_check(&self) -> Result<HealthReport, PrimalError>;
-}
-```
+- UniBin validation passes
+- `cargo tree` shows zero C dependencies
+- Cross-compilation works (musl targets)
+- Binary is statically linked
 
-**Why**: Every primal needs health monitoring (for biomeOS, neuralAPI, ops)
+### genomeBin Validation (`sourdough genomebin test`)
 
-### **Integration Traits** (Ecosystem Integration)
-
-#### **PrimalIdentity** (BearDog)
-```rust
-pub trait PrimalIdentity {
-    fn did(&self) -> &Did;
-    async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError>;
-    async fn verify(&self, data: &[u8], sig: &Signature) -> Result<bool, PrimalError>;
-}
-```
-
-**Why**: Primals need identity and signing (via BearDog)
-
-#### **PrimalDiscovery** (Songbird)
-```rust
-pub trait PrimalDiscovery {
-    fn capabilities(&self) -> Vec<UpaCapability>;
-    async fn register(&self) -> Result<ServiceRegistration, PrimalError>;
-    async fn announce(&self) -> Result<(), PrimalError>;
-}
-```
-
-**Why**: Primals need to be discoverable (via Songbird/UPA)
-
-### **Utility Traits**
-
-#### **PrimalConfig**
-```rust
-pub trait PrimalConfig {
-    type Config;
-    fn load(path: &Path) -> Result<Self::Config, PrimalError>;
-    fn validate(&self) -> Result<(), PrimalError>;
-}
-```
-
-**Why**: Every primal needs configuration management
+- ecoBin validation passes
+- genomeBin self-extracts correctly
+- System detection works (OS, arch, init)
+- Health check passes after install
 
 ---
 
-## 🌟 Benefits
+## Related Standards
 
-### **For New Primals**
-
-**Before sourDough**:
-- Write all traits from scratch
-- Figure out UniBin architecture
-- Discover ecoBin requirements
-- Create genomeBin manually
-- **Total**: ~100+ hours
-
-**After sourDough**:
-- `sourdough scaffold new-primal` → instant primal structure
-- Implement `sourdough-core` traits (standard interface)
-- Follow sourDough example (reference implementation)
-- `sourdough genomebin create` → instant genomeBin
-- **Total**: ~20 hours
-
-**Savings**: **~80 hours per primal!**
-
-### **For Existing Primals**
-
-- Reference sourDough for patterns
-- Use `sourdough validate` to check compliance
-- Use `sourdough genomebin` to create genomeBins
-- Implement `sourdough-core` traits for interoperability
-
-### **For Ecosystem**
-
-- **Consistency**: All primals implement same traits
-- **Interoperability**: biomeOS/neuralAPI can manage any primal
-- **Quality**: Standard patterns = fewer bugs
-- **Velocity**: New primals created faster
-- **Evolution**: Update sourDough → all future primals benefit
+- `wateringHole/UNIBIN_ARCHITECTURE_STANDARD.md`
+- `wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md`
+- `wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
+- `wateringHole/CAPABILITY_BASED_DISCOVERY_STANDARD.md`
 
 ---
 
-## 🎯 Validation Criteria
+## Future Evolution
 
-### **UniBin Validation** (`sourdough validate unibin`)
+### Near Term
 
-Checks:
-- [ ] Single binary exists
-- [ ] Multiple modes via subcommands
-- [ ] `--help` flag works
-- [ ] `--version` flag works
-- [ ] Consistent CLI UX
-- [ ] No multiple binaries (e.g., no `-server`, `-client`)
+- Cross-compilation validation (musl targets)
+- genomeBin signing (Pure Rust, sequoia-openpgp)
 
-### **ecoBin Validation** (`sourdough validate ecobin`)
+### Medium Term
 
-Checks:
-- [ ] UniBin validation passes ✅
-- [ ] `cargo tree` shows zero C dependencies
-- [ ] Cross-compilation works (x86_64-musl, aarch64-musl)
-- [ ] Binary analysis shows no C symbols (`nm` check)
-- [ ] Static linking (`ldd` shows "statically linked")
-- [ ] Implements `PrimalHealth` trait
+- EphemeralOwner<T> for short-lived primals (see EPHEMERAL_PRIMAL_SCAFFOLDING.md)
+- biomeOS integration library
+- neuralAPI integration library
 
-### **genomeBin Validation** (`sourdough genomebin test`)
+### Long Term
 
-Checks:
-- [ ] ecoBin validation passes ✅
-- [ ] genomeBin self-extracts correctly
-- [ ] System detection works (OS, arch, init)
-- [ ] Installation works (root and user modes)
-- [ ] Service creation works (systemd/launchd/rc.d)
-- [ ] Health check passes after install
-- [ ] Update works
-- [ ] Rollback works
-- [ ] Uninstall cleans up completely
-
----
-
-## 📚 Related Standards
-
-- **UniBin**: `wateringHole/UNIBIN_ARCHITECTURE_STANDARD.md`
-- **ecoBin**: `wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md`
-- **genomeBin**: `wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
-
----
-
-## 🚀 Future Evolution
-
-### **v0.3.0** (Near Term)
-
-- [ ] Implement `sourdough` UniBin CLI
-- [ ] Implement `sourdough validate` commands
-- [ ] Implement `sourdough genomebin` commands
-- [ ] Cross-compile sourDough for x86_64, ARM64
-- [ ] Harvest sourDough to `plasmidBin/`
-
-### **v0.4.0** (Medium Term)
-
-- [ ] Add `PrimalMetrics` trait (observability)
-- [ ] Add `PrimalTelemetry` trait (distributed tracing)
-- [ ] Create sourDough genomeBin
-- [ ] biomeOS integration library
-- [ ] neuralAPI integration library
-
-### **v1.0.0** (Long Term)
-
-- [ ] Complete reference implementation
-- [ ] All validation tools complete
-- [ ] genomeBin tooling complete
-- [ ] Integration libraries production-ready
-- [ ] Documentation comprehensive
-
----
-
-## Summary
-
-**sourDough v0.1.0** is the nascent budding primal:
-- Core traits library with JSON-RPC 2.0 IPC and tarpc RPC
-- UniBin CLI with scaffold, validate, genomebin, doctor commands
-- Pure Rust genomebin library (replaces all bash scripts)
-- Self-contained scaffolding: generated primals have no sourDough dependency
-
-Scaffolded primals receive inlined core traits and are immediately independent.
+- Complete integration platform
+- Ephemeral-to-permanent primal promotion
+- Ephemeral mesh coordination
 
 ---
 
 **Date**: April 3, 2026
 **Version**: 0.1.0
 **Status**: Reference Implementation
-**Next**: Cross-compilation validation, genomeBin signing (sequoia-openpgp), ephemeral primal pattern
-

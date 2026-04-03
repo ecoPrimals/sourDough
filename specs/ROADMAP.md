@@ -1,478 +1,140 @@
 # sourDough Roadmap
 
-**Version**: 0.1.0  
-**Date**: April 3, 2026  
+**Version**: 0.1.0
+**Date**: April 3, 2026
 **Vision**: The nascent budding primal for ecoPrimals
 
 ---
 
-## 🎯 Mission
-
-Transform sourDough from scaffolding templates into a **complete reference primal** that demonstrates UniBin, ecoBin, and genomeBin standards while providing tooling for the entire ecosystem.
-
----
-
-## Current Status (v0.1.0)
+## Current State (v0.1.0)
 
 ### Complete
 
-- [x] Core traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalIdentity`, `PrimalDiscovery`, `PrimalConfig`)
-- [x] `sourdough-core` library (traits + types + JSON-RPC 2.0 IPC + tarpc RPC)
-- [x] sourDough UniBin CLI (scaffold, validate, genomebin, doctor)
-- [x] Scaffold independence: generated primals are self-contained (no sourdough-core dependency)
-- [x] `sourdough-genomebin` Pure Rust library (platform detection, metadata, archive, validation)
-- [x] Validation tools (primal, unibin, ecobin compliance)
-- [x] Comprehensive specifications
-- [x] Zero C dependencies (Pure Rust)
-- [x] 229 tests, 94.40% coverage
+- [x] Core traits: PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig
+- [x] sourdough-core library: traits + types + JSON-RPC 2.0 IPC + tarpc RPC
+- [x] sourDough UniBin CLI: scaffold, validate, genomebin, doctor
+- [x] Scaffold independence: generated primals are self-contained (budding primal pattern)
+- [x] sourdough-genomebin Pure Rust library: platform detection, metadata, archive, validation
+- [x] Validation tools: primal, unibin, ecobin compliance
+- [x] Pure Rust: zero C dependencies
+- [x] 229 tests, 94.40% coverage (llvm-cov)
 - [x] `#![forbid(unsafe_code)]` on all crates
-- [x] `clippy::pedantic` + `clippy::nursery` clean (`-D warnings`)
+- [x] clippy pedantic + nursery clean (-D warnings)
+- [x] All `#[allow()]` replaced with `#[expect(reason)]`
+- [x] Rust edition 2024
+- [x] scyBorg Provenance Trio license
 
 ### In Progress
 
 - [ ] Cross-compilation validation (musl targets)
 - [ ] genomeBin signing (Pure Rust, sequoia-openpgp)
-- [ ] Ephemeral primal scaffolding (session-as-primal pattern)
 
 ### Planned
 
-- [ ] biomeOS/neuralAPI connectors
+- [ ] Ephemeral primal scaffolding (session-as-primal pattern)
 - [ ] EphemeralOwner<T> in sourdough-core
+- [ ] biomeOS/neuralAPI connectors
 
 ---
 
-## 🚀 Version Roadmap
+## Version Roadmap
 
-### **v0.1.0** - Foundation + UniBin CLI (Current)
+### v0.1.0 -- Foundation + CLI + Scaffold Independence (Current)
 
-**Status**: Core library, CLI, genomebin library, scaffold independence
-**Timeline**: January - April 2026
+**Delivered** (January - April 2026):
 
-**Deliverables**:
 - Core traits library with JSON-RPC 2.0 IPC and tarpc RPC
-- UniBin CLI with scaffold, validate, genomebin, doctor commands
+- UniBin CLI: scaffold, validate, genomebin, doctor
 - Pure Rust genomebin library (replaces bash scripts)
 - Self-contained primal scaffolding (budding primal pattern)
 - 229 tests, 94.40% coverage, zero unsafe code
-- ✅ Core traits stable
-- ✅ genomeBin scaffolding designed
-- ✅ Zero C dependencies
-
-**Next**: Implement UniBin CLI
-
----
-
-### **v0.3.0** - UniBin Implementation 📝 (Next)
-
-**Status**: Implementing  
-**Timeline**: ~2-3 weeks  
-**Effort**: ~40-60 hours
-
-#### **Goals**
-
-Transform sourDough into a TRUE UniBin with multiple operational modes.
-
-#### **Deliverables**
-
-**1. sourDough UniBin Binary** (~20 hours)
-- [ ] Create `crates/sourdough/` (CLI crate)
-- [ ] Implement `main.rs` with `clap` CLI parsing
-- [ ] Implement subcommand structure
-- [ ] Professional `--help` output
-- [ ] Version handling
-
-**2. Scaffold Commands** (~8 hours)
-- [ ] `sourdough scaffold new-primal <name> "<desc>"`
-  - [ ] Generate workspace structure
-  - [ ] Generate `Cargo.toml`
-  - [ ] Generate core crate with traits
-  - [ ] Generate specs/ directory
-  - [ ] Generate README
-- [ ] `sourdough scaffold new-crate <primal> <crate>`
-  - [ ] Generate crate structure
-  - [ ] Update workspace `Cargo.toml`
-
-**3. Validate Commands** (~12 hours)
-- [ ] `sourdough validate primal <dir>`
-  - [ ] Check workspace structure
-  - [ ] Check specs/ exists
-  - [ ] Check implements `sourdough-core` traits
-  - [ ] Report compliance
-- [ ] `sourdough validate unibin <dir>`
-  - [ ] Check single binary
-  - [ ] Check subcommands
-  - [ ] Check CLI flags
-  - [ ] Report compliance
-- [ ] `sourdough validate ecobin <dir>`
-  - [ ] Check UniBin compliance
-  - [ ] Check `cargo tree` for C deps
-  - [ ] Check cross-compilation
-  - [ ] Check binary analysis
-  - [ ] Report compliance
-
-**4. Doctor Command** (~4 hours)
-- [ ] `sourdough doctor`
-  - [ ] Check sourDough health
-  - [ ] Check dependencies
-  - [ ] Check genomeBin tools available
-  - [ ] Report status
-
-**5. Testing** (~8 hours)
-- [ ] Unit tests for all commands
-- [ ] Integration tests
-- [ ] CLI acceptance tests
-- [ ] Documentation
-
-**Success Criteria**:
-- ✅ `sourdough --help` works
-- ✅ `sourdough scaffold new-primal` creates valid primal
-- ✅ `sourdough validate` checks compliance
-- ✅ `sourdough doctor` reports health
-- ✅ All tests pass
-
----
-
-### **v0.4.0** - ecoBin Certification 📝
-
-**Status**: Planned  
-**Timeline**: ~1 week  
-**Effort**: ~20-30 hours
-
-#### **Goals**
-
-Certify sourDough as TRUE ecoBin with full cross-compilation support.
-
-#### **Deliverables**
-
-**1. Cross-Compilation** (~8 hours)
-- [ ] Build for `x86_64-unknown-linux-musl`
-- [ ] Build for `aarch64-unknown-linux-musl`
-- [ ] Build for `x86_64-apple-darwin`
-- [ ] Build for `aarch64-apple-darwin`
-- [ ] (Optional) Build for `riscv64gc-unknown-linux-gnu`
-
-**2. Binary Validation** (~4 hours)
-- [ ] Run `nm` analysis (no C symbols)
-- [ ] Run `ldd` analysis (statically linked)
-- [ ] Size optimization (strip binaries)
-- [ ] Functional testing (all modes work)
-
-**3. Harvest to plasmidBin** (~2 hours)
-- [ ] Create `plasmidBin/primals/sourdough/v0.4.0/`
-- [ ] Copy all ecoBins
-- [ ] Update `plasmidBin/MANIFEST.md`
-- [ ] Create release notes
-
-**4. Documentation** (~4 hours)
-- [ ] ecoBin certification document
-- [ ] Cross-compilation guide
-- [ ] Distribution guide
-
-**Success Criteria**:
-- ✅ Builds on ALL targets without C dependencies
-- ✅ Binaries are statically linked
-- ✅ All functional tests pass on all platforms
-- ✅ Harvested to `plasmidBin/`
-- ✅ Official ecoBin certification
-
----
-
-### **v0.5.0** - genomeBin Tooling 📝
-
-**Status**: Planned  
-**Timeline**: ~2-3 weeks  
-**Effort**: ~60-80 hours
-
-#### **Goals**
-
-Implement complete genomeBin creation and management tooling.
-
-#### **Deliverables**
-
-**1. genomeBin Create Command** (~20 hours)
-- [ ] `sourdough genomebin create`
-  - [ ] Collect ecoBins from directory
-  - [ ] Create payload tarball
-  - [ ] Embed wrapper script
-  - [ ] Create self-extracting archive
-  - [ ] Generate checksums
-  - [ ] (Optional) GPG signing
-
-**2. genomeBin Test Command** (~12 hours)
-- [ ] `sourdough genomebin test <genomebin>`
-  - [ ] Test extraction
-  - [ ] Test system detection
-  - [ ] Test installation (Docker containers)
-    - [ ] Ubuntu 22.04 (x86_64)
-    - [ ] Ubuntu 22.04 (ARM64)
-    - [ ] Debian 12
-    - [ ] Alpine Linux
-    - [ ] Fedora
-  - [ ] Test service creation
-  - [ ] Test health check
-  - [ ] Test uninstall
-
-**3. genomeBin Sign Command** (~4 hours)
-- [ ] `sourdough genomebin sign <genomebin>`
-  - [ ] GPG signing
-  - [ ] SHA256 checksum
-  - [ ] Verification
-
-**4. Standard Scripts** (~20 hours)
-- [ ] Implement `genomebin/wrapper/genome-wrapper.sh`
-- [ ] Implement `genomebin/wrapper/system-detection.sh`
-- [ ] Implement `genomebin/wrapper/install-logic.sh`
-- [ ] Implement `genomebin/wrapper/lifecycle.sh`
-- [ ] Create service templates (systemd, launchd, rc.d)
-- [ ] Create config templates
-
-**5. Testing** (~8 hours)
-- [ ] End-to-end genomeBin tests
-- [ ] Multi-platform validation
-- [ ] Documentation
-
-**Success Criteria**:
-- ✅ `sourdough genomebin create` produces valid genomeBin
-- ✅ genomeBin installs on all target systems
-- ✅ One-command installation works
-- ✅ Service integration works
-- ✅ Update/rollback works
-
----
-
-### **v0.6.0** - sourDough genomeBin 📝
-
-**Status**: Planned  
-**Timeline**: ~1 week  
-**Effort**: ~10-15 hours
-
-#### **Goals**
-
-Create sourDough's own genomeBin (meta: tool uses itself!).
-
-#### **Deliverables**
-
-**1. Create sourDough genomeBin** (~4 hours)
-- [ ] Use `sourdough genomebin create` to create `sourdough.genome`
-- [ ] Test installation on multiple systems
-- [ ] Validate all modes work
-- [ ] Sign and distribute
-
-**2. Self-Hosting** (~4 hours)
-- [ ] Host at `https://install.sourdough.dev/genome`
-- [ ] Create installation endpoint
-- [ ] Test one-liner: `curl -sSf https://install.sourdough.dev/genome | sh`
-
-**3. Documentation** (~2 hours)
-- [ ] Installation guide
-- [ ] User guide
-- [ ] FAQ
-
-**Success Criteria**:
-- ✅ sourDough installs via genomeBin
-- ✅ One-command installation works
-- ✅ All sourDough modes work after genomeBin install
-- ✅ Meta-circular: tool built with itself!
-
----
-
-### **v0.7.0** - Integration Libraries 📝
-
-**Status**: Planned  
-**Timeline**: ~2-3 weeks  
-**Effort**: ~60-80 hours
-
-#### **Goals**
-
-Provide Rust libraries for biomeOS and neuralAPI to programmatically manage primals, including **ephemeral primal scaffolding** for short-lived entities.
-
-#### **Deliverables**
-
-**1. sourdough-genomebin Crate** (~30 hours)
-- [ ] `GenomeBinLauncher` (launch any primal)
-  - [ ] `new(primal)` - create launcher
-  - [ ] `install()` - install primal
-  - [ ] `health_check()` - query health
-  - [ ] `update(version)` - update primal
-  - [ ] `uninstall()` - remove primal
-- [ ] `GenomeBinRegistry` (discover/manage primals)
-  - [ ] `list_available()` - query registry
-  - [ ] `install(primal, version)` - install from registry
-  - [ ] `is_installed(primal)` - check if installed
-- [ ] Standard JSON-RPC protocol
-  - [ ] `health` - health status
-  - [ ] `capabilities` - what primal can do
-  - [ ] `install` - install primal
-  - [ ] `update` - update version
-  - [ ] `rollback` - restore previous
-  - [ ] `uninstall` - remove primal
-
-**2. Ephemeral Primal Scaffolding** (~15 hours)
-- [ ] `EphemeralOwner<T>` utility in `sourdough-core`
-  - [ ] Spawn protocol: `start()` + `lifecycle.register` with `ephemeral: true`
-  - [ ] Teardown protocol: `lifecycle.deregister` + `stop()` + cleanup
-  - [ ] Drop guard for safety-net deregistration on panic
-  - [ ] Scoped capability namespacing (`session.{id}.*`, `npc.{id}.*`)
-  - [ ] Health contract: state-based `PrimalHealth` responses
-- [ ] Use-case reference implementations
-  - [ ] Session-as-primal (game sessions with bounded lifetime)
-  - [ ] NPC-as-primal (AI agents with independent context)
-  - [ ] Mod-as-primal (content packs discovered by capability)
-  - [ ] Match-as-primal (multiplayer servers spawned per match)
-- [ ] Provenance-outlives-runtime pattern (rhizoCrypt DAG persists after teardown)
-- [ ] See: `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for full specification
-
-**3. biomeOS Integration** (~15 hours)
-- [ ] `genomebin/integration/biomeos-launcher.rs`
-- [ ] biomeOS ephemeral lifecycle support (`lifecycle.register` with `ephemeral: true`)
-- [ ] Examples for biomeOS team
-- [ ] Integration tests
-
-**4. neuralAPI Integration** (~15 hours)
-- [ ] `genomebin/integration/neuralapi-launcher.rs`
-- [ ] Examples for neuralAPI team
-- [ ] Integration tests
-
-**Success Criteria**:
-- ✅ biomeOS can programmatically launch any primal (long-lived or ephemeral)
-- ✅ neuralAPI can manage primal dependencies
-- ✅ Ephemeral primals register/deregister with biomeOS at runtime
-- ✅ Ephemeral provenance persists after primal teardown
-- ✅ Standard protocol works across all primals
-- ✅ Documentation complete
-
----
-
-### **v1.0.0** - Production Ready 🎯
-
-**Status**: Future  
-**Timeline**: 6+ months  
-**Effort**: Ongoing refinement
-
-#### **Goals**
-
-sourDough is the definitive reference implementation and tooling platform.
-
-#### **Requirements**
-
-**1. Stability**
-- [ ] All APIs stable (semantic versioning)
-- [ ] Backward compatibility guaranteed
-- [ ] Comprehensive test coverage (>90%)
-
-**2. Documentation**
-- [ ] Complete API documentation
-- [ ] Comprehensive guides
-- [ ] Video tutorials
-- [ ] Case studies
-
-**3. Ecosystem Adoption**
-- [ ] All primals use `sourdough-core` traits
+- 6 unused dependencies removed
+- All lint suppressions documented with `#[expect(reason)]`
+
+### v0.2.0 -- Cross-Compilation and Signing (Next)
+
+**Goals**: Production-ready distribution pipeline
+
+- [ ] Cross-compile for x86_64-musl, aarch64-musl, x86_64-macos, aarch64-macos
+- [ ] Binary analysis: no C symbols, static linking verified
+- [ ] genomeBin signing via Pure Rust sequoia-openpgp
+- [ ] SHA256 checksums
+- [ ] Harvest to plasmidBin
+
+**Success criteria**:
+- Builds on all targets without C dependencies
+- Binaries are statically linked
+- Signed genomeBins verify correctly
+
+### v0.3.0 -- Ephemeral Primal Scaffolding
+
+**Goals**: Support short-lived primals (sessions, NPCs, matches, mods)
+
+See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for full specification.
+
+- [ ] `EphemeralOwner<T>` utility in sourdough-core
+- [ ] Spawn protocol: `start()` + `lifecycle.register` with `ephemeral: true`
+- [ ] Teardown protocol: `lifecycle.deregister` + `stop()` + cleanup
+- [ ] Drop guard for safety-net deregistration on panic
+- [ ] Scoped capability namespacing (`session.{id}.*`, `npc.{id}.*`)
+- [ ] Reference implementations: session-as-primal, NPC-as-primal
+
+**Success criteria**:
+- Ephemeral primals register/deregister with biomeOS at runtime
+- Provenance outlives runtime (rhizoCrypt DAG persists after teardown)
+- Drop guard ensures cleanup on panic
+
+### v0.4.0 -- Integration Libraries
+
+**Goals**: Programmatic primal management for biomeOS and neuralAPI
+
+- [ ] GenomeBinLauncher: install, health_check, update, uninstall any primal
+- [ ] GenomeBinRegistry: discover and manage available primals
+- [ ] biomeOS ephemeral lifecycle support
+- [ ] Standard JSON-RPC protocol for primal management
+- [ ] Integration tests with biomeOS team
+
+**Success criteria**:
+- biomeOS can programmatically launch any primal
+- neuralAPI can manage primal dependencies
+- Standard protocol works across all primals
+
+### v1.0.0 -- Production Ready
+
+**Goals**: Stable APIs, comprehensive adoption
+
+- [ ] All APIs stable (semantic versioning, backward compatibility)
+- [ ] All primals use sourDough scaffolding
 - [ ] All ecoBins use sourDough genomeBin tooling
-- [ ] biomeOS uses sourDough for primal management
-- [ ] neuralAPI uses sourDough for dependencies
-
-**4. Performance**
-- [ ] genomeBin creation < 1 minute
-- [ ] genomeBin installation < 30 seconds
-- [ ] Validation commands < 5 seconds
-
-**5. Reliability**
-- [ ] Zero known critical bugs
-- [ ] Battle-tested in production
+- [ ] biomeOS and neuralAPI use sourDough libraries
 - [ ] Security audit complete
-
-**Success Criteria**:
-- ✅ Used by 100% of ecoPrimals
-- ✅ Zero regressions in 6 months
-- ✅ Community contributors
-- ✅ Production deployments
+- [ ] genomeBin creation < 1 minute, installation < 30 seconds
 
 ---
 
-## 📈 Milestones Summary
+## Quality Targets
 
-| Version | Milestone | Timeline | Effort | Status |
-|---------|-----------|----------|--------|--------|
-| v0.2.0 | Foundation Complete | Jan 2026 | - | ✅ Done |
-| v0.3.0 | UniBin Implementation | Feb 2026 | 40-60h | 📝 Next |
-| v0.4.0 | ecoBin Certification | Mar 2026 | 20-30h | ⏳ Planned |
-| v0.5.0 | genomeBin Tooling | Apr 2026 | 60-80h | ⏳ Planned |
-| v0.6.0 | sourDough genomeBin | May 2026 | 10-15h | ⏳ Planned |
-| v0.7.0 | Integration Libraries | Jun 2026 | 60-80h | ⏳ Planned |
-| v1.0.0 | Production Ready | Q4 2026 | Ongoing | 🎯 Goal |
-
-**Total Development**: ~190-265 hours across 6-9 months
+| Metric | Current | Target (v1.0) |
+|--------|---------|---------------|
+| Test coverage | 94.40% | >90% maintained |
+| Tests passing | 229/229 | All passing |
+| Clippy | zero warnings | zero warnings |
+| Unsafe code | zero | zero |
+| C dependencies | zero | zero |
+| Max file size | 789 lines | <1000 lines |
+| Build time | <15s incremental | <30s clean |
 
 ---
 
-## 🎯 Immediate Next Steps (v0.3.0)
+## Related Documents
 
-### **Week 1-2: CLI Foundation**
-
-**Days 1-3**: Set up CLI infrastructure
-- [ ] Create `crates/sourdough/` with `clap`
-- [ ] Implement argument parsing
-- [ ] Set up logging
-- [ ] Basic `--help` and `--version`
-
-**Days 4-7**: Scaffold commands
-- [ ] Implement `scaffold new-primal`
-- [ ] Implement `scaffold new-crate`
-- [ ] Test scaffolding
-- [ ] Documentation
-
-**Days 8-10**: Validation commands
-- [ ] Implement `validate primal`
-- [ ] Implement `validate unibin`
-- [ ] Implement `validate ecobin`
-- [ ] Test validation
-- [ ] Documentation
-
-**Days 11-14**: Polish and release
-- [ ] Doctor command
-- [ ] Integration tests
-- [ ] User documentation
-- [ ] Release v0.3.0
+- [ARCHITECTURE.md](ARCHITECTURE.md) -- how sourDough is built
+- [SOURDOUGH_SPECIFICATION.md](SOURDOUGH_SPECIFICATION.md) -- what sourDough is
+- [EPHEMERAL_PRIMAL_SCAFFOLDING.md](EPHEMERAL_PRIMAL_SCAFFOLDING.md) -- ephemeral primal spec
+- [CONVENTIONS.md](../CONVENTIONS.md) -- coding conventions
 
 ---
 
-## 🎊 Success Metrics
-
-### **Technical Metrics**
-
-- **Code Coverage**: >85% by v1.0.0
-- **Build Time**: <30 seconds (clean build)
-- **Binary Size**: <5MB (stripped, musl)
-- **Dependencies**: <50 crates total
-- **Documentation**: 100% public APIs documented
-
-### **Adoption Metrics**
-
-- **Primal Usage**: 100% of new primals use sourDough scaffolding
-- **ecoBin Usage**: 100% of ecoBins use sourDough genomeBin tools
-- **Integration**: biomeOS and neuralAPI use sourDough libraries
-
-### **Quality Metrics**
-
-- **Bugs**: <5 open critical bugs at any time
-- **Response Time**: Issue triage <24 hours
-- **Stability**: No regressions for 3+ months before v1.0.0
-
----
-
-## 📚 Related Documents
-
-- `SOURDOUGH_SPECIFICATION.md` - What sourDough is
-- `ARCHITECTURE.md` - How sourDough is built
-- [`CONVENTIONS.md`](../CONVENTIONS.md) - Coding conventions
-
----
-
-**Date**: January 19, 2026  
-**Version**: 0.1.0  
-**Status**: Foundation complete, UniBin next  
-**Timeline**: v1.0.0 by Q4 2026
-
-The nascent budding primal for ecoPrimals.
-
+**Version**: 0.1.0
+**Date**: April 3, 2026
+**Status**: Foundation complete, cross-compilation and signing next

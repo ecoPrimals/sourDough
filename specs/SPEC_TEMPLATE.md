@@ -1,10 +1,10 @@
-# {{PRIMAL_NAME}} — Specification
+# {{PRIMAL_NAME}} -- Specification
 
-**Version:** 0.1.0 (Draft)  
-**Status:** Architectural Specification  
-**Author:** ecoPrimals Project  
-**Date:** {{DATE}}  
-**License:** AGPL-3.0  
+**Version:** 0.1.0 (Draft)
+**Status:** Architectural Specification
+**Author:** ecoPrimals Project
+**Date:** {{DATE}}
+**License:** AGPL-3.0-or-later (scyBorg Provenance Trio)
 
 ---
 
@@ -36,8 +36,6 @@
 pub struct {{PRIMARY_STRUCT}} {
     /// Unique identifier
     pub id: {{ID_TYPE}},
-    
-    // Add fields
 }
 ```
 
@@ -52,20 +50,21 @@ pub struct {{PRIMARY_STRUCT}} {
 ### 3.1 Component Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     {{PRIMAL_NAME}} Service                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
-│  │ Component 1 │  │ Component 2 │  │      Component 3        │ │
-│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘ │
-│         │                │                      │               │
-│         ▼                ▼                      ▼               │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │                    Storage Layer                           │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
++---------------------------------------------------------------+
+|                     {{PRIMAL_NAME}} Service                    |
++---------------------------------------------------------------+
+|                                                               |
+|  +-----------+  +-----------+  +---------------------------+  |
+|  | Component |  | Component |  |       Component 3         |  |
+|  |     1     |  |     2     |  |                           |  |
+|  +-----+-----+  +-----+-----+  +-------------+-------------+  |
+|        |              |                      |                |
+|        v              v                      v                |
+|  +-----------------------------------------------------------+|
+|  |                    Storage Layer                           ||
+|  +-----------------------------------------------------------+|
+|                                                               |
++---------------------------------------------------------------+
 ```
 
 ### 3.2 Component Details
@@ -74,43 +73,40 @@ pub struct {{PRIMARY_STRUCT}} {
 
 ---
 
-## 4. API Specification
+## 4. IPC Specification
 
-### 4.1 gRPC Service
+### 4.1 JSON-RPC 2.0 Methods (Primary)
 
-```protobuf
-syntax = "proto3";
-
-package {{primal_name}}.v1;
-
-service {{PrimalName}} {
-    // Define RPCs
+```json
+// Method naming: domain.verb
+{
+    "jsonrpc": "2.0",
+    "method": "{{primal_name}}.{{verb}}",
+    "params": { "key": "value" },
+    "id": 1
 }
 ```
 
-### 4.2 REST API
+### 4.2 tarpc Service (Secondary, High-Throughput)
 
-```yaml
-openapi: 3.0.0
-info:
-  title: {{PrimalName}} API
-  version: 1.0.0
-
-paths:
-  /resource:
-    get:
-      summary: Get resource
+```rust
+#[tarpc::service]
+pub trait {{PrimalName}}Rpc {
+    async fn health() -> Result<HealthReport, String>;
+    async fn state() -> Result<PrimalState, String>;
+    // Add primal-specific methods
+}
 ```
 
 ---
 
 ## 5. Integration Points
 
-### 5.1 BearDog Integration
+### 5.1 BearDog Integration (Identity)
 
 {{BEARDOG_INTEGRATION}}
 
-### 5.2 Songbird Integration
+### 5.2 Songbird Integration (Discovery)
 
 {{SONGBIRD_INTEGRATION}}
 
@@ -164,11 +160,11 @@ paths:
 
 ## 10. References
 
-- [SourDough Core](../sourDough/) — Common traits
-- [BearDog](../beardog/) — Identity and signing
-- [Songbird](../songbird/) — Service discovery
+- [sourDough Core](../sourDough/) -- Primal traits and scaffolding
+- [BearDog](../beardog/) -- Identity and signing
+- [Songbird](../songbird/) -- Service discovery
+- [wateringHole Standards](../../infra/wateringHole/) -- Ecosystem standards
 
 ---
 
 *{{PRIMAL_NAME}}: {{TAGLINE}}*
-
