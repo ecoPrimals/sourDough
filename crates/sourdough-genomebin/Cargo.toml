@@ -1,11 +1,11 @@
 [package]
 name = "sourdough-genomebin"
-version = "0.1.0"
-edition = "2024"
-authors = ["ecoPrimals Team"]
 description = "Pure Rust genomeBin infrastructure - type-safe, concurrent, universal deployment"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/ecoPrimals/sourDough"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
 
 [dependencies]
 # Async runtime
@@ -44,6 +44,9 @@ chrono = { workspace = true }
 
 # NOTE: GPG signing removed for now (gpgme has C dependencies)
 # Future: Add Pure Rust signing via sequoia-openpgp
+
+[lints]
+workspace = true
 
 [dev-dependencies]
 tempfile = { workspace = true }

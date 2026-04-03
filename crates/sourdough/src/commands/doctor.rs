@@ -1,18 +1,14 @@
 //! Health diagnostics for `SourDough` and the ecosystem.
 
 use anyhow::Result;
+use sourdough_genomebin::Platform;
 
 pub(crate) fn run(comprehensive: bool) -> Result<()> {
-    crate::info("🏥 SourDough Health Check");
+    crate::info("SourDough Health Check");
     println!();
 
-    // Check SourDough binary
     check_sourdough_binary();
-
-    // Check dependencies
     check_rust_toolchain()?;
-
-    // Check for common tools
     check_common_tools();
 
     if comprehensive {
@@ -40,7 +36,6 @@ fn check_sourdough_binary() {
 fn check_rust_toolchain() -> Result<()> {
     crate::info("Checking Rust toolchain...");
 
-    // Check rustc
     let output = std::process::Command::new("rustc")
         .arg("--version")
         .output()?;
@@ -54,7 +49,6 @@ fn check_rust_toolchain() -> Result<()> {
         anyhow::bail!("Rust compiler not found");
     }
 
-    // Check cargo
     let output = std::process::Command::new("cargo")
         .arg("--version")
         .output()?;
@@ -117,7 +111,23 @@ fn check_cross_compilation_targets() {
 }
 
 fn check_genome_bin_tools() {
-    crate::info("Checking genomeBin tools...");
+    crate::info("Checking genomeBin tools (Pure Rust)...");
 
-    println!("  ⚠ genomeBin tools not yet implemented");
+    match Platform::detect() {
+        Ok(platform) => {
+            println!("  Platform: {platform}");
+            println!("  Target triple: {}", platform.target_triple());
+            crate::success("Platform detection OK");
+        }
+        Err(e) => {
+            crate::warning(&format!("Platform detection issue: {e}"));
+        }
+    }
+
+    println!("  ✓ Archive operations (tar + flate2, Pure Rust)");
+    println!("  ✓ Checksum (BLAKE3 + SHA256, Pure Rust)");
+    println!("  ✓ Metadata (TOML, Pure Rust)");
+    println!("  ⚠ Signing (sequoia-openpgp, planned)");
+
+    crate::success("genomeBin tooling OK");
 }

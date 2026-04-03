@@ -13,34 +13,25 @@
 //!
 //! ## Example
 //!
-//! ```rust,ignore
-//! use sourdough_core::{
-//!     PrimalLifecycle, PrimalHealth, PrimalConfig,
-//!     HealthStatus, PrimalError,
-//! };
+//! ```
+//! use sourdough_core::{PrimalLifecycle, PrimalState, PrimalError};
 //!
-//! pub struct MyPrimal {
-//!     config: MyConfig,
-//!     running: bool,
-//! }
+//! struct MyPrimal { state: PrimalState }
 //!
-//! #[async_trait::async_trait]
 //! impl PrimalLifecycle for MyPrimal {
+//!     fn state(&self) -> PrimalState { self.state }
+//!
 //!     async fn start(&mut self) -> Result<(), PrimalError> {
-//!         self.running = true;
+//!         self.state = PrimalState::Running;
 //!         Ok(())
 //!     }
 //!
 //!     async fn stop(&mut self) -> Result<(), PrimalError> {
-//!         self.running = false;
+//!         self.state = PrimalState::Stopped;
 //!         Ok(())
 //!     }
 //! }
 //! ```
-
-#![forbid(unsafe_code)]
-#![warn(missing_docs, rust_2018_idioms, unreachable_pub)]
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 pub mod config;
 pub mod discovery;

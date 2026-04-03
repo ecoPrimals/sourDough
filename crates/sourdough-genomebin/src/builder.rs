@@ -161,7 +161,6 @@ pub struct GenomeBin {
     version: String,
     ecobins: HashMap<String, PathBuf>,
     output: PathBuf,
-    #[expect(dead_code, reason = "reserved for future concurrent processing")]
     parallel: bool,
     wrapper_script: Option<PathBuf>,
 }
@@ -200,10 +199,25 @@ impl GenomeBin {
         let temp_dir = tempfile::tempdir()?;
         let archive_path = temp_dir.path().join("payload.tar.gz");
 
-        let mut files = Vec::new();
-        for (target, path) in &self.ecobins {
-            let dest = PathBuf::from(format!("ecobins/{}-{}", self.primal, target));
-            files.push((path.clone(), dest));
+        let files: Vec<(PathBuf, PathBuf)> = self
+            .ecobins
+            .iter()
+            .map(|(target, path)| {
+                let dest = PathBuf::from(format!("ecobins/{}-{}", self.primal, target));
+                (path.clone(), dest)
+            })
+            .collect();
+
+        if self.parallel && files.len() > 1 {
+            info!("Pre-reading {} ecoBins concurrently", files.len());
+            let mut set = tokio::task::JoinSet::new();
+            for (src, _) in &files {
+                let src = src.clone();
+                set.spawn(async move { tokio::fs::read(&src).await });
+            }
+            while let Some(result) = set.join_next().await {
+                result??;
+            }
         }
 
         let builder = ArchiveBuilder::new(&archive_path).compression(9);

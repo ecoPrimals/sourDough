@@ -46,7 +46,10 @@ sourDough provides tooling for the ecosystem:
 
 ### sourDough as UniBin
 
-Single binary, multiple modes:
+Single binary, multiple modes. Note: sourDough is a meta-primal (tooling/scaffolding),
+not a long-running service. The `server --port` subcommand specified by
+`UNIBIN_ARCHITECTURE_STANDARD.md` does not apply because sourDough has no
+daemon mode — all operations are CLI commands that complete and exit.
 
 ```bash
 # Scaffolding (output is self-contained, no sourDough dependency)

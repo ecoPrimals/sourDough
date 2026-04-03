@@ -8,10 +8,6 @@
 //! - Validating primal compliance
 //! - Health diagnostics
 
-#![forbid(unsafe_code)]
-#![warn(missing_docs, rust_2018_idioms, unreachable_pub)]
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::Colorize;

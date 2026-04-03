@@ -392,6 +392,102 @@ fn test_subcommand_help() {
     }
 }
 
+/// Test genomebin test command on a created genomeBin
+#[test]
+fn test_genomebin_test_valid() {
+    let temp_dir = TempDir::new().unwrap();
+    let ecobins_dir = temp_dir.path().join("ecobins");
+    std::fs::create_dir_all(&ecobins_dir).unwrap();
+
+    std::fs::write(
+        ecobins_dir.join("testPrimal-x86_64-unknown-linux-musl"),
+        "#!/bin/sh\necho test",
+    )
+    .unwrap();
+
+    let output_path = temp_dir.path().join("test.genome");
+
+    // Create a genomeBin first
+    let mut create_cmd = Command::new(sourdough_bin());
+    create_cmd
+        .arg("genomebin")
+        .arg("create")
+        .arg("--primal")
+        .arg("testPrimal")
+        .arg("--version")
+        .arg("1.0.0")
+        .arg("--ecobins")
+        .arg(&ecobins_dir)
+        .arg("--output")
+        .arg(&output_path);
+    create_cmd.assert().success();
+
+    // Now test it
+    let mut test_cmd = Command::new(sourdough_bin());
+    test_cmd.arg("genomebin").arg("test").arg(&output_path);
+
+    let output = test_cmd.output().unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Testing genomeBin") || stdout.contains("Validation Results"));
+}
+
+/// Test genomebin test on a missing file
+#[test]
+fn test_genomebin_test_missing_file() {
+    let mut cmd = Command::new(sourdough_bin());
+    cmd.arg("genomebin")
+        .arg("test")
+        .arg("/nonexistent/genome.bin");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("not found"));
+}
+
+/// Test genomebin sign returns informative error
+#[test]
+fn test_genomebin_sign_not_implemented() {
+    let temp_dir = TempDir::new().unwrap();
+    let dummy = temp_dir.path().join("dummy.genome");
+    std::fs::write(&dummy, "dummy content").unwrap();
+
+    let mut cmd = Command::new(sourdough_bin());
+    cmd.arg("genomebin").arg("sign").arg(&dummy);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("sequoia-openpgp"));
+}
+
+/// Test genomebin sign on missing file
+#[test]
+fn test_genomebin_sign_missing_file() {
+    let mut cmd = Command::new(sourdough_bin());
+    cmd.arg("genomebin")
+        .arg("sign")
+        .arg("/nonexistent/genome.bin");
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("not found"));
+}
+
+/// Test doctor comprehensive checks genomeBin tools
+#[test]
+fn test_doctor_comprehensive_genomebin_tools() {
+    let mut cmd = Command::new(sourdough_bin());
+    cmd.args(["doctor", "--comprehensive"]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("genomeBin tools"))
+        .stdout(
+            predicate::str::contains("Platform detection OK")
+                .or(predicate::str::contains("Platform:")),
+        )
+        .stdout(predicate::str::contains("Pure Rust"));
+}
+
 /// Test scaffold new-crate command
 #[test]
 fn test_scaffold_new_crate() {

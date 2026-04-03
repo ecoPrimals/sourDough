@@ -2,9 +2,6 @@
 /target/
 **/target/
 
-# Cargo.lock for libraries (keep for binaries)
-# Cargo.lock is kept for this workspace
-
 # Debug artifacts
 **/*.pdb
 
@@ -21,7 +18,6 @@ tarpaulin-report.html
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Environment and local config
 .env
@@ -37,13 +33,10 @@ tarpaulin-report.html
 *.bak
 *.old
 
-# MacOS
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Linux
-*~
 
 # Documentation build
 book/
@@ -52,4 +45,3 @@ docs/_build/
 # Benchmarking
 criterion/
 bench-results/
-

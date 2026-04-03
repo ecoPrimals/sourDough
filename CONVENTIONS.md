@@ -40,9 +40,10 @@ primalName/
 ### Code Style
 
 - **Edition**: 2024
-- **Linting**: `#![warn(clippy::all, clippy::pedantic)]`
-- **Docs**: `#![warn(missing_docs)]`
+- **Linting**: Workspace-level `[workspace.lints]` — `clippy::pedantic`, `clippy::nursery`, `forbid(unsafe_code)`
+- **Docs**: `warn(missing_docs)` via workspace lints
 - **Format**: `cargo fmt` (rustfmt defaults)
+- **Suppressions**: `#[expect(lint, reason = "...")]` only — no `#[allow()]`
 
 ### Error Handling
 
@@ -282,8 +283,8 @@ serde = { version = "1.0", features = ["derive"] }
 
 ### Required Dependencies
 
+Scaffolded primals are **self-contained** with inlined traits (no `sourdough-core` dependency).
 All primals should use:
-- `sourdough-core` — Common traits and RPC layer
 - `tokio` — Async runtime
 - `tarpc` — RPC communication
 - `serde` — Serialization
@@ -310,9 +311,9 @@ All primals should use:
 
 ### Unsafe Code
 
-- Minimize `unsafe`
-- Document all `unsafe` blocks
-- Gate platform-specific code
+- `#![forbid(unsafe_code)]` enforced via `[workspace.lints]`
+- No `unsafe` blocks permitted in any crate
+- Platform-specific behavior via runtime detection (no `#[cfg]` gates)
 
 ---
 

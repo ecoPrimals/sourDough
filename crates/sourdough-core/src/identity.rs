@@ -115,28 +115,22 @@ impl std::fmt::Debug for Signature {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```
 /// use sourdough_core::{PrimalIdentity, Did, Signature, PrimalError};
 ///
-/// struct MyPrimal {
-///     did: Did,
-///     // ... identity service client (discovered at runtime)
-/// }
+/// struct MyPrimal { did: Did }
 ///
-/// #[async_trait::async_trait]
 /// impl PrimalIdentity for MyPrimal {
-///     fn did(&self) -> &Did {
-///         &self.did
-///     }
+///     fn did(&self) -> &Did { &self.did }
 ///
 ///     async fn sign(&self, data: &[u8]) -> Result<Signature, PrimalError> {
-///         // Use identity service to sign (discovered at runtime)
+///         Ok(Signature::new(data.to_vec(), "Ed25519", self.did.as_str()))
 ///     }
 ///
-///     async fn verify(&self, data: &[u8], signature: &Signature, signer: &Did)
-///         -> Result<bool, PrimalError>
-///     {
-///         // Use identity service to verify (discovered at runtime)
+///     async fn verify(
+///         &self, data: &[u8], signature: &Signature, _signer: &Did,
+///     ) -> Result<bool, PrimalError> {
+///         Ok(signature.bytes == data)
 ///     }
 /// }
 /// ```

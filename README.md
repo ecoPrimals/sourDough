@@ -45,12 +45,12 @@ Scaffolded primals include their own core traits (`PrimalLifecycle`, `PrimalHeal
 
 | Metric | Value |
 |--------|-------|
-| Tests | 229 passing |
-| Coverage | 94.40% (llvm-cov, target: 90%) |
-| Clippy | zero warnings (pedantic + nursery, `-D warnings`) |
-| Unsafe | zero (`#![forbid(unsafe_code)]` on all crates) |
+| Tests | 237+ passing (unit, integration, e2e, doc) |
+| Coverage | 95%+ (llvm-cov, target: 90%) |
+| Clippy | zero warnings (workspace-level pedantic + nursery) |
+| Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
 | C deps | zero (Pure Rust) |
-| Max file | < 800 lines (target: 1000) |
+| Max file | < 450 lines (target: 1000) |
 
 ## Standards Compliance
 
@@ -98,6 +98,8 @@ cargo doc --workspace --no-deps
 
 ## Documentation
 
+- [Start Here](START_HERE.md) -- new developer guide
+- [What's Next](WHATS_NEXT.md) -- roadmap and priorities
 - [Specification](specs/SOURDOUGH_SPECIFICATION.md)
 - [Architecture](specs/ARCHITECTURE.md)
 - [Roadmap](specs/ROADMAP.md)

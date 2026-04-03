@@ -1,359 +1,11 @@
-//! Scaffolding commands for creating new primals and crates.
+//! Inlined primal DNA templates — the offspring is self-contained after budding.
 //!
-//! sourDough is the nascent primal — the budding primal. When it scaffolds
-//! a new primal, the offspring is fully self-contained: all primal DNA
-//! (traits, types, patterns) is inlined. No runtime dependency on sourDough.
-
-use anyhow::{Context, Result};
-use clap::Subcommand;
-use std::path::{Path, PathBuf};
-
-#[derive(Subcommand)]
-pub(crate) enum ScaffoldCommand {
-    /// Create a new primal
-    #[command(name = "new-primal")]
-    NewPrimal {
-        /// Name of the primal (e.g., "rhizoCrypt")
-        name: String,
-
-        /// Description of the primal
-        description: String,
-
-        /// Output directory (defaults to parent of current directory)
-        #[arg(short, long)]
-        output: Option<PathBuf>,
-    },
-
-    /// Add a new crate to an existing primal
-    #[command(name = "new-crate")]
-    NewCrate {
-        /// Name of the primal
-        primal: String,
-
-        /// Name of the new crate (e.g., "rhizocrypt-storage")
-        crate_name: String,
-
-        /// Path to the primal directory
-        #[arg(short, long)]
-        path: Option<PathBuf>,
-    },
-}
-
-pub(crate) fn run(cmd: ScaffoldCommand) -> Result<()> {
-    match cmd {
-        ScaffoldCommand::NewPrimal {
-            name,
-            description,
-            output,
-        } => create_primal(&name, &description, output),
-        ScaffoldCommand::NewCrate {
-            primal,
-            crate_name,
-            path,
-        } => create_crate(&primal, &crate_name, path),
-    }
-}
-
-fn create_primal(name: &str, description: &str, output: Option<PathBuf>) -> Result<()> {
-    crate::info(&format!("Creating new primal: {name}"));
-
-    let output_dir = output.unwrap_or_else(|| PathBuf::from("..").join(name));
-    std::fs::create_dir_all(&output_dir).context("Failed to create primal directory")?;
-
-    let crates_dir = output_dir.join("crates");
-    std::fs::create_dir_all(&crates_dir)?;
-
-    write_workspace_cargo_toml(&output_dir, name)?;
-    create_core_crate(&crates_dir, name)?;
-    write_specs_directory(&output_dir, name, description)?;
-    write_readme(&output_dir, name, description)?;
-    write_conventions(&output_dir)?;
-
-    crate::success(&format!(
-        "Created primal '{name}' at {}",
-        output_dir.display()
-    ));
-    crate::info("Next steps:");
-    println!("  cd {}", output_dir.display());
-    println!("  cargo build");
-    println!("  cargo test");
-
-    Ok(())
-}
-
-fn create_crate(primal: &str, crate_name: &str, path: Option<PathBuf>) -> Result<()> {
-    crate::info(&format!("Adding crate '{crate_name}' to primal '{primal}'"));
-
-    let primal_dir = path.unwrap_or_else(|| PathBuf::from("..").join(primal));
-
-    if !primal_dir.exists() {
-        anyhow::bail!("Primal directory not found: {}", primal_dir.display());
-    }
-
-    let crate_dir = primal_dir.join("crates").join(crate_name);
-    let src_dir = crate_dir.join("src");
-    std::fs::create_dir_all(&src_dir)?;
-
-    let core_crate = format!("{}-core", primal.to_lowercase());
-    let core_crate_ident = core_crate.replace('-', "_");
-
-    std::fs::write(
-        crate_dir.join("Cargo.toml"),
-        format!(
-            r#"[package]
-name = "{crate_name}"
-description = "{crate_name} crate"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-authors.workspace = true
-
-[dependencies]
-{core_crate} = {{ path = "../{core_crate}" }}
-tokio = {{ workspace = true }}
-serde = {{ workspace = true }}
-thiserror = {{ workspace = true }}
-"#,
-        ),
-    )?;
-
-    std::fs::write(
-        src_dir.join("lib.rs"),
-        format!(
-            r"//! # {crate_name}
-//!
-//! Part of the {primal} primal.
-
-#![forbid(unsafe_code)]
-#![warn(missing_docs, clippy::all, clippy::pedantic, clippy::nursery)]
-
-pub use {core_crate_ident}::PrimalError;
-",
-        ),
-    )?;
-
-    update_workspace_members(&primal_dir, crate_name)?;
-
-    crate::success(&format!("Created crate '{crate_name}'"));
-    crate::info("Workspace members updated in Cargo.toml.");
-
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// File generators
-// ---------------------------------------------------------------------------
-
-fn write_workspace_cargo_toml(dir: &Path, name: &str) -> Result<()> {
-    let core_crate_name = format!("{}-core", name.to_lowercase());
-    std::fs::write(
-        dir.join("Cargo.toml"),
-        format!(
-            r#"[workspace]
-resolver = "2"
-members = [
-    "crates/{core_crate_name}",
-]
-
-[workspace.package]
-version = "0.1.0"
-edition = "2024"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/ecoPrimals/{name}"
-authors = ["ecoPrimals Project"]
-
-[workspace.dependencies]
-# Async runtime
-tokio = {{ version = "1.40", features = ["macros", "rt-multi-thread", "signal", "net", "io-util", "time"] }}
-
-# Serialization
-serde = {{ version = "1.0", features = ["derive"] }}
-serde_json = "1.0"
-toml = "0.8"
-
-# Error handling
-thiserror = "2.0"
-anyhow = "1.0"
-
-# Logging
-tracing = "0.1"
-tracing-subscriber = {{ version = "0.3", features = ["env-filter"] }}
-"#,
-        ),
-    )?;
-    Ok(())
-}
-
-fn primal_rust_type_name(name: &str) -> String {
-    let mut chars = name.chars();
-    let Some(first) = chars.next() else {
-        return String::new();
-    };
-    first.to_uppercase().collect::<String>() + chars.as_str()
-}
-
-fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
-    let core_crate_name = format!("{}-core", name.to_lowercase());
-    let core_dir = crates_dir.join(&core_crate_name);
-    let src_dir = core_dir.join("src");
-
-    std::fs::create_dir_all(&src_dir)?;
-
-    std::fs::write(
-        core_dir.join("Cargo.toml"),
-        generated_core_cargo_toml(&core_crate_name, name),
-    )?;
-    std::fs::write(src_dir.join("error.rs"), GENERATED_ERROR_RS)?;
-    std::fs::write(src_dir.join("lifecycle.rs"), GENERATED_LIFECYCLE_RS)?;
-    std::fs::write(src_dir.join("health.rs"), GENERATED_HEALTH_RS)?;
-    std::fs::write(src_dir.join("lib.rs"), generated_lib_rs(name))?;
-
-    Ok(())
-}
-
-fn write_specs_directory(dir: &Path, name: &str, description: &str) -> Result<()> {
-    let specs_dir = dir.join("specs");
-    std::fs::create_dir_all(&specs_dir)?;
-
-    let date = chrono::Local::now().format("%B %d, %Y");
-    std::fs::write(
-        specs_dir.join(format!("{}_SPECIFICATION.md", name.to_uppercase())),
-        format!(
-            r"# {name} - Specification
-
-**Version**: 0.1.0
-**Date**: {date}
-**Status**: Draft
-
----
-
-## Purpose
-
-{description}
-
-## Architecture
-
-(To be defined)
-
-## Components
-
-(To be defined)
-
----
-
-**Date**: {date}
-**Version**: 0.1.0
-",
-        ),
-    )?;
-
-    Ok(())
-}
-
-fn write_readme(dir: &Path, name: &str, description: &str) -> Result<()> {
-    std::fs::write(
-        dir.join("README.md"),
-        format!(
-            r"# {name}
-
-**Status**: Draft
-**Purpose**: {description}
-
----
-
-## Quick Start
-
-```bash
-cargo build
-cargo test
-```
-
-## Structure
-
-```
-{name}/
-├── crates/
-│   └── {core}-core/
-└── specs/
-```
-
----
-
-*Scaffolded by sourDough — the nascent primal.*
-",
-            core = name.to_lowercase(),
-        ),
-    )?;
-
-    Ok(())
-}
-
-fn write_conventions(dir: &Path) -> Result<()> {
-    std::fs::write(
-        dir.join("CONVENTIONS.md"),
-        r"# Coding Conventions
-
-This primal follows the ecoPrimals coding conventions.
-
-## Quick Reference
-
-- **Edition**: 2024
-- **License**: AGPL-3.0-or-later (scyBorg triple license)
-- **Linting**: `#![forbid(unsafe_code)]`, `#![warn(clippy::all, clippy::pedantic, clippy::nursery)]`
-- **Docs**: `#![warn(missing_docs)]`
-- **Max file size**: 1000 LOC
-- **Test coverage**: 90%+
-- **IPC**: JSON-RPC 2.0 (`domain.verb` naming)
-- **Identity**: Self-sovereign DIDs
-- **Discovery**: Runtime via universal adapter (zero hardcoding)
-
-*Consistency is the foundation of collaboration.*
-",
-    )?;
-
-    Ok(())
-}
-
-fn update_workspace_members(primal_dir: &Path, crate_name: &str) -> Result<()> {
-    let cargo_path = primal_dir.join("Cargo.toml");
-    let raw = std::fs::read_to_string(&cargo_path)
-        .with_context(|| format!("failed to read {}", cargo_path.display()))?;
-    let mut root: toml::Value =
-        toml::from_str(&raw).context("workspace Cargo.toml is not valid TOML")?;
-    let workspace = root
-        .as_table_mut()
-        .and_then(|t| t.get_mut("workspace"))
-        .and_then(toml::Value::as_table_mut)
-        .context("missing [workspace] table in Cargo.toml")?;
-    let members = workspace
-        .entry("members")
-        .or_insert_with(|| toml::Value::Array(Vec::new()));
-    let arr = members
-        .as_array_mut()
-        .context("[workspace].members must be an array")?;
-    let entry = format!("crates/{crate_name}");
-    if arr.iter().any(|v| v.as_str() == Some(entry.as_str())) {
-        crate::info(&format!(
-            "Crate '{crate_name}' already listed in workspace members"
-        ));
-        return Ok(());
-    }
-    arr.push(toml::Value::String(entry));
-    let updated = toml::to_string_pretty(&root).context("failed to serialize Cargo.toml")?;
-    std::fs::write(&cargo_path, updated)
-        .with_context(|| format!("failed to write {}", cargo_path.display()))?;
-    crate::success(&format!(
-        "Added 'crates/{crate_name}' to [workspace].members"
-    ));
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Inlined primal DNA templates — the offspring is self-contained after budding
-// ---------------------------------------------------------------------------
-
-fn generated_core_cargo_toml(core_crate_name: &str, name: &str) -> String {
+//! These templates are the genetic material that sourDough passes to new primals.
+//! Each scaffolded primal receives its own copy of core traits, types, and patterns
+//! with zero runtime dependency on sourDough.
+
+/// Generate the core crate `Cargo.toml` for a scaffolded primal.
+pub(super) fn core_cargo_toml(core_crate_name: &str, name: &str) -> String {
     format!(
         r#"[package]
 name = "{core_crate_name}"
@@ -377,8 +29,9 @@ tokio = {{ workspace = true, features = ["test-util"] }}
     )
 }
 
-fn generated_lib_rs(name: &str) -> String {
-    let type_name = primal_rust_type_name(name);
+/// Generate the core `lib.rs` with a starter primal implementation.
+pub(super) fn lib_rs(name: &str) -> String {
+    let type_name = super::primal_rust_type_name(name);
     format!(
         r#"//! # {name} Core
 //!
@@ -386,9 +39,6 @@ fn generated_lib_rs(name: &str) -> String {
 //!
 //! Self-contained: all primal DNA (traits, types, patterns) is defined here.
 //! This primal discovers other primals at runtime via JSON-RPC 2.0 IPC.
-
-#![forbid(unsafe_code)]
-#![warn(missing_docs, clippy::all, clippy::pedantic, clippy::nursery)]
 
 pub mod error;
 pub mod health;
@@ -487,7 +137,7 @@ mod tests {{
     )
 }
 
-const GENERATED_ERROR_RS: &str = r#"//! Common error types for this primal.
+pub(super) const ERROR_RS: &str = r#"//! Common error types for this primal.
 //!
 //! Extend this enum with domain-specific variants as your primal evolves.
 
@@ -579,7 +229,7 @@ impl PrimalError {
 }
 "#;
 
-const GENERATED_LIFECYCLE_RS: &str = r#"//! Primal lifecycle management.
+pub(super) const LIFECYCLE_RS: &str = r#"//! Primal lifecycle management.
 //!
 //! Every primal has a lifecycle: created, running, stopped.
 //! This module provides the state machine and trait for managing it.
@@ -681,7 +331,7 @@ pub trait PrimalLifecycle: Send + Sync {
 }
 "#;
 
-const GENERATED_HEALTH_RS: &str = r"//! Health check traits for observability.
+pub(super) const HEALTH_RS: &str = r"//! Health check traits for observability.
 //!
 //! Every primal needs to be observable. This module provides health check
 //! traits usable by orchestrators, load balancers, and monitoring systems.

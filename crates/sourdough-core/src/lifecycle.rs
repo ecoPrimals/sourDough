@@ -62,30 +62,20 @@ impl std::fmt::Display for PrimalState {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```
 /// use sourdough_core::{PrimalLifecycle, PrimalState, PrimalError};
 ///
-/// struct MyPrimal {
-///     state: PrimalState,
-///     // ...
-/// }
+/// struct MyPrimal { state: PrimalState }
 ///
-/// #[async_trait::async_trait]
 /// impl PrimalLifecycle for MyPrimal {
-///     fn state(&self) -> PrimalState {
-///         self.state
-///     }
+///     fn state(&self) -> PrimalState { self.state }
 ///
 ///     async fn start(&mut self) -> Result<(), PrimalError> {
-///         self.state = PrimalState::Starting;
-///         // Initialize resources...
 ///         self.state = PrimalState::Running;
 ///         Ok(())
 ///     }
 ///
 ///     async fn stop(&mut self) -> Result<(), PrimalError> {
-///         self.state = PrimalState::Stopping;
-///         // Clean up resources...
 ///         self.state = PrimalState::Stopped;
 ///         Ok(())
 ///     }

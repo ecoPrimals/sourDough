@@ -30,6 +30,9 @@ blake3 = { workspace = true }
 # RPC
 tarpc = { workspace = true }
 
+[lints]
+workspace = true
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }
 tempfile = "3.12"

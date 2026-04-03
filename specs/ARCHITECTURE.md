@@ -24,34 +24,38 @@ after creation.
 
 ```
 sourDough/
-  Cargo.toml                            Workspace manifest
+  Cargo.toml                            Workspace manifest + lints + release profile
   crates/
     sourdough-core/src/
-      lib.rs                            Re-exports (66 lines)
-      lifecycle.rs                      PrimalLifecycle trait (315 lines)
+      lib.rs                            Re-exports (57 lines)
+      lifecycle.rs                      PrimalLifecycle trait (305 lines)
       health.rs                         PrimalHealth trait (371 lines)
-      identity.rs                       PrimalIdentity trait (420 lines)
+      identity.rs                       PrimalIdentity trait (414 lines)
       discovery.rs                      PrimalDiscovery trait (369 lines)
       config.rs                         PrimalConfig trait (290 lines)
       ipc.rs                            JSON-RPC 2.0 IPC, primary (637 lines)
       rpc.rs                            tarpc RPC, secondary (425 lines)
       error.rs                          Common error types (244 lines)
-      types.rs                          Common types: Did, ContentHash, Timestamp (444 lines)
+      types.rs                          Common types: ContentHash, Timestamp (444 lines)
     sourdough/src/
-      main.rs                           CLI entry point (125 lines)
+      main.rs                           CLI entry point (121 lines)
       commands/
         mod.rs                          Command module declarations (11 lines)
-        scaffold.rs                     new-primal, new-crate (789 lines)
+        scaffold/
+          mod.rs                        Command dispatch + orchestration (154 lines)
+          generators.rs                 File writing logic (220 lines)
+          templates.rs                  Inlined primal DNA constants (438 lines)
         validate.rs                     primal, unibin, ecobin (279 lines)
         genomebin.rs                    create, test, sign (133 lines)
-        doctor.rs                       System health checks (123 lines)
+        doctor.rs                       System health diagnostics (133 lines)
       tests/
-        cli_integration.rs              Integration tests (442 lines)
+        cli_integration.rs              Integration tests (538 lines)
+        e2e_scaffold_lifecycle.rs       E2E scaffold lifecycle (153 lines)
     sourdough-genomebin/src/
-      lib.rs                            Public API (72 lines)
+      lib.rs                            Public API (68 lines)
       platform.rs                       Runtime platform detection (535 lines)
       validator.rs                      genomeBin validation (553 lines)
-      builder.rs                        genomeBin creation (401 lines)
+      builder.rs                        genomeBin creation (415 lines)
       archive.rs                        Pure Rust tar/gzip (251 lines)
       metadata.rs                       Type-safe metadata parsing (242 lines)
       error.rs                          Structured error types (169 lines)
@@ -62,7 +66,7 @@ sourDough/
   archive/                              Fossil record
 ```
 
-Total: 7,705 lines of Rust across 26 files. Largest file: `scaffold.rs` (789 lines).
+Total: ~8,100 lines of Rust across 29 files. Largest file: `ipc.rs` (637 lines).
 
 ---
 
@@ -158,6 +162,7 @@ pub trait PrimalConfig {
 `sourdough-core/src/rpc.rs` provides high-throughput binary IPC:
 
 - Type-safe service definitions via tarpc
+- `bytes::Bytes` for zero-copy on the wire (custom `rpc_bytes_serde`)
 - Used when JSON-RPC 2.0 overhead is unacceptable
 - Same semantic contract, different wire format
 
@@ -190,6 +195,9 @@ sourdough
   doctor [--comprehensive]
 ```
 
+Note: sourDough is a meta-primal (tooling/scaffolding), not a long-running
+service. It has no `server --port` mode per UNIBIN_ARCHITECTURE_STANDARD.
+
 ### Scaffold Independence
 
 When `sourdough scaffold new-primal` creates a new primal:
@@ -199,6 +207,7 @@ When `sourdough scaffold new-primal` creates a new primal:
    `HealthStatus`, `HealthReport`) are **inlined** into the generated code
 3. The new primal has zero dependency on `sourdough-core`
 4. Each `new-crate` within the primal uses a path dependency to the primal's own core
+5. Generated workspace includes `[workspace.lints]` for pedantic/nursery/forbid(unsafe)
 
 This is the **budding primal pattern**: like biological budding, the offspring is
 complete and independent from creation.
@@ -211,18 +220,12 @@ All dependencies are Pure Rust (ecoBin compliant):
 
 ```toml
 [workspace.dependencies]
-tokio = { version = "1.43", features = ["macros", "rt-multi-thread", "signal", "net", "io-util", "time"] }
+tokio = { version = "1.40", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-toml = "0.8"
+tarpc = { version = "0.34", features = ["tokio1", "serde1", "serde-transport"] }
+bytes = { version = "1.11", features = ["serde"] }
+blake3 = "1.5"
 thiserror = "2.0"
-anyhow = "1.0"
-clap = { version = "4.5", features = ["derive"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tarpc = { version = "0.35", features = ["tokio1", "serde-transport"] }
-bytes = "1.9"
-blake3 = { version = "1.5", features = ["pure"] }
 ```
 
 No `ring`, `openssl-sys`, `aws-lc-sys`, `native-tls`, `reqwest`. Crypto operations
@@ -230,13 +233,16 @@ are delegated to BearDog at runtime. HTTP is delegated to Songbird when needed.
 
 ---
 
-## Reference Implementation Principles
+## Lint and Build Configuration
 
-1. **Simplicity**: easy to read, well-documented, minimal complexity
-2. **Compliance**: sourDough follows its own standards (UniBin, ecoBin, `#![forbid(unsafe_code)]`)
-3. **Sovereignty**: primals know only themselves, discover others at runtime
-4. **Zero hardcoding**: OS-assigned ports, capability-based discovery
-5. **Pure Rust**: no C dependencies, no shell scripts
+Workspace-level lint enforcement (`[workspace.lints]` in root `Cargo.toml`):
+
+- `rust.unsafe_code = "forbid"` -- no unsafe in any crate
+- `clippy::pedantic` + `clippy::nursery` at warn level
+- `rust.missing_docs = "warn"` on library crates
+- `.cargo/config.toml`: `rustflags = ["-D", "warnings"]`
+
+Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 
 ---
 
@@ -253,7 +259,7 @@ are delegated to BearDog at runtime. HTTP is delegated to Songbird when needed.
 - scaffold new-primal and new-crate with self-contained output
 - validate primal, unibin, ecobin
 - genomebin create, test, sign
-- doctor diagnostics
+- doctor diagnostics with genomeBin tooling validation
 
 ### Phase 3: Pure Rust genomeBin Library -- COMPLETE
 
@@ -261,6 +267,7 @@ are delegated to BearDog at runtime. HTTP is delegated to Songbird when needed.
 - Type-safe metadata parsing
 - Pure Rust tar/gzip archive operations
 - Comprehensive validation
+- Parallel ecoBin processing
 
 ### Phase 4: Cross-Compilation and Signing -- IN PROGRESS
 

@@ -116,12 +116,12 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for full specification.
 
 | Metric | Current | Target (v1.0) |
 |--------|---------|---------------|
-| Test coverage | 94.40% | >90% maintained |
-| Tests passing | 229/229 | All passing |
-| Clippy | zero warnings | zero warnings |
+| Test coverage | 96%+ | >90% maintained |
+| Tests passing | 239/239 | All passing |
+| Clippy | zero warnings (workspace lints) | zero warnings |
 | Unsafe code | zero | zero |
 | C dependencies | zero | zero |
-| Max file size | 789 lines | <1000 lines |
+| Max file size | 637 lines | <1000 lines |
 | Build time | <15s incremental | <30s clean |
 
 ---
