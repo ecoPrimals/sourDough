@@ -1,7 +1,6 @@
 //! `GenomeBin` creation and management commands.
 //!
-//! This module provides genomeBin operations using the Pure Rust `sourdough-genomebin`
-//! library. The bash script fallback is maintained for compatibility during migration.
+//! Pure Rust genomeBin operations via the `sourdough-genomebin` library.
 
 use anyhow::Result;
 use clap::Subcommand;
@@ -128,6 +127,6 @@ fn sign_genomebin(genomebin: &Path) -> Result<()> {
 
     anyhow::bail!(
         "genomeBin signing requires Pure Rust cryptography (sequoia-openpgp). \
-         This will be implemented when BearDog identity services are available."
+         This will be implemented when identity services are available via capability discovery."
     )
 }

@@ -47,7 +47,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Cryptography
-blake3 = "1.5"
+blake3 = { version = "1.5", default-features = false, features = ["pure"] }
 
 # RPC
 tarpc = { version = "0.34", features = ["tokio1", "serde1", "serde-transport"] }

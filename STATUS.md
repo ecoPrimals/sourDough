@@ -17,7 +17,9 @@
 - [x] All `#[allow()]` replaced with `#[expect(reason)]`
 - [x] `cargo fmt` clean
 - [x] `cargo doc` zero warnings, all doctests compile (0 ignored)
-- [x] Zero C dependencies (Pure Rust)
+- [x] Zero C application dependencies (Pure Rust, blake3 `pure` feature)
+- [x] `cargo deny check` passing (ecoBin v3.0 C-sys ban list, supply chain audit)
+- [x] Zero hardcoded primal names in crate code (Discovery grade A)
 - [x] JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
 - [x] tarpc secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
@@ -30,8 +32,10 @@
 - [x] Parallel genomeBin processing implemented
 - [x] E2E tests: scaffold -> build -> test -> validate lifecycle
 - [x] WHATS_NEXT.md and START_HERE.md documentation
-- [ ] Cross-compilation validation (musl)
-- [ ] genomeBin signing (Pure Rust, sequoia-openpgp)
+- [x] `deny.toml` supply chain auditing (SD-01 resolved)
+- [x] `tar` crate updated to 0.4.45 (RUSTSEC-2026-0067, RUSTSEC-2026-0068 resolved)
+- [ ] Cross-compilation validation (musl) — SD-02, stretch
+- [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
 
 ## Crate Health
 

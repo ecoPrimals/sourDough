@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `deny.toml` supply chain auditing with ecoBin v3.0 C-sys ban list (16 crates)
 - Workspace-level lint configuration (`[workspace.lints]`): pedantic, nursery, forbid(unsafe_code)
 - Release profile optimizations: LTO, codegen-units=1, strip
 - E2E tests: full scaffold -> build -> test -> validate lifecycle (2 tests)
@@ -18,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - server --port N/A documented in specification (sourDough is meta-primal)
 
 ### Changed
+- blake3 dependency uses `pure` feature (no C/asm build dependency)
+- `tar` crate updated to 0.4.45 (fixes RUSTSEC-2026-0067, RUSTSEC-2026-0068)
+- Removed cosmetic "BearDog" primal name from genomebin sign error message (Discovery A)
 - Scaffold command refactored: `scaffold.rs` (789 lines) -> `scaffold/{mod,generators,templates}.rs` (max 438)
 - All 3 ignored doctests rewritten to compile (native async trait syntax, edition 2024)
 - `sourdough-genomebin` Cargo.toml migrated to workspace metadata
