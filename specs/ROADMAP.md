@@ -1,8 +1,8 @@
-# 🗺️ sourDough Roadmap
+# sourDough Roadmap
 
-**Version**: 0.2.0  
-**Date**: January 19, 2026  
-**Vision**: Complete reference implementation for ecoPrimals
+**Version**: 0.1.0  
+**Date**: April 3, 2026  
+**Vision**: The nascent budding primal for ecoPrimals
 
 ---
 
@@ -12,45 +12,48 @@ Transform sourDough from scaffolding templates into a **complete reference prima
 
 ---
 
-## 📊 Current Status (v0.2.0)
+## Current Status (v0.1.0)
 
-### ✅ **Complete**
+### Complete
 
 - [x] Core traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalIdentity`, `PrimalDiscovery`, `PrimalConfig`)
-- [x] `sourdough-core` library (traits + types)
-- [x] Basic scaffolding script (`scripts/scaffold.sh`)
+- [x] `sourdough-core` library (traits + types + JSON-RPC 2.0 IPC + tarpc RPC)
+- [x] sourDough UniBin CLI (scaffold, validate, genomebin, doctor)
+- [x] Scaffold independence: generated primals are self-contained (no sourdough-core dependency)
+- [x] `sourdough-genomebin` Pure Rust library (platform detection, metadata, archive, validation)
+- [x] Validation tools (primal, unibin, ecobin compliance)
 - [x] Comprehensive specifications
-  - [x] `SOURDOUGH_SPECIFICATION.md`
-  - [x] `ARCHITECTURE.md`
-  - [x] `ROADMAP.md` (this document)
-- [x] genomeBin standard scaffolding (`genomebin/` directory)
 - [x] Zero C dependencies (Pure Rust)
+- [x] 229 tests, 94.40% coverage
+- [x] `#![forbid(unsafe_code)]` on all crates
+- [x] `clippy::pedantic` + `clippy::nursery` clean (`-D warnings`)
 
-### 📝 **In Progress**
+### In Progress
 
-- [ ] sourDough UniBin CLI implementation
-- [ ] Validation tools
-- [ ] genomeBin creation tools
+- [ ] Cross-compilation validation (musl targets)
+- [ ] genomeBin signing (Pure Rust, sequoia-openpgp)
+- [ ] Ephemeral primal scaffolding (session-as-primal pattern)
 
-### ⏳ **Planned**
+### Planned
 
-- [ ] ecoBin certification (cross-compilation validation)
-- [ ] sourDough genomeBin
-- [ ] Integration libraries (`sourdough-genomebin`)
 - [ ] biomeOS/neuralAPI connectors
+- [ ] EphemeralOwner<T> in sourdough-core
 
 ---
 
 ## 🚀 Version Roadmap
 
-### **v0.2.0** - Foundation Complete ✅ (Current)
+### **v0.1.0** - Foundation + UniBin CLI (Current)
 
-**Status**: Architecture defined, specs complete  
-**Timeline**: January 19, 2026  
+**Status**: Core library, CLI, genomebin library, scaffold independence
+**Timeline**: January - April 2026
 
 **Deliverables**:
-- ✅ Comprehensive specification
-- ✅ Architecture documented
+- Core traits library with JSON-RPC 2.0 IPC and tarpc RPC
+- UniBin CLI with scaffold, validate, genomebin, doctor commands
+- Pure Rust genomebin library (replaces bash scripts)
+- Self-contained primal scaffolding (budding primal pattern)
+- 229 tests, 94.40% coverage, zero unsafe code
 - ✅ Core traits stable
 - ✅ genomeBin scaffolding designed
 - ✅ Zero C dependencies
@@ -281,7 +284,7 @@ Create sourDough's own genomeBin (meta: tool uses itself!).
 
 #### **Goals**
 
-Provide Rust libraries for biomeOS and neuralAPI to programmatically manage primals.
+Provide Rust libraries for biomeOS and neuralAPI to programmatically manage primals, including **ephemeral primal scaffolding** for short-lived entities.
 
 #### **Deliverables**
 
@@ -304,19 +307,37 @@ Provide Rust libraries for biomeOS and neuralAPI to programmatically manage prim
   - [ ] `rollback` - restore previous
   - [ ] `uninstall` - remove primal
 
-**2. biomeOS Integration** (~15 hours)
+**2. Ephemeral Primal Scaffolding** (~15 hours)
+- [ ] `EphemeralOwner<T>` utility in `sourdough-core`
+  - [ ] Spawn protocol: `start()` + `lifecycle.register` with `ephemeral: true`
+  - [ ] Teardown protocol: `lifecycle.deregister` + `stop()` + cleanup
+  - [ ] Drop guard for safety-net deregistration on panic
+  - [ ] Scoped capability namespacing (`session.{id}.*`, `npc.{id}.*`)
+  - [ ] Health contract: state-based `PrimalHealth` responses
+- [ ] Use-case reference implementations
+  - [ ] Session-as-primal (game sessions with bounded lifetime)
+  - [ ] NPC-as-primal (AI agents with independent context)
+  - [ ] Mod-as-primal (content packs discovered by capability)
+  - [ ] Match-as-primal (multiplayer servers spawned per match)
+- [ ] Provenance-outlives-runtime pattern (rhizoCrypt DAG persists after teardown)
+- [ ] See: `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for full specification
+
+**3. biomeOS Integration** (~15 hours)
 - [ ] `genomebin/integration/biomeos-launcher.rs`
+- [ ] biomeOS ephemeral lifecycle support (`lifecycle.register` with `ephemeral: true`)
 - [ ] Examples for biomeOS team
 - [ ] Integration tests
 
-**3. neuralAPI Integration** (~15 hours)
+**4. neuralAPI Integration** (~15 hours)
 - [ ] `genomebin/integration/neuralapi-launcher.rs`
 - [ ] Examples for neuralAPI team
 - [ ] Integration tests
 
 **Success Criteria**:
-- ✅ biomeOS can programmatically launch any primal
+- ✅ biomeOS can programmatically launch any primal (long-lived or ephemeral)
 - ✅ neuralAPI can manage primal dependencies
+- ✅ Ephemeral primals register/deregister with biomeOS at runtime
+- ✅ Ephemeral provenance persists after primal teardown
 - ✅ Standard protocol works across all primals
 - ✅ Documentation complete
 
@@ -444,14 +465,14 @@ sourDough is the definitive reference implementation and tooling platform.
 
 - `SOURDOUGH_SPECIFICATION.md` - What sourDough is
 - `ARCHITECTURE.md` - How sourDough is built
-- [`DEVELOPMENT.md`](../DEVELOPMENT.md) - How to develop with sourDough ✅
+- [`CONVENTIONS.md`](../CONVENTIONS.md) - Coding conventions
 
 ---
 
 **Date**: January 19, 2026  
-**Version**: 0.2.0  
+**Version**: 0.1.0  
 **Status**: Foundation complete, UniBin next  
 **Timeline**: v1.0.0 by Q4 2026
 
-🍞🧬🦀 **The path to the complete reference primal!** ✨
+The nascent budding primal for ecoPrimals.
 

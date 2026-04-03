@@ -204,4 +204,39 @@ mod tests {
         assert!(metadata.find_ecobin("x86_64-musl").is_some());
         assert!(metadata.find_ecobin("aarch64-musl").is_none());
     }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn valid_primal_names_accepted(name in "[a-zA-Z][a-zA-Z0-9_-]{0,30}") {
+                let arches = HashMap::new();
+                let result = Metadata::new(&name, "1.0.0", arches);
+                prop_assert!(result.is_ok());
+            }
+
+            #[test]
+            fn invalid_primal_names_rejected(name in ".*[!@#$%^&*() ].*") {
+                let arches = HashMap::new();
+                let result = Metadata::new(&name, "1.0.0", arches);
+                prop_assert!(result.is_err());
+            }
+
+            #[test]
+            fn metadata_toml_roundtrip_preserves_data(
+                primal in "[a-z]{3,10}",
+                version in "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}",
+            ) {
+                let mut arches = HashMap::new();
+                arches.insert("x86_64-musl".to_string(), PathBuf::from("ecobins/test-x86_64-musl"));
+                let metadata = Metadata::new(&primal, &version, arches).unwrap();
+                let toml_str = metadata.to_toml().unwrap();
+                let parsed = Metadata::from_toml(&toml_str).unwrap();
+                prop_assert_eq!(metadata.primal(), parsed.primal());
+                prop_assert_eq!(metadata.version(), parsed.version());
+            }
+        }
+    }
 }

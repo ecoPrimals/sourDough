@@ -4,7 +4,63 @@
 //! All primals expose common RPC endpoints for health, lifecycle, and discovery.
 
 use crate::{error::PrimalError, health::HealthReport, identity::Did, lifecycle::PrimalState};
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+
+/// Serde adapters: `serde_bytes` does not implement its traits for `bytes::Bytes` (only `Vec<u8>`,
+/// `serde_bytes::ByteBuf`, etc.). These helpers keep the same on-the-wire representation as
+/// `#[serde(with = "serde_bytes")]` on `Vec<u8>` / `Option<Vec<u8>>` while storing `Bytes`.
+mod rpc_bytes_serde {
+    use bytes::Bytes;
+    use serde::{Deserializer, Serialize, Serializer};
+
+    pub(super) fn serialize_params<S>(bytes: &Bytes, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serde_bytes::serialize(bytes.as_ref(), serializer)
+    }
+
+    pub(super) fn deserialize_params<'de, D>(deserializer: D) -> Result<Bytes, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        serde_bytes::deserialize::<Vec<u8>, D>(deserializer).map(Bytes::from)
+    }
+
+    struct SerSlice<'a>(&'a [u8]);
+
+    impl Serialize for SerSlice<'_> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serde_bytes::serialize(self.0, serializer)
+        }
+    }
+
+    #[expect(
+        clippy::ref_option,
+        reason = "serde serialize_with requires &Option<Bytes> signature"
+    )]
+    pub(super) fn serialize_result<S>(v: &Option<Bytes>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match v {
+            None => serializer.serialize_none(),
+            Some(b) => serializer.serialize_some(&SerSlice(b.as_ref())),
+        }
+    }
+
+    pub(super) fn deserialize_result<'de, D>(deserializer: D) -> Result<Option<Bytes>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt = serde_bytes::deserialize::<Option<Vec<u8>>, D>(deserializer)?;
+        Ok(opt.map(Bytes::from))
+    }
+}
 
 /// Common RPC service that all primals must implement.
 ///
@@ -31,9 +87,12 @@ pub struct RpcRequest {
     pub id: String,
     /// Method name.
     pub method: String,
-    /// Parameters as JSON bytes.
-    #[serde(with = "serde_bytes")]
-    pub params: Vec<u8>,
+    /// Parameters as JSON bytes (`serde_bytes`-compatible wire format; see `rpc_bytes_serde`).
+    #[serde(
+        serialize_with = "rpc_bytes_serde::serialize_params",
+        deserialize_with = "rpc_bytes_serde::deserialize_params"
+    )]
+    pub params: Bytes,
 }
 
 /// RPC response wrapper for zero-copy optimization.
@@ -41,9 +100,12 @@ pub struct RpcRequest {
 pub struct RpcResponse {
     /// Request ID for correlation.
     pub id: String,
-    /// Result as JSON bytes (None if error).
-    #[serde(with = "serde_bytes")]
-    pub result: Option<Vec<u8>>,
+    /// Result as JSON bytes (None if error; `serde_bytes`-compatible wire format).
+    #[serde(
+        serialize_with = "rpc_bytes_serde::serialize_result",
+        deserialize_with = "rpc_bytes_serde::deserialize_result"
+    )]
+    pub result: Option<Bytes>,
     /// Error message if any.
     pub error: Option<String>,
 }
@@ -51,11 +113,11 @@ pub struct RpcResponse {
 impl RpcRequest {
     /// Create a new RPC request.
     #[must_use]
-    pub fn new(id: impl Into<String>, method: impl Into<String>, params: Vec<u8>) -> Self {
+    pub fn new(id: impl Into<String>, method: impl Into<String>, params: impl Into<Bytes>) -> Self {
         Self {
             id: id.into(),
             method: method.into(),
-            params,
+            params: params.into(),
         }
     }
 }
@@ -63,10 +125,10 @@ impl RpcRequest {
 impl RpcResponse {
     /// Create a successful response.
     #[must_use]
-    pub fn success(id: impl Into<String>, result: Vec<u8>) -> Self {
+    pub fn success(id: impl Into<String>, result: impl Into<Bytes>) -> Self {
         Self {
             id: id.into(),
-            result: Some(result),
+            result: Some(result.into()),
             error: None,
         }
     }
@@ -92,22 +154,23 @@ impl From<PrimalError> for String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bytes::Bytes;
 
     #[test]
     fn rpc_request_creation() {
-        let req = RpcRequest::new("req-123", "health", vec![1, 2, 3]);
+        let req = RpcRequest::new("req-123", "health", Bytes::from(vec![1, 2, 3]));
 
         assert_eq!(req.id, "req-123");
         assert_eq!(req.method, "health");
-        assert_eq!(req.params, vec![1, 2, 3]);
+        assert_eq!(req.params, Bytes::from(vec![1, 2, 3]));
     }
 
     #[test]
     fn rpc_response_success() {
-        let resp = RpcResponse::success("req-123", vec![4, 5, 6]);
+        let resp = RpcResponse::success("req-123", Bytes::from(vec![4, 5, 6]));
 
         assert_eq!(resp.id, "req-123");
-        assert_eq!(resp.result, Some(vec![4, 5, 6]));
+        assert_eq!(resp.result, Some(Bytes::from(vec![4, 5, 6])));
         assert!(resp.error.is_none());
     }
 
@@ -122,7 +185,7 @@ mod tests {
 
     #[test]
     fn rpc_request_serialization() {
-        let req = RpcRequest::new("test", "ping", vec![]);
+        let req = RpcRequest::new("test", "ping", Bytes::new());
         let json = serde_json::to_string(&req).unwrap();
 
         assert!(json.contains("test"));
@@ -131,7 +194,7 @@ mod tests {
 
     #[test]
     fn rpc_response_serialization() {
-        let resp = RpcResponse::success("test", vec![1, 2]);
+        let resp = RpcResponse::success("test", Bytes::from(vec![1, 2]));
         let json = serde_json::to_string(&resp).unwrap();
 
         assert!(json.contains("test"));
@@ -139,16 +202,16 @@ mod tests {
 
     #[test]
     fn rpc_request_with_empty_params() {
-        let req = RpcRequest::new("empty", "method", vec![]);
+        let req = RpcRequest::new("empty", "method", Bytes::new());
         assert_eq!(req.params.len(), 0);
     }
 
     #[test]
     fn rpc_request_with_large_params() {
         let large_params = vec![42u8; 1000];
-        let req = RpcRequest::new("large", "bulk_operation", large_params.clone());
+        let req = RpcRequest::new("large", "bulk_operation", Bytes::from(large_params.clone()));
         assert_eq!(req.params.len(), 1000);
-        assert_eq!(req.params, large_params);
+        assert_eq!(req.params, Bytes::from(large_params));
     }
 
     #[test]
@@ -168,7 +231,7 @@ mod tests {
 
     #[test]
     fn rpc_request_roundtrip_serialization() {
-        let req = RpcRequest::new("roundtrip", "test_method", vec![1, 2, 3, 4, 5]);
+        let req = RpcRequest::new("roundtrip", "test_method", Bytes::from(vec![1, 2, 3, 4, 5]));
         let json = serde_json::to_string(&req).unwrap();
         let deserialized: RpcRequest = serde_json::from_str(&json).unwrap();
 
@@ -179,7 +242,7 @@ mod tests {
 
     #[test]
     fn rpc_response_success_roundtrip() {
-        let resp = RpcResponse::success("round", vec![10, 20, 30]);
+        let resp = RpcResponse::success("round", Bytes::from(vec![10, 20, 30]));
         let json = serde_json::to_string(&resp).unwrap();
         let deserialized: RpcResponse = serde_json::from_str(&json).unwrap();
 
@@ -229,7 +292,7 @@ pub mod client {
 
         /// Get the connected address.
         #[must_use]
-        pub fn addr(&self) -> SocketAddr {
+        pub const fn addr(&self) -> SocketAddr {
             self.addr
         }
     }

@@ -4,7 +4,7 @@
 //! loading configuration from files, environment variables, and runtime.
 
 use crate::error::PrimalError;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::path::Path;
 
 /// Common configuration that all primals share.
@@ -32,7 +32,7 @@ impl Default for CommonConfig {
     fn default() -> Self {
         Self {
             name: "primal".to_string(),
-            instance_id: uuid_simple(),
+            instance_id: new_instance_id(),
             log_level: "info".to_string(),
             data_dir: "./data".to_string(),
             listen_addr: "0.0.0.0".to_string(),
@@ -120,14 +120,16 @@ pub trait PrimalConfig: Send + Sync {
     ) -> impl std::future::Future<Output = Result<(), PrimalError>> + Send;
 }
 
-/// Generate a simple UUID-like string.
-fn uuid_simple() -> String {
+fn new_instance_id() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    format!("{nanos:x}")
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(&nanos.to_le_bytes());
+    hasher.update(&std::process::id().to_le_bytes());
+    hasher.finalize().to_hex().to_string()
 }
 
 /// Configuration file watcher (optional utility).

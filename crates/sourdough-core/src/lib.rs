@@ -38,15 +38,16 @@
 //! }
 //! ```
 
-#![warn(missing_docs)]
-#![warn(clippy::all)]
-#![warn(clippy::pedantic)]
+#![forbid(unsafe_code)]
+#![warn(missing_docs, rust_2018_idioms, unreachable_pub)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 pub mod config;
 pub mod discovery;
 pub mod error;
 pub mod health;
 pub mod identity;
+pub mod ipc;
 pub mod lifecycle;
 pub mod rpc;
 pub mod types;
@@ -57,5 +58,9 @@ pub use discovery::{PrimalDiscovery, ServiceRegistration, UpaCapability};
 pub use error::{PrimalError, PrimalResult};
 pub use health::{DependencyHealth, HealthStatus, PrimalHealth};
 pub use identity::{Did, PrimalIdentity, Signature};
+pub use ipc::{
+    Capability, CircuitBreaker, CircuitState, HealthProbe, IpcError, IpcErrorKind, JsonRpcError,
+    JsonRpcRequest, JsonRpcResponse,
+};
 pub use lifecycle::{PrimalLifecycle, PrimalState};
 pub use types::{ContentHash, Timestamp};

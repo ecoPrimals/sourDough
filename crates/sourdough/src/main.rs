@@ -8,11 +8,15 @@
 //! - Validating primal compliance
 //! - Health diagnostics
 
+#![forbid(unsafe_code)]
+#![warn(missing_docs, rust_2018_idioms, unreachable_pub)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 
-mod commands;
+pub(crate) mod commands;
 
 #[derive(Parser)]
 #[command(name = "sourdough")]
@@ -84,7 +88,7 @@ async fn main() -> Result<()> {
     // Execute command
     match cli.command {
         Commands::Scaffold { scaffold_cmd } => {
-            commands::scaffold::run(scaffold_cmd).await?;
+            commands::scaffold::run(scaffold_cmd)?;
         }
         Commands::GenomeBin { genomebin_cmd } => {
             commands::genomebin::run(genomebin_cmd).await?;
@@ -101,21 +105,21 @@ async fn main() -> Result<()> {
 }
 
 /// Print success message
-pub fn success(msg: &str) {
+pub(crate) fn success(msg: &str) {
     println!("{} {}", "✓".green().bold(), msg);
 }
 
 /// Print error message
-pub fn error(msg: &str) {
+pub(crate) fn error(msg: &str) {
     eprintln!("{} {}", "✗".red().bold(), msg);
 }
 
 /// Print warning message
-pub fn warning(msg: &str) {
+pub(crate) fn warning(msg: &str) {
     println!("{} {}", "⚠".yellow().bold(), msg);
 }
 
 /// Print info message
-pub fn info(msg: &str) {
+pub(crate) fn info(msg: &str) {
     println!("{} {}", "ℹ".blue().bold(), msg);
 }

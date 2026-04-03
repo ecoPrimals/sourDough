@@ -10,7 +10,6 @@ authors.workspace = true
 [dependencies]
 # Async
 tokio = { workspace = true }
-futures = { workspace = true }
 
 # Serialization
 serde = { workspace = true }
@@ -25,9 +24,6 @@ thiserror = { workspace = true }
 # Logging
 tracing = { workspace = true }
 
-# Config
-config = { workspace = true }
-
 # Cryptography
 blake3 = { workspace = true }
 
@@ -37,4 +33,5 @@ tarpc = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }
 tempfile = "3.12"
+proptest = { workspace = true }
 

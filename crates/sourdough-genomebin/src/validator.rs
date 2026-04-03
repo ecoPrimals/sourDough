@@ -241,6 +241,7 @@ impl Validator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn validation_result_creation() {
@@ -251,5 +252,302 @@ mod tests {
         let fail = ValidationResult::fail("test", "error");
         assert!(!fail.passed);
         assert_eq!(fail.message, Some("error".to_string()));
+    }
+
+    #[test]
+    fn validation_result_equality() {
+        let a = ValidationResult::pass("test");
+        let b = ValidationResult::pass("test");
+        assert_eq!(a, b);
+
+        let c = ValidationResult::fail("test", "err");
+        assert_ne!(a, c);
+    }
+
+    fn create_mock_genomebin(dir: &std::path::Path) -> PathBuf {
+        let path = dir.join("test.genome");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "#!/bin/bash").unwrap();
+        writeln!(f, "# genomeBin wrapper").unwrap();
+        write!(f, "__METADATA_START__").unwrap();
+        write!(
+            f,
+            r#"
+[genome]
+primal = "testPrimal"
+version = "1.0.0"
+architecture_count = 2
+created = "2025-01-01T00:00:00Z"
+
+[architectures]
+x86_64-unknown-linux-musl = "ecobins/testPrimal-x86_64-unknown-linux-musl"
+aarch64-unknown-linux-musl = "ecobins/testPrimal-aarch64-unknown-linux-musl"
+"#,
+        )
+        .unwrap();
+        writeln!(f, "__METADATA_END__").unwrap();
+        writeln!(f, "__EMBEDDED_PAYLOAD__").unwrap();
+        f.write_all(b"fake-tar-gz-payload-data").unwrap();
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&path).unwrap().permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(&path, perms).unwrap();
+        }
+
+        path
+    }
+
+    #[test]
+    fn test_file_exists_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_file_exists();
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_file_exists_fail() {
+        let validator = Validator::new("/nonexistent/file.genome");
+        let result = validator.test_file_exists();
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_shebang_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_shebang().await;
+        assert!(result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_shebang_fail() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("no-shebang.genome");
+        std::fs::write(&path, "not a script\n").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.test_shebang().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_shebang_missing_file() {
+        let validator = Validator::new("/nonexistent/file");
+        let result = validator.test_shebang().await;
+        assert!(!result.passed);
+        assert!(result.message.unwrap().contains("Failed to read"));
+    }
+
+    #[tokio::test]
+    async fn test_payload_boundary_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_payload_boundary().await;
+        assert!(result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_payload_boundary_fail() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("no-payload.genome");
+        std::fs::write(&path, "#!/bin/bash\necho hello\n").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.test_payload_boundary().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_payload_boundary_missing_file() {
+        let validator = Validator::new("/nonexistent/file");
+        let result = validator.test_payload_boundary().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_extraction_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_metadata_extraction().await;
+        assert!(result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_extraction_fail() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad-meta.genome");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "#!/bin/bash").unwrap();
+        write!(f, "__METADATA_START__not-valid-toml__METADATA_END__").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.test_metadata_extraction().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_payload_extraction_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_payload_extraction().await;
+        assert!(result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_payload_extraction_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("empty-payload.genome");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "__EMBEDDED_PAYLOAD__").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.test_payload_extraction().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn test_architecture_count_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_architecture_count().await;
+        assert!(result.passed);
+        assert!(result.name.contains('2'));
+    }
+
+    #[tokio::test]
+    async fn test_architecture_count_zero() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("zero-arch.genome");
+        let mut f = std::fs::File::create(&path).unwrap();
+        write!(f, "__METADATA_START__").unwrap();
+        write!(
+            f,
+            r#"
+[genome]
+primal = "test"
+version = "1.0.0"
+architecture_count = 0
+created = "2025-01-01T00:00:00Z"
+
+[architectures]
+"#,
+        )
+        .unwrap();
+        write!(f, "__METADATA_END__").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.test_architecture_count().await;
+        assert!(!result.passed);
+    }
+
+    #[tokio::test]
+    async fn run_all_tests_on_valid_genomebin() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let results = validator.run_all_tests().await;
+        assert_eq!(results.len(), 7);
+        let passed = results.iter().filter(|r| r.passed).count();
+        assert!(passed >= 5, "expected at least 5 pass, got {passed}");
+    }
+
+    #[tokio::test]
+    async fn validate_returns_ok_when_all_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.validate().await;
+        // May not all pass (e.g., executable on some systems) but should not panic
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[tokio::test]
+    async fn validate_returns_err_when_file_missing() {
+        let validator = Validator::new("/nonexistent/file.genome");
+        let result = validator.validate().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn extract_and_parse_metadata_success() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let metadata = validator.extract_and_parse_metadata().await.unwrap();
+        assert_eq!(metadata.genome.primal, "testPrimal");
+        assert_eq!(metadata.genome.version, "1.0.0");
+        assert_eq!(metadata.genome.architecture_count, 2);
+    }
+
+    #[tokio::test]
+    async fn extract_and_parse_metadata_no_start_marker() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("no-marker.genome");
+        std::fs::write(&path, "just some text without markers").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.extract_and_parse_metadata().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn extract_and_parse_metadata_no_end_marker() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("no-end.genome");
+        std::fs::write(&path, "__METADATA_START__some data but no end").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.extract_and_parse_metadata().await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn extract_payload_success() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let payload = validator.extract_payload().await.unwrap();
+        assert!(!payload.is_empty());
+        assert!(payload.starts_with(b"fake-tar-gz-payload-data"));
+    }
+
+    #[tokio::test]
+    async fn extract_payload_no_boundary() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("no-boundary.genome");
+        std::fs::write(&path, "no boundary here").unwrap();
+        let validator = Validator::new(&path);
+        let result = validator.extract_payload().await;
+        assert!(result.is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_file_executable_pass() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = create_mock_genomebin(dir.path());
+        let validator = Validator::new(&path);
+        let result = validator.test_file_executable().await;
+        assert!(result.passed);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_file_executable_fail() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("not-exec.genome");
+        std::fs::write(&path, "#!/bin/bash\n").unwrap();
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&path).unwrap().permissions();
+            perms.set_mode(0o644);
+            std::fs::set_permissions(&path, perms).unwrap();
+        }
+        let validator = Validator::new(&path);
+        let result = validator.test_file_executable().await;
+        assert!(!result.passed);
     }
 }

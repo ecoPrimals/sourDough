@@ -1,6 +1,11 @@
 //! Command modules for the `SourDough` CLI.
 
-pub mod doctor;
-pub mod genomebin;
-pub mod scaffold;
-pub mod validate;
+#![expect(
+    clippy::redundant_pub_crate,
+    reason = "pub(crate) is explicit about intent in binary crate modules"
+)]
+
+pub(crate) mod doctor;
+pub(crate) mod genomebin;
+pub(crate) mod scaffold;
+pub(crate) mod validate;

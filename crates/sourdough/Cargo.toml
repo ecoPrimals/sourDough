@@ -35,18 +35,13 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
-# File system
-walkdir = "2.5"
-ignore = "0.4"
-pathdiff = "0.2"
-
 # Date/time
 chrono = "0.4"
 sourdough-genomebin = { version = "0.1.0", path = "../sourdough-genomebin" }
 
 [dev-dependencies]
 tempfile = "3.12"
-assert_cmd = "2.0"
+assert_cmd = "2.2"
 predicates = "3.1"
 tokio-util = { workspace = true, features = ["codec"] }
 tokio-serde = { workspace = true, features = ["bincode"] }

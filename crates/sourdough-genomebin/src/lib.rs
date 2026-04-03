@@ -53,14 +53,9 @@
 //! 5. **Type-Safe**: Validated types prevent invalid states
 //! 6. **Well-Tested**: Comprehensive unit and integration tests
 
-#![warn(
-    missing_docs,
-    rust_2018_idioms,
-    unreachable_pub,
-    clippy::all,
-    clippy::pedantic
-)]
 #![forbid(unsafe_code)]
+#![warn(missing_docs, rust_2018_idioms, unreachable_pub)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 pub mod archive;
 pub mod builder;

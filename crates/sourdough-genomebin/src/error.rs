@@ -99,3 +99,71 @@ impl GenomeBinError {
         Self::PlatformDetection(msg.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validation_error_display() {
+        let e = GenomeBinError::validation("check failed");
+        assert_eq!(e.to_string(), "Validation failed: check failed");
+    }
+
+    #[test]
+    fn platform_detection_error_display() {
+        let e = GenomeBinError::platform_detection("unknown arch");
+        assert_eq!(e.to_string(), "Failed to detect platform: unknown arch");
+    }
+
+    #[test]
+    fn invalid_primal_name_display() {
+        let e = GenomeBinError::InvalidPrimalName("bad name!".into());
+        assert!(e.to_string().contains("bad name!"));
+    }
+
+    #[test]
+    fn invalid_version_display() {
+        let e = GenomeBinError::InvalidVersion("not.semver".into());
+        assert!(e.to_string().contains("not.semver"));
+    }
+
+    #[test]
+    fn ecobins_dir_not_found_display() {
+        let e = GenomeBinError::EcoBinsDirNotFound(PathBuf::from("/missing"));
+        assert!(e.to_string().contains("/missing"));
+    }
+
+    #[test]
+    fn no_ecobins_found_display() {
+        let e = GenomeBinError::NoEcoBinsFound {
+            primal: "test".into(),
+            dir: PathBuf::from("/dir"),
+        };
+        assert!(e.to_string().contains("test"));
+    }
+
+    #[test]
+    fn payload_boundary_not_found_display() {
+        let e = GenomeBinError::PayloadBoundaryNotFound;
+        assert!(e.to_string().contains("Payload boundary"));
+    }
+
+    #[test]
+    fn checksum_mismatch_display() {
+        let e = GenomeBinError::ChecksumMismatch {
+            expected: "aaa".into(),
+            actual: "bbb".into(),
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("aaa"));
+        assert!(msg.contains("bbb"));
+    }
+
+    #[test]
+    fn io_error_from() {
+        let io = std::io::Error::new(std::io::ErrorKind::NotFound, "gone");
+        let e: GenomeBinError = io.into();
+        assert!(e.to_string().contains("gone"));
+    }
+}

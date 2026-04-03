@@ -161,7 +161,7 @@ pub struct GenomeBin {
     version: String,
     ecobins: HashMap<String, PathBuf>,
     output: PathBuf,
-    #[allow(dead_code)] // Reserved for future concurrent processing
+    #[expect(dead_code, reason = "reserved for future concurrent processing")]
     parallel: bool,
     wrapper_script: Option<PathBuf>,
 }
@@ -280,9 +280,11 @@ impl GenomeBin {
     }
 }
 
-/// Default wrapper script (embedded).
+/// Default wrapper script for self-extracting genomeBins.
 ///
-/// This is the minimal self-extracting wrapper for genomeBins.
+/// This bash wrapper is a transitional artifact. The roadmap calls for
+/// replacing it with a Pure Rust self-extractor binary to achieve full
+/// ecoBin compliance. See specs/ROADMAP.md v0.5.0.
 const DEFAULT_WRAPPER_SCRIPT: &str = r#"#!/bin/bash
 set -euo pipefail
 

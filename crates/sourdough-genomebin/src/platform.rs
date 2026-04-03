@@ -53,7 +53,7 @@ impl Os {
     ///
     /// Uses runtime detection, no compile-time assumptions.
     #[must_use]
-    pub fn detect() -> Self {
+    pub const fn detect() -> Self {
         #[cfg(target_os = "linux")]
         return Self::Linux;
 
@@ -72,7 +72,7 @@ impl Os {
         #[cfg(target_os = "netbsd")]
         return Self::NetBsd;
 
-        #[allow(unreachable_code)]
+        #[expect(unreachable_code, reason = "cfg fallback for unsupported platforms")]
         Self::Unknown
     }
 }
@@ -113,7 +113,7 @@ impl Arch {
     ///
     /// Uses runtime detection, no compile-time assumptions.
     #[must_use]
-    pub fn detect() -> Self {
+    pub const fn detect() -> Self {
         #[cfg(target_arch = "x86_64")]
         return Self::X86_64;
 
@@ -129,7 +129,7 @@ impl Arch {
         #[cfg(target_arch = "powerpc64")]
         return Self::Powerpc64;
 
-        #[allow(unreachable_code)]
+        #[expect(unreachable_code, reason = "cfg fallback for unsupported platforms")]
         Self::Unknown
     }
 }
@@ -169,7 +169,7 @@ impl LibC {
     ///
     /// Uses runtime detection, no compile-time assumptions.
     #[must_use]
-    pub fn detect() -> Self {
+    pub const fn detect() -> Self {
         #[cfg(target_env = "gnu")]
         {
             #[cfg(target_os = "windows")]
@@ -187,7 +187,7 @@ impl LibC {
         #[cfg(target_os = "macos")]
         return Self::Darwin;
 
-        #[allow(unreachable_code)]
+        #[expect(unreachable_code, reason = "cfg fallback for unsupported platforms")]
         Self::Unknown
     }
 }
@@ -393,5 +393,143 @@ mod tests {
         assert_eq!(LibC::Musl.to_string(), "musl");
         assert_eq!(LibC::Gnu.to_string(), "gnu");
         assert_eq!(LibC::Darwin.to_string(), "darwin");
+        assert_eq!(LibC::Msvc.to_string(), "msvc");
+        assert_eq!(LibC::GnuWindows.to_string(), "gnu");
+        assert_eq!(LibC::Unknown.to_string(), "unknown");
+    }
+
+    #[test]
+    fn os_display_all_variants() {
+        assert_eq!(Os::Linux.to_string(), "linux");
+        assert_eq!(Os::MacOs.to_string(), "macos");
+        assert_eq!(Os::Windows.to_string(), "windows");
+        assert_eq!(Os::FreeBsd.to_string(), "freebsd");
+        assert_eq!(Os::OpenBsd.to_string(), "openbsd");
+        assert_eq!(Os::NetBsd.to_string(), "netbsd");
+        assert_eq!(Os::Unknown.to_string(), "unknown");
+    }
+
+    #[test]
+    fn arch_display_all_variants() {
+        assert_eq!(Arch::X86_64.to_string(), "x86_64");
+        assert_eq!(Arch::Aarch64.to_string(), "aarch64");
+        assert_eq!(Arch::Arm.to_string(), "arm");
+        assert_eq!(Arch::Riscv64.to_string(), "riscv64");
+        assert_eq!(Arch::Powerpc64.to_string(), "powerpc64");
+        assert_eq!(Arch::Unknown.to_string(), "unknown");
+    }
+
+    #[test]
+    fn target_triple_linux() {
+        let p = Platform::new(Os::Linux, Arch::Aarch64, LibC::Gnu);
+        assert_eq!(p.target_triple(), "aarch64-unknown-linux-gnu");
+    }
+
+    #[test]
+    fn target_triple_macos() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        assert_eq!(p.target_triple(), "aarch64-apple-darwin");
+    }
+
+    #[test]
+    fn target_triple_windows() {
+        let p = Platform::new(Os::Windows, Arch::X86_64, LibC::Msvc);
+        assert_eq!(p.target_triple(), "x86_64-pc-windows-msvc");
+    }
+
+    #[test]
+    fn target_triple_freebsd() {
+        let p = Platform::new(Os::FreeBsd, Arch::X86_64, LibC::Unknown);
+        assert_eq!(p.target_triple(), "x86_64-unknown-freebsd");
+    }
+
+    #[test]
+    fn target_triple_openbsd() {
+        let p = Platform::new(Os::OpenBsd, Arch::X86_64, LibC::Unknown);
+        assert_eq!(p.target_triple(), "x86_64-unknown-openbsd");
+    }
+
+    #[test]
+    fn target_triple_netbsd() {
+        let p = Platform::new(Os::NetBsd, Arch::X86_64, LibC::Unknown);
+        assert_eq!(p.target_triple(), "x86_64-unknown-netbsd");
+    }
+
+    #[test]
+    fn target_triple_unknown() {
+        let p = Platform::new(Os::Unknown, Arch::X86_64, LibC::Unknown);
+        assert_eq!(p.target_triple(), "x86_64-unknown-unknown");
+    }
+
+    #[test]
+    fn simple_target_windows() {
+        let p = Platform::new(Os::Windows, Arch::X86_64, LibC::Msvc);
+        assert_eq!(p.simple_target(), "x86_64-windows");
+    }
+
+    #[test]
+    fn simple_target_macos() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        assert_eq!(p.simple_target(), "aarch64-darwin");
+    }
+
+    #[test]
+    fn simple_target_other() {
+        let p = Platform::new(Os::FreeBsd, Arch::X86_64, LibC::Unknown);
+        assert_eq!(p.simple_target(), "x86_64-freebsd");
+    }
+
+    #[test]
+    fn is_linux_true() {
+        let p = Platform::new(Os::Linux, Arch::X86_64, LibC::Gnu);
+        assert!(p.is_linux());
+        assert!(!p.is_macos());
+    }
+
+    #[test]
+    fn is_macos_true() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        assert!(p.is_macos());
+        assert!(!p.is_linux());
+    }
+
+    #[test]
+    fn is_musl_true() {
+        let p = Platform::new(Os::Linux, Arch::X86_64, LibC::Musl);
+        assert!(p.is_musl());
+    }
+
+    #[test]
+    fn is_musl_false() {
+        let p = Platform::new(Os::Linux, Arch::X86_64, LibC::Gnu);
+        assert!(!p.is_musl());
+    }
+
+    #[test]
+    fn fallback_targets_musl_no_glibc_fallback() {
+        let p = Platform::new(Os::Linux, Arch::X86_64, LibC::Musl);
+        let fallbacks = p.fallback_targets();
+        assert!(fallbacks.contains(&"x86_64-unknown-linux-musl".to_string()));
+        let musl_fallback_count = fallbacks.iter().filter(|t| t.contains("musl")).count();
+        assert_eq!(musl_fallback_count, 2);
+    }
+
+    #[test]
+    fn fallback_targets_non_linux() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        let fallbacks = p.fallback_targets();
+        assert!(!fallbacks.iter().any(|t| t.contains("musl")));
+    }
+
+    #[test]
+    fn platform_detect_returns_known() {
+        let p = Platform::detect().unwrap();
+        assert!(p.is_linux() || p.is_macos() || !matches!(p.os(), Os::Unknown));
+    }
+
+    #[test]
+    fn platform_unknown_detection_fails() {
+        let result = Platform::new(Os::Unknown, Arch::Unknown, LibC::Unknown);
+        assert_eq!(result.os(), Os::Unknown);
     }
 }

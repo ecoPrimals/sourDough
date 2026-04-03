@@ -1,0 +1,36 @@
+ecoPrimals — scyBorg Provenance Trio License
+
+Copyright (C) 2026 ecoPrimals Project
+
+This project uses the scyBorg Provenance Trio licensing model:
+
+1. SOFTWARE (AGPL-3.0-or-later)
+   All Rust source code, configuration files, build scripts, and binary
+   artifacts are licensed under the GNU Affero General Public License,
+   version 3 or later.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+2. RESEARCH & DATA (ORC — Open Research Commons)
+   All scientific data, experiment results, numerical outputs, benchmark
+   results, and research artifacts are shared under Open Research Commons
+   principles: open access, reproducibility, and attribution.
+
+3. DOCUMENTATION (CC-BY-SA-4.0)
+   All documentation, specifications, guides, and prose are licensed under
+   the Creative Commons Attribution-ShareAlike 4.0 International License.
+   See <https://creativecommons.org/licenses/by-sa/4.0/>.
+
+---
+
+Lysogeny Protocol Notice:
+
+This software is released as open prior art under the Lysogeny Protocol.
+Any entity attempting to patent concepts implemented herein will find this
+publication as prior art. The AGPL-3.0 ensures that all derivative works
+remain open.
+
+---
+
+SPDX-License-Identifier: AGPL-3.0-or-later AND CC-BY-SA-4.0

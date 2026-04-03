@@ -1,9 +1,9 @@
-# 🍞 SourDough - Specification
+# sourDough Specification
 
-**Version**: 0.2.0  
-**Date**: January 19, 2026  
-**Status**: **Reference Implementation**  
-**Role**: Nascent Primal + Standardization Framework
+**Version**: 0.1.0  
+**Date**: April 3, 2026  
+**Status**: Reference Implementation  
+**Role**: Nascent Primal (Budding Primal) + Standardization Framework
 
 ---
 
@@ -191,36 +191,28 @@ sourdough version
 sourdough help [command]
 ```
 
-### **3. genomebin/** (Standard Scaffolding)
+### **3. sourdough-genomebin** (Pure Rust Library)
 
-**Purpose**: Standardized genomeBin creation machinery
+**Purpose**: Pure Rust genomeBin operations (replaces former `genomebin/` bash scripts, now archived)
 
 **Structure**:
 ```
-genomebin/
-├── README.md                    # Complete guide
-├── wrapper/
-│   ├── genome-wrapper.sh        # Main wrapper script
-│   ├── system-detection.sh      # OS/arch detection
-│   ├── install-logic.sh         # Installation
-│   └── lifecycle.sh             # Update/rollback
-├── services/
-│   ├── systemd.service.tmpl     # Linux systemd
-│   ├── launchd.plist.tmpl       # macOS launchd
-│   └── rc.d.tmpl                # BSD rc.d
-├── scripts/
-│   ├── create-genomebin.sh      # Build genomeBin
-│   ├── test-genomebin.sh        # Test across systems
-│   └── sign-genomebin.sh        # Sign and checksum
-├── config/
-│   ├── config-template.toml     # Base template
-│   └── environments/            # Env-specific configs
-└── integration/
-    ├── biomeos-launcher.rs      # biomeOS integration
-    └── neuralapi-launcher.rs    # neuralAPI integration
+crates/sourdough-genomebin/
+├── src/
+│   ├── lib.rs                   # Public API
+│   ├── platform.rs              # Runtime platform detection
+│   ├── metadata.rs              # Type-safe metadata parsing
+│   ├── archive.rs               # Pure Rust tar/gzip
+│   ├── builder.rs               # genomeBin creation
+│   ├── validator.rs             # Comprehensive validation
+│   └── error.rs                 # Structured error types
+├── examples/
+│   ├── platform_detection.rs    # Platform detection example
+│   └── create_and_validate.rs   # Create and validate example
+└── Cargo.toml
 ```
 
-**Usage**: All ecoBin primals use this to create genomeBins
+**Usage**: Pure Rust replacement for former bash scripts; all genomeBin operations are type-safe and concurrent
 
 ---
 
@@ -310,13 +302,14 @@ sourdough genomebin sign myPrimal.genome
 - **Pure Rust**: 100% (zero C dependencies)
 - **Dependencies**:
   ```
-  sourdough-core v0.2.0
+  sourdough-core v0.1.0
   ├── tokio (Pure Rust)
   ├── serde/serde_json (Pure Rust)
   ├── toml (Pure Rust)
   ├── thiserror (Pure Rust)
   ├── tracing (Pure Rust)
-  └── config (Pure Rust)
+  ├── tarpc (Pure Rust)
+  └── bytes (Pure Rust)
   ```
 - **Cross-compilation**: x86_64, ARM64 (validated)
 - **Static linking**: musl
@@ -327,8 +320,8 @@ sourDough can create its own genomeBin:
 ```bash
 sourdough genomebin create \
     --primal sourdough \
-    --version 0.2.0 \
-    --ecobins plasmidBin/primals/sourdough/v0.2.0/ \
+    --version 0.1.0 \
+    --ecobins plasmidBin/primals/sourdough/v0.1.0/ \
     --output sourdough.genome
 ```
 
@@ -511,24 +504,20 @@ Checks:
 
 ---
 
-## 🎊 Summary
+## Summary
 
-**sourDough v0.2.0** is evolving from:
-- **Was**: Scaffolding templates + core traits
-- **Now**: Reference primal (UniBin + ecoBin) + standardization framework
-- **Future**: Complete genomeBin + integration platform
+**sourDough v0.1.0** is the nascent budding primal:
+- Core traits library with JSON-RPC 2.0 IPC and tarpc RPC
+- UniBin CLI with scaffold, validate, genomebin, doctor commands
+- Pure Rust genomebin library (replaces all bash scripts)
+- Self-contained scaffolding: generated primals have no sourDough dependency
 
-**Mission**: Make creating and standardizing primals trivial!
-
-**Philosophy**:
-> "Just as sourdough starter contains all the essential microorganisms to create bread, sourDough contains all the essential patterns to create primals."
+Scaffolded primals receive inlined core traits and are immediately independent.
 
 ---
 
-**Date**: January 19, 2026  
-**Version**: 0.2.0  
-**Status**: Reference Implementation (evolving)  
-**Next**: Implement sourDough UniBin CLI
-
-🍞🧬🦀 **The starter culture for ALL ecoPrimals!** ✨
+**Date**: April 3, 2026
+**Version**: 0.1.0
+**Status**: Reference Implementation
+**Next**: Cross-compilation validation, genomeBin signing (sequoia-openpgp), ephemeral primal pattern
 

@@ -110,7 +110,10 @@ impl Timestamp {
 
     /// Create a timestamp from milliseconds since epoch.
     #[must_use]
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "truncation is safe: (millis % 1000) * 1_000_000 < u32::MAX"
+    )]
     pub const fn from_millis(millis: u64) -> Self {
         Self {
             secs: millis / 1000,
@@ -312,7 +315,10 @@ mod tests {
         let converted = ts.as_millis();
 
         // Allow for small precision loss due to nanosecond truncation
-        #[allow(clippy::cast_possible_wrap)]
+        #[expect(
+            clippy::cast_possible_wrap,
+            reason = "test compares u64 millis via i64 abs_diff; values stay in comparable range"
+        )]
         let diff = (converted as i64).abs_diff(millis as i64);
         assert!(diff < 2);
     }
@@ -402,5 +408,37 @@ mod tests {
         set.insert(ts3);
 
         assert_eq!(set.len(), 2); // ts1 and ts3 are the same
+    }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn content_hash_hex_roundtrip(bytes in proptest::collection::vec(any::<u8>(), 32..=32)) {
+                let arr: [u8; 32] = bytes.try_into().unwrap();
+                let hash = ContentHash::new(arr);
+                let hex = hash.to_hex();
+                let parsed = ContentHash::from_hex(&hex).unwrap();
+                prop_assert_eq!(hash, parsed);
+            }
+
+            #[test]
+            fn timestamp_millis_roundtrip(secs in 0u64..=4_000_000_000u64, millis_frac in 0u64..1000u64) {
+                let total_millis = secs * 1000 + millis_frac;
+                let ts = Timestamp::from_millis(total_millis);
+                let back = ts.as_millis();
+                prop_assert_eq!(total_millis, back);
+            }
+
+            #[test]
+            fn timestamp_ordering_consistent(a_secs in 0u64..=1_000_000u64, b_secs in 0u64..=1_000_000u64) {
+                let a = Timestamp::from_secs(a_secs);
+                let b = Timestamp::from_secs(b_secs);
+                prop_assert_eq!(a_secs < b_secs, a < b);
+                prop_assert_eq!(a_secs == b_secs, a == b);
+            }
+        }
     }
 }

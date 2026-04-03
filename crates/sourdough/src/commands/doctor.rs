@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-pub fn run(comprehensive: bool) -> Result<()> {
+pub(crate) fn run(comprehensive: bool) -> Result<()> {
     crate::info("🏥 SourDough Health Check");
     println!();
 

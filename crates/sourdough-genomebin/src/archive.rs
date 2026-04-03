@@ -12,9 +12,9 @@
 
 use crate::error::{GenomeBinError, Result};
 use bytes::Bytes;
+use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
-use flate2::Compression;
 use std::path::{Path, PathBuf};
 use tokio::io::AsyncWriteExt;
 
@@ -36,7 +36,7 @@ impl ArchiveBuilder {
 
     /// Set compression level (0-9).
     #[must_use]
-    pub fn compression(mut self, level: u32) -> Self {
+    pub const fn compression(mut self, level: u32) -> Self {
         self.compression = Compression::new(level);
         self
     }
@@ -233,9 +233,19 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn list_archive_files() {
-        // This test requires a pre-existing archive, which we'll skip for now
-        // In a real implementation, we'd create one first
+    #[tokio::test]
+    async fn list_archive_files_returns_entries() {
+        let temp = TempDir::new().unwrap();
+        let test_file = temp.path().join("test.txt");
+        tokio::fs::write(&test_file, b"content").await.unwrap();
+
+        let archive = temp.path().join("archive.tar.gz");
+        let builder = ArchiveBuilder::new(&archive);
+        let files = vec![(test_file, PathBuf::from("inner/test.txt"))];
+        builder.create(&files).await.unwrap();
+
+        let listed = list_files(&archive).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0], PathBuf::from("inner/test.txt"));
     }
 }

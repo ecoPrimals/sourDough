@@ -1,6 +1,6 @@
 # 🏗️ sourDough Architecture
 
-**Version**: 0.2.0  
+**Version**: 0.1.0 (unreleased)  
 **Date**: January 19, 2026  
 **Type**: Reference Implementation
 
@@ -22,50 +22,42 @@ This dual nature makes sourDough unique: it's infrastructure AND a reference imp
 sourDough/
 ├── Cargo.toml                           # Workspace manifest
 ├── crates/
-│   ├── sourdough-core/                  # Core library (traits)
-│   │   ├── src/
-│   │   │   ├── lib.rs
-│   │   │   ├── lifecycle.rs             # PrimalLifecycle trait
-│   │   │   ├── health.rs                # PrimalHealth trait
-│   │   │   ├── identity.rs              # PrimalIdentity trait
-│   │   │   ├── discovery.rs             # PrimalDiscovery trait
-│   │   │   ├── config.rs                # PrimalConfig trait
-│   │   │   ├── error.rs                 # Common error types
-│   │   │   └── types.rs                 # Common types
-│   │   └── Cargo.toml
-│   ├── sourdough/                       # UniBin CLI (NEW)
+│   ├── sourdough-core/                  # Core library (traits + IPC)
+│   │   └── src/
+│   │       ├── lib.rs                   # Re-exports
+│   │       ├── lifecycle.rs             # PrimalLifecycle trait
+│   │       ├── health.rs                # PrimalHealth trait
+│   │       ├── identity.rs             # PrimalIdentity trait
+│   │       ├── discovery.rs            # PrimalDiscovery trait
+│   │       ├── config.rs               # PrimalConfig trait
+│   │       ├── ipc.rs                  # JSON-RPC 2.0 IPC (primary)
+│   │       ├── rpc.rs                  # tarpc RPC (secondary)
+│   │       ├── error.rs                # Common error types
+│   │       └── types.rs                # Common types
+│   ├── sourdough/                       # UniBin CLI
 │   │   ├── src/
 │   │   │   ├── main.rs                  # Entry point
-│   │   │   ├── cli.rs                   # CLI argument parsing
-│   │   │   ├── commands/
-│   │   │   │   ├── scaffold.rs          # Scaffold commands
-│   │   │   │   ├── genomebin.rs         # genomeBin commands
-│   │   │   │   ├── validate.rs          # Validation commands
-│   │   │   │   └── doctor.rs            # Health check
-│   │   │   └── lib.rs
-│   │   └── Cargo.toml
-│   └── sourdough-genomebin/             # genomeBin library (NEW)
+│   │   │   └── commands/
+│   │   │       ├── mod.rs
+│   │   │       ├── scaffold.rs          # Scaffold commands
+│   │   │       ├── genomebin.rs         # genomeBin commands
+│   │   │       ├── validate.rs          # Validation commands
+│   │   │       └── doctor.rs            # Health check
+│   │   └── tests/
+│   │       └── cli_integration.rs
+│   └── sourdough-genomebin/             # genomeBin library
 │       ├── src/
 │       │   ├── lib.rs
-│       │   ├── launcher.rs              # GenomeBinLauncher
-│       │   ├── registry.rs              # GenomeBinRegistry
-│       │   └── protocol.rs              # Standard protocol
-│       └── Cargo.toml
+│       │   ├── builder.rs              # GenomeBinBuilder
+│       │   ├── validator.rs            # Validation
+│       │   ├── archive.rs              # Tar/gzip operations
+│       │   ├── metadata.rs             # Type-safe metadata
+│       │   ├── platform.rs             # Platform detection
+│       │   └── error.rs                # Error types
+│       └── examples/
 ├── genomebin/                           # Standard genomeBin scaffolding
-│   ├── README.md
-│   ├── wrapper/                         # Shell scripts
-│   ├── services/                        # Service templates
-│   ├── scripts/                         # Build scripts
-│   ├── config/                          # Config templates
-│   └── integration/                     # Integration code
-├── templates/                           # Scaffolding templates
-│   ├── new-primal/
-│   └── new-crate/
-└── specs/                               # This directory
-    ├── SOURDOUGH_SPECIFICATION.md
-    ├── ARCHITECTURE.md                  # This file
-    ├── DEVELOPMENT.md
-    └── ROADMAP.md
+├── specs/                               # Specifications
+└── archive/                             # Historical session docs
 ```
 
 ---
@@ -642,7 +634,7 @@ sourDough's patterns should apply to:
 ---
 
 **Date**: January 19, 2026  
-**Version**: 0.2.0  
+**Version**: 0.1.0 (unreleased)  
 **Status**: Reference Implementation (evolving)  
 **Next**: Implement sourDough UniBin CLI
 

@@ -4,12 +4,18 @@
 
 use assert_cmd::Command;
 use predicates::prelude::*;
+use std::ffi::OsString;
 use tempfile::TempDir;
+
+fn sourdough_bin() -> OsString {
+    std::env::var_os("CARGO_BIN_EXE_sourdough")
+        .expect("CARGO_BIN_EXE_sourdough must be set by cargo test")
+}
 
 /// Test that the binary exists and shows help
 #[test]
 fn test_help() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("--help");
 
     cmd.assert()
@@ -24,7 +30,7 @@ fn test_help() {
 /// Test version flag
 #[test]
 fn test_version() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("--version");
 
     cmd.assert()
@@ -35,7 +41,7 @@ fn test_version() {
 /// Test doctor command basic functionality
 #[test]
 fn test_doctor_basic() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("doctor");
 
     cmd.assert()
@@ -47,7 +53,7 @@ fn test_doctor_basic() {
 /// Test doctor comprehensive mode
 #[test]
 fn test_doctor_comprehensive() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.args(["doctor", "--comprehensive"]);
 
     cmd.assert()
@@ -61,7 +67,7 @@ fn test_scaffold_new_primal() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "testPrimal";
 
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
@@ -100,7 +106,7 @@ fn test_scaffold_new_primal() {
 fn test_scaffold_invalid_primal_name() {
     let temp_dir = TempDir::new().unwrap();
 
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("scaffold")
         .arg("new-primal")
         .arg("") // Empty name
@@ -122,7 +128,7 @@ fn test_validate_primal_valid() {
     let primal_name = "validPrimal";
 
     // First create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -133,7 +139,7 @@ fn test_validate_primal_valid() {
     create_cmd.assert().success();
 
     // Now validate it
-    let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut validate_cmd = Command::new(sourdough_bin());
     validate_cmd
         .arg("validate")
         .arg("primal")
@@ -150,7 +156,7 @@ fn test_validate_primal_valid() {
 /// Test validate primal command on invalid path
 #[test]
 fn test_validate_primal_invalid() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("validate").arg("primal").arg("/nonexistent/path");
 
     cmd.assert().failure().stdout(
@@ -166,7 +172,7 @@ fn test_validate_unibin() {
     let primal_name = "unibinPrimal";
 
     // Create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -177,7 +183,7 @@ fn test_validate_unibin() {
     create_cmd.assert().success();
 
     // Validate as UniBin
-    let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut validate_cmd = Command::new(sourdough_bin());
     validate_cmd
         .arg("validate")
         .arg("unibin")
@@ -196,7 +202,7 @@ fn test_validate_ecobin() {
     let primal_name = "ecobinPrimal";
 
     // Create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -207,7 +213,7 @@ fn test_validate_ecobin() {
     create_cmd.assert().success();
 
     // Validate as ecoBin
-    let mut validate_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut validate_cmd = Command::new(sourdough_bin());
     validate_cmd
         .arg("validate")
         .arg("ecobin")
@@ -240,7 +246,7 @@ fn test_genomebin_create() {
 
     let output_path = temp_dir.path().join("test.genome");
 
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("genomebin")
         .arg("create")
         .arg("--primal")
@@ -266,7 +272,7 @@ fn test_genomebin_create() {
 fn test_genomebin_create_missing_dir() {
     let temp_dir = TempDir::new().unwrap();
 
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("genomebin")
         .arg("create")
         .arg("--primal")
@@ -286,7 +292,7 @@ fn test_genomebin_create_missing_dir() {
 /// Test verbose flag
 #[test]
 fn test_verbose_flag() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("--verbose").arg("doctor");
 
     cmd.assert().success();
@@ -295,7 +301,7 @@ fn test_verbose_flag() {
 /// Test quiet flag
 #[test]
 fn test_quiet_flag() {
-    let mut cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut cmd = Command::new(sourdough_bin());
     cmd.arg("--quiet").arg("doctor");
 
     cmd.assert().success();
@@ -308,7 +314,7 @@ fn test_generated_primal_structure() {
     let primal_name = "buildablePrimal";
 
     // Create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -347,7 +353,7 @@ fn test_generated_primal_has_tests() {
     let primal_name = "testablePrimal";
 
     // Create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -377,7 +383,7 @@ fn test_subcommand_help() {
     let subcommands = ["scaffold", "validate", "doctor", "genomebin"];
 
     for subcmd in subcommands {
-        let mut cmd = Command::cargo_bin("sourdough").unwrap();
+        let mut cmd = Command::new(sourdough_bin());
         cmd.arg(subcmd).arg("--help");
 
         cmd.assert()
@@ -393,7 +399,7 @@ fn test_scaffold_new_crate() {
     let primal_name = "cratePrimal";
 
     // First create a primal
-    let mut create_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut create_cmd = Command::new(sourdough_bin());
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -404,7 +410,7 @@ fn test_scaffold_new_crate() {
     create_cmd.assert().success();
 
     // Add a new crate
-    let mut add_crate_cmd = Command::cargo_bin("sourdough").unwrap();
+    let mut add_crate_cmd = Command::new(sourdough_bin());
     add_crate_cmd
         .arg("scaffold")
         .arg("new-crate")
@@ -428,4 +434,9 @@ fn test_scaffold_new_crate() {
     assert!(crate_path.exists());
     assert!(crate_path.join("Cargo.toml").exists());
     assert!(crate_path.join("src").join("lib.rs").exists());
+
+    // Workspace members should list the new crate
+    let workspace =
+        std::fs::read_to_string(temp_dir.path().join(primal_name).join("Cargo.toml")).unwrap();
+    assert!(workspace.contains("crates/crateprimal-storage"));
 }

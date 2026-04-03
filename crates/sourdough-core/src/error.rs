@@ -133,7 +133,7 @@ impl PrimalError {
 
     /// Check if this is a retryable error.
     #[must_use]
-    pub fn is_retryable(&self) -> bool {
+    pub const fn is_retryable(&self) -> bool {
         matches!(
             self,
             Self::Network(_) | Self::Timeout(_) | Self::Dependency { .. }
