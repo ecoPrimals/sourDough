@@ -45,12 +45,13 @@ Scaffolded primals include their own core traits (`PrimalLifecycle`, `PrimalHeal
 
 | Metric | Value |
 |--------|-------|
-| Tests | 237+ passing (unit, integration, e2e, doc) |
+| Tests | 239 passing (128 unit, 23 CLI integration, 2 e2e, 7 doc, 79 genomebin) |
 | Coverage | 95%+ (llvm-cov, target: 90%) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
 | C deps | zero (Pure Rust) |
-| Max file | < 450 lines (target: 1000) |
+| LOC | ~5,900 Rust across 29 files |
+| Max file | < 650 lines (target: 1000) |
 
 ## Standards Compliance
 
