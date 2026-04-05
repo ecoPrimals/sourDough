@@ -4,18 +4,16 @@
 
 use assert_cmd::Command;
 use predicates::prelude::*;
-use std::ffi::OsString;
 use tempfile::TempDir;
 
-fn sourdough_bin() -> OsString {
-    std::env::var_os("CARGO_BIN_EXE_sourdough")
-        .expect("CARGO_BIN_EXE_sourdough must be set by cargo test")
+fn sourdough_cmd() -> Command {
+    Command::cargo_bin("sourdough").expect("sourdough binary not found")
 }
 
 /// Test that the binary exists and shows help
 #[test]
 fn test_help() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("--help");
 
     cmd.assert()
@@ -30,7 +28,7 @@ fn test_help() {
 /// Test version flag
 #[test]
 fn test_version() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("--version");
 
     cmd.assert()
@@ -41,7 +39,7 @@ fn test_version() {
 /// Test doctor command basic functionality
 #[test]
 fn test_doctor_basic() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("doctor");
 
     cmd.assert()
@@ -53,7 +51,7 @@ fn test_doctor_basic() {
 /// Test doctor comprehensive mode
 #[test]
 fn test_doctor_comprehensive() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.args(["doctor", "--comprehensive"]);
 
     cmd.assert()
@@ -67,7 +65,7 @@ fn test_scaffold_new_primal() {
     let temp_dir = TempDir::new().unwrap();
     let primal_name = "testPrimal";
 
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("scaffold")
         .arg("new-primal")
         .arg(primal_name)
@@ -106,7 +104,7 @@ fn test_scaffold_new_primal() {
 fn test_scaffold_invalid_primal_name() {
     let temp_dir = TempDir::new().unwrap();
 
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("scaffold")
         .arg("new-primal")
         .arg("") // Empty name
@@ -128,7 +126,7 @@ fn test_validate_primal_valid() {
     let primal_name = "validPrimal";
 
     // First create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -139,7 +137,7 @@ fn test_validate_primal_valid() {
     create_cmd.assert().success();
 
     // Now validate it
-    let mut validate_cmd = Command::new(sourdough_bin());
+    let mut validate_cmd = sourdough_cmd();
     validate_cmd
         .arg("validate")
         .arg("primal")
@@ -156,7 +154,7 @@ fn test_validate_primal_valid() {
 /// Test validate primal command on invalid path
 #[test]
 fn test_validate_primal_invalid() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("validate").arg("primal").arg("/nonexistent/path");
 
     cmd.assert().failure().stdout(
@@ -172,7 +170,7 @@ fn test_validate_unibin() {
     let primal_name = "unibinPrimal";
 
     // Create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -183,7 +181,7 @@ fn test_validate_unibin() {
     create_cmd.assert().success();
 
     // Validate as UniBin
-    let mut validate_cmd = Command::new(sourdough_bin());
+    let mut validate_cmd = sourdough_cmd();
     validate_cmd
         .arg("validate")
         .arg("unibin")
@@ -202,7 +200,7 @@ fn test_validate_ecobin() {
     let primal_name = "ecobinPrimal";
 
     // Create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -213,7 +211,7 @@ fn test_validate_ecobin() {
     create_cmd.assert().success();
 
     // Validate as ecoBin
-    let mut validate_cmd = Command::new(sourdough_bin());
+    let mut validate_cmd = sourdough_cmd();
     validate_cmd
         .arg("validate")
         .arg("ecobin")
@@ -246,7 +244,7 @@ fn test_genomebin_create() {
 
     let output_path = temp_dir.path().join("test.genome");
 
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("genomebin")
         .arg("create")
         .arg("--primal")
@@ -272,7 +270,7 @@ fn test_genomebin_create() {
 fn test_genomebin_create_missing_dir() {
     let temp_dir = TempDir::new().unwrap();
 
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("genomebin")
         .arg("create")
         .arg("--primal")
@@ -292,7 +290,7 @@ fn test_genomebin_create_missing_dir() {
 /// Test verbose flag
 #[test]
 fn test_verbose_flag() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("--verbose").arg("doctor");
 
     cmd.assert().success();
@@ -301,7 +299,7 @@ fn test_verbose_flag() {
 /// Test quiet flag
 #[test]
 fn test_quiet_flag() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("--quiet").arg("doctor");
 
     cmd.assert().success();
@@ -314,7 +312,7 @@ fn test_generated_primal_structure() {
     let primal_name = "buildablePrimal";
 
     // Create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -353,7 +351,7 @@ fn test_generated_primal_has_tests() {
     let primal_name = "testablePrimal";
 
     // Create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -383,7 +381,7 @@ fn test_subcommand_help() {
     let subcommands = ["scaffold", "validate", "doctor", "genomebin"];
 
     for subcmd in subcommands {
-        let mut cmd = Command::new(sourdough_bin());
+        let mut cmd = sourdough_cmd();
         cmd.arg(subcmd).arg("--help");
 
         cmd.assert()
@@ -408,7 +406,7 @@ fn test_genomebin_test_valid() {
     let output_path = temp_dir.path().join("test.genome");
 
     // Create a genomeBin first
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("genomebin")
         .arg("create")
@@ -423,7 +421,7 @@ fn test_genomebin_test_valid() {
     create_cmd.assert().success();
 
     // Now test it
-    let mut test_cmd = Command::new(sourdough_bin());
+    let mut test_cmd = sourdough_cmd();
     test_cmd.arg("genomebin").arg("test").arg(&output_path);
 
     let output = test_cmd.output().unwrap();
@@ -434,7 +432,7 @@ fn test_genomebin_test_valid() {
 /// Test genomebin test on a missing file
 #[test]
 fn test_genomebin_test_missing_file() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("genomebin")
         .arg("test")
         .arg("/nonexistent/genome.bin");
@@ -451,7 +449,7 @@ fn test_genomebin_sign_not_implemented() {
     let dummy = temp_dir.path().join("dummy.genome");
     std::fs::write(&dummy, "dummy content").unwrap();
 
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("genomebin").arg("sign").arg(&dummy);
 
     cmd.assert()
@@ -462,7 +460,7 @@ fn test_genomebin_sign_not_implemented() {
 /// Test genomebin sign on missing file
 #[test]
 fn test_genomebin_sign_missing_file() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.arg("genomebin")
         .arg("sign")
         .arg("/nonexistent/genome.bin");
@@ -475,7 +473,7 @@ fn test_genomebin_sign_missing_file() {
 /// Test doctor comprehensive checks genomeBin tools
 #[test]
 fn test_doctor_comprehensive_genomebin_tools() {
-    let mut cmd = Command::new(sourdough_bin());
+    let mut cmd = sourdough_cmd();
     cmd.args(["doctor", "--comprehensive"]);
 
     cmd.assert()
@@ -495,7 +493,7 @@ fn test_scaffold_new_crate() {
     let primal_name = "cratePrimal";
 
     // First create a primal
-    let mut create_cmd = Command::new(sourdough_bin());
+    let mut create_cmd = sourdough_cmd();
     create_cmd
         .arg("scaffold")
         .arg("new-primal")
@@ -506,7 +504,7 @@ fn test_scaffold_new_crate() {
     create_cmd.assert().success();
 
     // Add a new crate
-    let mut add_crate_cmd = Command::new(sourdough_bin());
+    let mut add_crate_cmd = sourdough_cmd();
     add_crate_cmd
         .arg("scaffold")
         .arg("new-crate")
