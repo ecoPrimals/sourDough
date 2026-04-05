@@ -79,7 +79,7 @@ $ ldd target/x86_64-unknown-linux-musl/release/sourdough
 
 ```bash
 $ ls -lh target/x86_64-unknown-linux-musl/release/sourdough
--rwxrwxr-x 2 eastgate eastgate 3.1M Jan 19 14:18 sourdough
+-rwxrwxr-x 2 user user 3.1M Jan 19 14:18 sourdough
 ```
 
 **Result**: 3.1 MB (compact!)

@@ -10,7 +10,7 @@
 
 ### 1. ✅ **Harvested to plasmidBin**
 
-**Location**: `/path/to/ecoPrimals/phase2/biomeOS/plasmidBin/primals/sourdough/`
+**Location**: `plasmidBin/primals/sourdough/`
 
 **Binaries**:
 - `sourdough-x86_64-musl` (3.1 MB)
@@ -57,7 +57,7 @@ architecture_count = 2
 
 ### 3. ✅ **wateringHole Updated**
 
-**File**: `/path/to/ecoPrimals/wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md`
+**File**: `wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md`
 
 **Update**: Added sourDough as TRUE ecoBin #3
 
@@ -65,7 +65,7 @@ architecture_count = 2
 | **sourDough** | 0.1.0 | ✅ TRUE ecoBin #3 | Jan 19, 2026 |
 ```
 
-**File**: `/path/to/ecoPrimals/wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
+**File**: `wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
 
 **Update**: Updated reference implementation to sourDough
 
@@ -151,9 +151,9 @@ architecture_count = 2
 
 ### **Updated Documents**
 - `STATUS.md` - Reflects 98.25% coverage, ecoBin certification
-- `/path/to/ecoPrimals/phase2/biomeOS/plasmidBin/MANIFEST.md` - v0.17.0
-- `/path/to/ecoPrimals/wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md` - TRUE ecoBin #3
-- `/path/to/ecoPrimals/wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md` - Reference implementation
+- `plasmidBin/MANIFEST.md` - v0.17.0
+- `wateringHole/ECOBIN_ARCHITECTURE_STANDARD.md` - TRUE ecoBin #3
+- `wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md` - Reference implementation
 
 ---
 

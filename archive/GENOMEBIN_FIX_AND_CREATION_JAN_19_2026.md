@@ -179,7 +179,7 @@ sudo ./myprimal-1.0.0-genomebin.tar.gz --install
 
 ### **genomeBin Architecture**
 
-See: `/path/to/ecoPrimals/wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
+See: `wateringHole/GENOMEBIN_ARCHITECTURE_STANDARD.md`
 
 **Reference Implementation**: sourDough (meta-circular genomeBin #1)
 
