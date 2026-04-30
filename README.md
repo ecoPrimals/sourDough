@@ -55,7 +55,7 @@ No dependency on sourDough after creation.
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
 | C deps | zero (Pure Rust, blake3 `pure` feature) |
-| LOC | ~8,900 Rust across 30 files |
+| LOC | ~8,900 Rust across 33 files |
 | Max file | < 650 lines (target: 1000) |
 
 ## Standards Compliance
@@ -90,8 +90,9 @@ sourDough/
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -W clippy::pedantic -W clippy::nursery -D warnings
 cargo fmt --all -- --check
-cargo llvm-cov --workspace
+cargo deny check
 cargo doc --workspace --no-deps
+cargo llvm-cov --workspace
 ```
 
 ## Design Principles

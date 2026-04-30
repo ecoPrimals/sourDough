@@ -24,7 +24,7 @@
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 95%+ test coverage via `cargo llvm-cov` (237+ tests, target: 90%)
+- [x] 95%+ test coverage via `cargo llvm-cov` (247 tests, target: 90%)
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Release profile: LTO, codegen-units=1, strip
 - [x] scaffold.rs refactored into module (mod + generators + templates)
@@ -43,6 +43,12 @@
 - [x] **v0.2.0**: Capability wire standard (health.liveness, health.readiness, health.check, capabilities.list)
 - [x] **v0.2.0**: CONVENTIONS.md drift fixed (JSON-RPC 2.0 primary, binary RPC secondary)
 - [x] **v0.2.0**: Scaffold core crate now inherits `[lints] workspace = true`
+- [x] **v0.2.0**: Scaffold `ci.yml` now includes `cargo deny check` step
+- [x] **v0.2.0**: Scaffold `deny.toml` allows `cc` wrapper for blake3 (ecosystem standard)
+- [x] **v0.2.0**: `tarpc` removed (unused, 40 deps eliminated); `PrimalRpc` is transport-agnostic
+- [x] **v0.2.0**: `PrimalRpcClient::connect` returns `std::io::Result` (was `Box<dyn Error>`)
+- [x] **v0.2.0**: `bytes` patched 1.11.1 (RUSTSEC-2026-0007); deny.toml advisory ignores cleared
+- [x] **v0.2.0**: Total dependencies: 171 (down from 211)
 - [ ] Cross-compilation validation (musl) — SD-02, stretch
 - [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
 
