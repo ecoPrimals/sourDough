@@ -18,8 +18,10 @@ pub(in crate::commands::scaffold) fn ci_yml(_name: &str) -> String {
      \x20\x20\x20\x20\x20 - uses: actions/checkout@v4\n\
      \x20\x20\x20\x20\x20 - uses: dtolnay/rust-toolchain@stable\n\
      \x20\x20\x20\x20\x20 - uses: Swatinem/rust-cache@v2\n\
+     \x20\x20\x20\x20\x20 - run: cargo install --locked cargo-deny\n\
      \x20\x20\x20\x20\x20 - run: cargo fmt --all -- --check\n\
      \x20\x20\x20\x20\x20 - run: cargo clippy --workspace --all-targets -- -D warnings\n\
+     \x20\x20\x20\x20\x20 - run: cargo deny check\n\
      \x20\x20\x20\x20\x20 - run: cargo test --workspace\n"
         .to_owned()
 }
@@ -82,13 +84,15 @@ highlight = "all"
 allow-wildcard-paths = true
 
 # ecoBin v3.0: C-backed crates banned from application builds.
+# blake3 uses cc for optional SIMD backends; use features = ["pure"] if possible,
+# but cc is allowed as a wrapper for blake3 per ecosystem convergence standard.
 deny = [
     { crate = "openssl-sys", wrappers = [] },
     { crate = "openssl-src", wrappers = [] },
     { crate = "native-tls", wrappers = [] },
     { crate = "aws-lc-sys", wrappers = [] },
     { crate = "cmake", wrappers = [] },
-    { crate = "cc", wrappers = [] },
+    { crate = "cc", wrappers = ["blake3", "iana-time-zone-haiku"] },
     { crate = "bindgen", wrappers = [] },
     { crate = "bzip2-sys", wrappers = [] },
     { crate = "curl-sys", wrappers = [] },
