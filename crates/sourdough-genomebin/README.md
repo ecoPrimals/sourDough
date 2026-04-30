@@ -187,7 +187,7 @@ cargo doc --open
 
 ## Contributing
 
-See [`DEVELOPMENT.md`](../../DEVELOPMENT.md) for guidelines.
+See [`CONVENTIONS.md`](../../CONVENTIONS.md) and [`START_HERE.md`](../../START_HERE.md) for guidelines.
 
 ## License
 

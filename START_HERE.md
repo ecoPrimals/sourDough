@@ -52,6 +52,7 @@ sourDough/
 │   │       ├── config.rs          PrimalConfig trait + CommonConfig
 │   │       ├── ipc.rs             JSON-RPC 2.0 IPC (primary)
 │   │       ├── rpc.rs             tarpc RPC (secondary, high-throughput)
+│   │       ├── transport.rs       PeekedStream, socket path resolution
 │   │       ├── error.rs           PrimalError types
 │   │       └── types.rs           ContentHash, Timestamp
 │   └── sourdough-genomebin/       Pure Rust genomeBin operations

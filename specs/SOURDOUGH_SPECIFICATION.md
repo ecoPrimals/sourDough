@@ -1,7 +1,7 @@
 # sourDough Specification
 
-**Version**: 0.1.0
-**Date**: April 3, 2026
+**Version**: 0.2.0-dev
+**Date**: April 30, 2026
 **Status**: Reference Implementation
 **Role**: Nascent Primal (Budding Primal) + Standardization Framework
 
@@ -278,6 +278,6 @@ sourdough genomebin sign myPrimal.genome
 
 ---
 
-**Date**: April 3, 2026
-**Version**: 0.1.0
+**Date**: April 30, 2026
+**Version**: 0.2.0-dev
 **Status**: Reference Implementation

@@ -26,7 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workspace Cargo.toml template adds `clap` to workspace dependencies
 - Scaffolded workspace members now include both `-core` and `-server` crates
 - README template updated with server crate structure and capability wire table
-- 247 tests passing (up from 239)
+- `templates.rs` (862L) refactored into module directory: `core.rs` (440L), `server.rs` (319L), `infra.rs` (110L)
+- Hardcoded primal names removed from CLI help and doc examples (rhizoCrypt, loamSpine → generic)
+- `chrono` and `tempfile` deps aligned to `workspace = true` (was using local version pins)
+- Broken `DEVELOPMENT.md` link in sourdough-genomebin README fixed → `CONVENTIONS.md`
+- All root docs updated to 0.2.0-dev: README, STATUS, WHATS_NEXT, ROADMAP, ARCHITECTURE, START_HERE
+- Binary artifacts (tar.gz) removed from `archive/` directory
+- 247 tests passing (up from 239), zero files over 650 lines
 
 ### Added (prior)
 - `deny.toml` supply chain auditing with ecoBin v3.0 C-sys ban list (16 crates)

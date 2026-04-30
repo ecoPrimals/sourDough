@@ -1,22 +1,36 @@
 # What's Next for sourDough
 
-**Version**: 0.1.0
-**Date**: April 3, 2026
+**Version**: 0.2.0-dev
+**Date**: April 30, 2026
 
 ---
 
-## Immediate (v0.2.0)
+## Shipped (v0.2.0 — April 30, 2026)
 
-### Cross-Compilation Validation
+- [x] Scaffold generates `{name}-server` crate (JSON-RPC 2.0 + capability wire standard)
+- [x] Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml`
+- [x] Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
+- [x] `PeekedStream` transport in sourdough-core (ecosystem convergence)
+- [x] Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
+- [x] First-byte peek (JSON-RPC vs BTSP auto-detection)
+- [x] Capability wire handlers (health.liveness, health.readiness, health.check, capabilities.list)
+- [x] CONVENTIONS.md corrected (JSON-RPC 2.0 primary, tarpc secondary)
+- [x] Templates refactored into module directory (core/server/infra)
+
+---
+
+## Immediate (v0.2.x)
+
+### Cross-Compilation Validation (SD-02)
 
 - Validate musl builds on x86_64 and aarch64
 - Binary analysis: verify no C symbols, fully static linking
-- CI pipeline for cross-target builds
+- Wire into plasmidBin CI for genomeBin distribution
 
-### genomeBin Signing
+### genomeBin Signing (SD-03)
 
 - Pure Rust signing via sequoia-openpgp
-- SHA256 checksums for all artifacts
+- BLAKE3 checksums for all artifacts
 - Harvest to plasmidBin distribution surface
 
 ---
@@ -39,10 +53,10 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
 
 ### Integration Libraries
 
+- `sourdough harvest` command interfacing with plasmidBin `sources.toml`
 - `GenomeBinLauncher`: install, health_check, update, uninstall any primal
 - `GenomeBinRegistry`: discover and manage available primals
 - biomeOS ephemeral lifecycle support
-- Standard JSON-RPC protocol for primal management
 
 ---
 
@@ -50,8 +64,8 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Test coverage | 96%+ | >90% maintained |
-| Tests passing | 239+ | All passing |
+| Test coverage | 95%+ | >90% maintained |
+| Tests passing | 247 | All passing |
 | Clippy | zero warnings (workspace lints) | zero warnings |
 | Unsafe code | zero (forbid) | zero |
 | C dependencies | zero | zero |
@@ -69,11 +83,11 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
    cargo test --workspace
    cargo clippy --workspace --all-targets -- -D warnings
    cargo fmt --all -- --check
+   cargo deny check
    cargo doc --workspace --no-deps
-   cargo llvm-cov --workspace
    ```
 
 ---
 
-**Date**: April 3, 2026
-**Status**: Foundation complete, cross-compilation and signing next
+**Date**: April 30, 2026
+**Status**: v0.2.0 scaffold evolution shipped, cross-compilation and signing next

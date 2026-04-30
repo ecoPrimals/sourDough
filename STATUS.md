@@ -51,7 +51,7 @@
 | Crate | Tests | Coverage | Max Lines |
 |-------|-------|----------|-----------|
 | sourdough-core | 135 | ~95% | all < 650 |
-| sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 862 |
+| sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
 | sourdough-genomebin | 79 | ~96% | all < 560 |
 
 ## Recent Changes (April 30, 2026 — v0.2.0 scaffold evolution)

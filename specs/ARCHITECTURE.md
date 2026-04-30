@@ -284,6 +284,6 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 
 ---
 
-**Date**: April 3, 2026
-**Version**: 0.1.0
+**Date**: April 30, 2026
+**Version**: 0.2.0-dev
 **Status**: Reference Implementation

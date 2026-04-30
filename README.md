@@ -2,7 +2,7 @@
 
 The nascent primal. The budding primal. The starter culture for ecoPrimals.
 
-**Version**: 0.1.0 (unreleased)
+**Version**: 0.2.0-dev (unreleased)
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 **Edition**: Rust 2024
 
@@ -19,7 +19,7 @@ UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, tarpc RPC |
+| `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, tarpc RPC, PeekedStream transport |
 | `sourdough` | UniBin CLI: scaffold, validate, genomebin, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation |
 
@@ -38,19 +38,24 @@ cargo build --release
 ./target/release/sourdough doctor
 ```
 
-Scaffolded primals include their own core traits (`PrimalLifecycle`, `PrimalHealth`,
-`PrimalState`, `PrimalError`) inlined directly. No dependency on sourDough after creation.
+Scaffolded primals include:
+- **Core crate**: inlined traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalState`, `PrimalError`)
+- **Server crate**: JSON-RPC 2.0 server with capability wire handlers, first-byte peek, socket naming
+- **CI/CD**: GitHub Actions workflows (`ci.yml` + `notify-plasmidbin.yml`)
+- **Supply chain**: `deny.toml` (ecoBin v3.0 C-sys ban list)
+
+No dependency on sourDough after creation.
 
 ## Quality
 
 | Metric | Value |
 |--------|-------|
-| Tests | 239 passing (128 unit, 23 CLI integration, 2 e2e, 7 doc, 79 genomebin) |
+| Tests | 247 passing (135 unit, 23 CLI integration, 2 e2e, 8 doc, 79 genomebin) |
 | Coverage | 95%+ (llvm-cov, target: 90%) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
-| C deps | zero (Pure Rust) |
-| LOC | ~5,900 Rust across 29 files |
+| C deps | zero (Pure Rust, blake3 `pure` feature) |
+| LOC | ~8,900 Rust across 30 files |
 | Max file | < 650 lines (target: 1000) |
 
 ## Standards Compliance

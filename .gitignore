@@ -45,3 +45,8 @@ docs/_build/
 # Benchmarking
 criterion/
 bench-results/
+
+# Binary artifacts (genomeBin archives etc.)
+*.tar.gz
+*.tar.bz2
+*.zip
