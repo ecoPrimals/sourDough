@@ -14,7 +14,7 @@
 - [x] Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
 - [x] First-byte peek (JSON-RPC vs BTSP auto-detection)
 - [x] Capability wire handlers (health.liveness, health.readiness, health.check, capabilities.list)
-- [x] CONVENTIONS.md corrected (JSON-RPC 2.0 primary, tarpc secondary)
+- [x] CONVENTIONS.md corrected (JSON-RPC 2.0 primary, binary RPC secondary)
 - [x] Templates refactored into module directory (core/server/infra)
 
 ---

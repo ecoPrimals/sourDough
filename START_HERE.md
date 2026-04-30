@@ -51,7 +51,7 @@ sourDough/
 │   │       ├── discovery.rs       PrimalDiscovery trait
 │   │       ├── config.rs          PrimalConfig trait + CommonConfig
 │   │       ├── ipc.rs             JSON-RPC 2.0 IPC (primary)
-│   │       ├── rpc.rs             tarpc RPC (secondary, high-throughput)
+│   │       ├── rpc.rs             Binary RPC (secondary, high-throughput)
 │   │       ├── transport.rs       PeekedStream, socket path resolution
 │   │       ├── error.rs           PrimalError types
 │   │       └── types.rs           ContentHash, Timestamp
@@ -83,8 +83,8 @@ runtime dependency on sourDough.
 ### IPC Architecture
 
 - **JSON-RPC 2.0** (primary): semantic `domain.verb` method naming, newline-delimited
-- **tarpc** (secondary): type-safe binary IPC for high-throughput paths
-- `bytes::Bytes` for zero-copy on the tarpc path
+- **Binary RPC** (secondary): type-safe binary IPC for high-throughput paths
+- `bytes::Bytes` for zero-copy wire format
 
 ### Primal Sovereignty
 

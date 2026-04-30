@@ -96,10 +96,11 @@ info!(user = %user_id, action = "login", "user logged in");
 | `health.check` | Full diagnostic report |
 | `capabilities.list` | `{ "primal": "name", "version": "x.y.z", "methods": [...] }` |
 
-### tarpc (Secondary, High-Throughput)
+### Binary RPC (Secondary, High-Throughput)
 
 - Type-safe binary IPC for bulk/streaming operations
 - `bytes::Bytes` for zero-copy on the wire
+- Transport-agnostic: `PrimalRpc` trait works with any binary framing
 - Same semantic contract as JSON-RPC, different wire format
 
 ### Service Discovery
@@ -278,7 +279,6 @@ serde = { version = "1.0", features = ["derive"] }
 Scaffolded primals are **self-contained** with inlined traits (no `sourdough-core` dependency).
 All primals should use:
 - `tokio` — Async runtime
-- `tarpc` — RPC communication
 - `serde` — Serialization
 - `bytes` — Zero-copy buffers
 - `thiserror` — Error handling (libraries)

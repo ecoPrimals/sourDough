@@ -1,7 +1,9 @@
 //! RPC layer for inter-primal communication.
 //!
-//! This module provides tarpc-based RPC interfaces for primals to communicate.
-//! All primals expose common RPC endpoints for health, lifecycle, and discovery.
+//! This module provides RPC interfaces for primals to communicate using the
+//! standard zero-copy wire format. The [`PrimalRpc`] trait defines the baseline
+//! service contract; implementations may use any transport (JSON-RPC 2.0 over
+//! UDS, binary framing, etc.).
 
 use crate::{error::PrimalError, health::HealthReport, identity::Did, lifecycle::PrimalState};
 use bytes::Bytes;
@@ -65,19 +67,20 @@ mod rpc_bytes_serde {
 /// Common RPC service that all primals must implement.
 ///
 /// This provides the baseline interface for inter-primal communication.
-#[tarpc::service]
+/// Implementations are transport-agnostic: the same contract works over
+/// JSON-RPC 2.0 (primary) or binary framing (high-throughput).
 pub trait PrimalRpc {
     /// Get the primal's current health status.
-    async fn health() -> Result<HealthReport, String>;
+    fn health(&self) -> impl std::future::Future<Output = Result<HealthReport, String>> + Send;
 
     /// Get the primal's current lifecycle state.
-    async fn state() -> Result<PrimalState, String>;
+    fn state(&self) -> impl std::future::Future<Output = Result<PrimalState, String>> + Send;
 
     /// Get the primal's decentralized identifier (DID).
-    async fn did() -> Result<Did, String>;
+    fn did(&self) -> impl std::future::Future<Output = Result<Did, String>> + Send;
 
     /// Ping the primal for liveness check.
-    async fn ping() -> Result<String, String>;
+    fn ping(&self) -> impl std::future::Future<Output = Result<String, String>> + Send;
 }
 
 /// RPC request wrapper for zero-copy optimization.
@@ -274,18 +277,18 @@ pub mod client {
     }
 
     impl PrimalRpcClient {
-        /// Create a new RPC client.
+        /// Create a new RPC client by resolving an address.
         ///
         /// # Errors
         ///
-        /// Returns an error if the address cannot be resolved.
-        pub async fn connect(
-            addr: impl ToSocketAddrs,
-        ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-            let addr = tokio::net::lookup_host(addr)
-                .await?
-                .next()
-                .ok_or("Failed to resolve address")?;
+        /// Returns [`std::io::Error`] if the address cannot be resolved.
+        pub async fn connect(addr: impl ToSocketAddrs) -> std::io::Result<Self> {
+            let addr = tokio::net::lookup_host(addr).await?.next().ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::AddrNotAvailable,
+                    "no addresses resolved",
+                )
+            })?;
 
             Ok(Self { addr })
         }

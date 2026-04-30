@@ -106,7 +106,10 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
 
     let ci_yml = std::fs::read_to_string(primal_path.join(".github/workflows/ci.yml")).unwrap();
     assert!(ci_yml.contains("cargo clippy"), "ci.yml must run clippy");
-    assert!(ci_yml.contains("cargo deny check"), "ci.yml must enforce supply chain audit");
+    assert!(
+        ci_yml.contains("cargo deny check"),
+        "ci.yml must enforce supply chain audit"
+    );
     assert!(ci_yml.contains("cargo test"), "ci.yml must run tests");
 
     assert!(

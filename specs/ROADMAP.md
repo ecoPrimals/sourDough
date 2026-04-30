@@ -11,7 +11,7 @@
 ### Complete (v0.1.0 + v0.2.0)
 
 - [x] Core traits: PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig
-- [x] sourdough-core library: traits + types + JSON-RPC 2.0 IPC + tarpc RPC + PeekedStream transport
+- [x] sourdough-core library: traits + types + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
 - [x] sourDough UniBin CLI: scaffold, validate, genomebin, doctor
 - [x] Scaffold independence: generated primals are self-contained (budding primal pattern)
 - [x] sourdough-genomebin Pure Rust library: platform detection, metadata, archive, validation
@@ -49,7 +49,7 @@
 
 **Delivered** (January - April 3, 2026):
 
-- Core traits library with JSON-RPC 2.0 IPC and tarpc RPC
+- Core traits library with JSON-RPC 2.0 IPC and zero-copy RPC
 - UniBin CLI: scaffold, validate, genomebin, doctor
 - Pure Rust genomebin library (replaces bash scripts)
 - Self-contained primal scaffolding (budding primal pattern)

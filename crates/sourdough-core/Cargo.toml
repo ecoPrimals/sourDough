@@ -27,9 +27,6 @@ tracing = { workspace = true }
 # Cryptography
 blake3 = { workspace = true }
 
-# RPC
-tarpc = { workspace = true }
-
 [lints]
 workspace = true
 

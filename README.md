@@ -19,7 +19,7 @@ UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, tarpc RPC, PeekedStream transport |
+| `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, zero-copy RPC, PeekedStream transport |
 | `sourdough` | UniBin CLI: scaffold, validate, genomebin, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation |
 
@@ -64,7 +64,7 @@ No dependency on sourDough after creation.
 - **ecoBin**: Pure Rust, zero C dependencies, static linking, cross-compilation
 - **genomeBin**: Pure Rust platform detection, metadata, archive operations
 - **JSON-RPC 2.0**: primary IPC with semantic `domain.verb` method naming
-- **tarpc**: secondary high-throughput binary IPC path
+- **Binary RPC**: secondary high-throughput path (`bytes::Bytes` zero-copy, transport-agnostic)
 - **scyBorg Provenance Trio**: AGPL-3.0-or-later (software), ORC (research/data), CC-BY-SA-4.0 (docs)
 
 ## Project Layout

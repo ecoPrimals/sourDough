@@ -6,7 +6,7 @@
 
 ## Current State
 
-- `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + tarpc RPC + PeekedStream transport
+- `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
 - `sourdough`: CLI binary (scaffold, validate, genomebin, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
@@ -21,7 +21,7 @@
 - [x] `cargo deny check` passing (ecoBin v3.0 C-sys ban list, supply chain audit)
 - [x] Zero hardcoded primal names in crate code (Discovery grade A)
 - [x] JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
-- [x] tarpc secondary high-throughput path with `bytes::Bytes` zero-copy
+- [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
 - [x] 95%+ test coverage via `cargo llvm-cov` (237+ tests, target: 90%)
@@ -41,7 +41,7 @@
 - [x] **v0.2.0**: Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
 - [x] **v0.2.0**: First-byte peek in generated server (JSON-RPC vs BTSP auto-detection)
 - [x] **v0.2.0**: Capability wire standard (health.liveness, health.readiness, health.check, capabilities.list)
-- [x] **v0.2.0**: CONVENTIONS.md drift fixed (JSON-RPC 2.0 primary, tarpc secondary)
+- [x] **v0.2.0**: CONVENTIONS.md drift fixed (JSON-RPC 2.0 primary, binary RPC secondary)
 - [x] **v0.2.0**: Scaffold core crate now inherits `[lints] workspace = true`
 - [ ] Cross-compilation validation (musl) — SD-02, stretch
 - [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
@@ -61,7 +61,10 @@
 - Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
 - `PeekedStream` + `peek_protocol` added to sourdough-core (first-byte protocol auto-detection)
 - `resolve_socket_path` + `socket_path_in` added to sourdough-core (ecosystem socket naming)
-- CONVENTIONS.md corrected: JSON-RPC 2.0 as primary IPC, tarpc as secondary
+- CONVENTIONS.md corrected: JSON-RPC 2.0 as primary IPC, binary RPC as secondary
+- tarpc dependency removed (40 transitive deps eliminated); PrimalRpc is now transport-agnostic
+- `bytes` patched to 1.11.1 (RUSTSEC-2026-0007 resolved)
+- deny.toml advisory ignores cleared (all were tarpc-transitive)
 - Generated core crate now inherits `[lints] workspace = true`
 - 247 tests passing (up from 239), enhanced e2e assertions for v0.2.0 artifacts
 - Generated server includes: dispatch with 4 capability handlers, first-byte peek, socket naming, tracing

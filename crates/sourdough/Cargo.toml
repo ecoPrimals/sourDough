@@ -46,7 +46,4 @@ workspace = true
 tempfile = { workspace = true }
 assert_cmd = "2.2"
 predicates = "3.1"
-tokio-util = { workspace = true, features = ["codec"] }
-tokio-serde = { workspace = true, features = ["bincode"] }
-bincode = { workspace = true }
 

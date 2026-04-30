@@ -4,7 +4,7 @@
 //! JSON-RPC 2.0 endpoints following the semantic method naming standard
 //! (`domain.verb` pattern).
 //!
-//! The tarpc-based RPC in [`crate::rpc`] is the optional high-throughput
+//! The binary RPC in [`crate::rpc`] is the optional high-throughput
 //! binary path for performance-critical communication.
 
 #![expect(

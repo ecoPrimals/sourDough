@@ -8,14 +8,7 @@ all-features = true
 
 [advisories]
 yanked = "deny"
-ignore = [
-    # Transitive from tarpc 0.34 → tokio-serde → bincode v1; awaiting tarpc upstream migration.
-    { id = "RUSTSEC-2025-0141", reason = "bincode v1 is transitive via tarpc; no direct usage" },
-    # Transitive from tarpc 0.34 → tracing-opentelemetry → opentelemetry_sdk 0.18.
-    { id = "RUSTSEC-2026-0007", reason = "opentelemetry_sdk is transitive via tarpc; no direct usage" },
-    # Transitive from tarpc 0.34 → opentelemetry_api merged into opentelemetry crate.
-    { id = "RUSTSEC-2024-0387", reason = "opentelemetry_api is transitive via tarpc; awaiting tarpc upgrade" },
-]
+ignore = []
 
 [licenses]
 allow = [
@@ -67,9 +60,6 @@ deny = [
     { crate = "cryptoki-sys", wrappers = [] },
 ]
 
-# Duplicate crate versions — all transitive from tarpc 0.34 (old opentelemetry,
-# rand 0.8, syn 1.x, thiserror 1.x) and proptest (rand 0.9). No action possible
-# until tarpc upgrades its dependency tree.
 skip = []
 
 [sources]

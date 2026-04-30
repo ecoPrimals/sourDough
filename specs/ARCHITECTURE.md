@@ -10,7 +10,7 @@
 
 sourDough is both a library and a tool:
 
-- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + tarpc RPC
+- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + zero-copy RPC
 - **Tool** (`sourdough` UniBin): Primal scaffolding, validation, genomeBin, diagnostics
 - **Library** (`sourdough-genomebin`): Pure Rust genomeBin operations
 
@@ -34,7 +34,7 @@ sourDough/
       discovery.rs                      PrimalDiscovery trait (369 lines)
       config.rs                         PrimalConfig trait (290 lines)
       ipc.rs                            JSON-RPC 2.0 IPC, primary (637 lines)
-      rpc.rs                            tarpc RPC, secondary (425 lines)
+      rpc.rs                            Binary RPC, secondary (425 lines)
       transport.rs                      PeekedStream, peek_protocol, socket_path (233 lines)
       error.rs                          Common error types (244 lines)
       types.rs                          Common types: ContentHash, Timestamp (444 lines)
@@ -158,11 +158,11 @@ pub trait PrimalConfig {
 - Request/response/notification/batch support
 - Circuit breaker pattern for resilience
 
-### tarpc (Secondary)
+### Binary RPC (Secondary)
 
 `sourdough-core/src/rpc.rs` provides high-throughput binary IPC:
 
-- Type-safe service definitions via tarpc
+- Type-safe `PrimalRpc` trait (transport-agnostic async interface)
 - `bytes::Bytes` for zero-copy on the wire (custom `rpc_bytes_serde`)
 - Used when JSON-RPC 2.0 overhead is unacceptable
 - Same semantic contract, different wire format
@@ -172,9 +172,9 @@ pub trait PrimalConfig {
 | Use case | Protocol |
 |----------|----------|
 | General IPC, tooling, debugging | JSON-RPC 2.0 |
-| High-throughput data transfer | tarpc |
+| High-throughput data transfer | Binary RPC |
 | Health checks, capability queries | JSON-RPC 2.0 |
-| Bulk operations, streaming | tarpc |
+| Bulk operations, streaming | Binary RPC |
 
 ---
 
@@ -223,7 +223,6 @@ All dependencies are Pure Rust (ecoBin compliant):
 [workspace.dependencies]
 tokio = { version = "1.40", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-tarpc = { version = "0.34", features = ["tokio1", "serde1", "serde-transport"] }
 bytes = { version = "1.11", features = ["serde"] }
 blake3 = "1.5"
 thiserror = "2.0"
@@ -252,7 +251,7 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 ### Phase 1: Core Traits -- COMPLETE
 
 - PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig
-- JSON-RPC 2.0 IPC, tarpc RPC
+- JSON-RPC 2.0 IPC, zero-copy RPC
 - Common types (Did, ContentHash, Timestamp, PrimalError)
 
 ### Phase 2: UniBin CLI -- COMPLETE

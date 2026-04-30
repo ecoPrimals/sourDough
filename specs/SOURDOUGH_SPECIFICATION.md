@@ -29,7 +29,7 @@ sourDough itself is a primal demonstrating ecoPrimals standards:
 - UniBin architecture (single binary, multiple subcommands)
 - ecoBin compliance (Pure Rust, zero C dependencies, cross-compilation)
 - JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
-- tarpc secondary high-throughput IPC
+- Binary RPC secondary high-throughput IPC (transport-agnostic)
 - Capability-based discovery, zero hardcoding
 - `#![forbid(unsafe_code)]` on all crates
 
@@ -123,7 +123,7 @@ pub trait PrimalConfig {
 
 Also provides:
 - JSON-RPC 2.0 IPC (`ipc.rs`): newline-delimited, `domain.verb` naming, circuit breaker
-- tarpc RPC (`rpc.rs`): type-safe binary IPC for high-throughput paths
+- Binary RPC (`rpc.rs`): type-safe transport-agnostic IPC for high-throughput paths
 - Common types (`types.rs`): `Did`, `ContentHash`, `Timestamp`
 
 ### 2. sourdough (UniBin CLI)
@@ -211,7 +211,7 @@ sourdough genomebin sign myPrimal.genome
 ### ecoBin
 
 - Pure Rust: zero C dependencies
-- Dependencies: tokio, serde, tarpc, bytes, blake3 (pure), thiserror, clap, tracing
+- Dependencies: tokio, serde, bytes, blake3 (pure), thiserror, clap, tracing
 - Cross-compilation: x86_64, ARM64 (musl targets)
 
 ### Quality

@@ -20,7 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generated server: `main.rs` with clap CLI (`--family-id` arg, `FAMILY_ID` env var)
 - Enhanced e2e tests: 14 new assertions verifying deny.toml, CI workflows, server crate, dispatch handlers, socket naming
 
+### Removed (v0.2.0)
+- `tarpc` dependency (was only used for a proc macro annotation on `PrimalRpc` trait; generated code never consumed)
+- `tokio-serde`, `bincode`, `tokio-util` dev-dependencies (unused, residual from tarpc exploration)
+- 40 transitive dependencies eliminated (211 → 171 total)
+- 3 advisory ignores from `deny.toml` (all were tarpc-transitive: RUSTSEC-2025-0141, RUSTSEC-2026-0007, RUSTSEC-2024-0387)
+
 ### Changed (v0.2.0)
+- `PrimalRpc` trait: transport-agnostic async trait (was tarpc proc-macro annotated)
+- `PrimalRpcClient::connect`: returns `std::io::Result` (was `Box<dyn Error>`)
+- `bytes` updated to 1.11.1 (RUSTSEC-2026-0007 BytesMut overflow patched)
+- Scaffold `ci.yml` now includes `cargo deny check` step (supply chain enforcement)
+- Scaffold `deny.toml` now allows `cc` as wrapper for `blake3`/`iana-time-zone-haiku` (ecosystem standard)
 - CONVENTIONS.md: JSON-RPC 2.0 is now documented as primary IPC (was incorrectly showing tarpc)
 - Scaffolded core crate now includes `[lints] workspace = true` (was missing)
 - Workspace Cargo.toml template adds `clap` to workspace dependencies

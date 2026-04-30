@@ -55,5 +55,6 @@ pub use ipc::{
     JsonRpcRequest, JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
+pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};
 pub use transport::{PeekedStream, Protocol, peek_protocol, resolve_socket_path, socket_path_in};
 pub use types::{ContentHash, Timestamp};

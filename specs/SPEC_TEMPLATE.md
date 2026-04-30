@@ -87,13 +87,12 @@ pub struct {{PRIMARY_STRUCT}} {
 }
 ```
 
-### 4.2 tarpc Service (Secondary, High-Throughput)
+### 4.2 Binary RPC Service (Secondary, High-Throughput)
 
 ```rust
-#[tarpc::service]
 pub trait {{PrimalName}}Rpc {
-    async fn health() -> Result<HealthReport, String>;
-    async fn state() -> Result<PrimalState, String>;
+    fn health(&self) -> impl Future<Output = Result<HealthReport, String>> + Send;
+    fn state(&self) -> impl Future<Output = Result<PrimalState, String>> + Send;
     // Add primal-specific methods
 }
 ```
