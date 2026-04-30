@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 /// Service registration for discovery services.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServiceRegistration {
-    /// Service name (e.g., "rhizocrypt", "loamspine").
+    /// Service name (e.g., "my-primal", "another-primal").
     pub name: String,
     /// Service version (semver).
     pub version: String,

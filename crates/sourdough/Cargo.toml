@@ -36,14 +36,14 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 # Date/time
-chrono = "0.4"
+chrono = { workspace = true }
 sourdough-genomebin = { version = "0.1.0", path = "../sourdough-genomebin" }
 
 [lints]
 workspace = true
 
 [dev-dependencies]
-tempfile = "3.12"
+tempfile = { workspace = true }
 assert_cmd = "2.2"
 predicates = "3.1"
 tokio-util = { workspace = true, features = ["codec"] }

@@ -16,7 +16,7 @@ pub(crate) enum ScaffoldCommand {
     /// Create a new primal
     #[command(name = "new-primal")]
     NewPrimal {
-        /// Name of the primal (e.g., "rhizoCrypt")
+        /// Name of the primal (e.g., "myPrimal")
         name: String,
 
         /// Description of the primal
@@ -33,7 +33,7 @@ pub(crate) enum ScaffoldCommand {
         /// Name of the primal
         primal: String,
 
-        /// Name of the new crate (e.g., "rhizocrypt-storage")
+        /// Name of the new crate (e.g., "myprimal-storage")
         crate_name: String,
 
         /// Path to the primal directory
