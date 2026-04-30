@@ -41,6 +41,7 @@ pub mod identity;
 pub mod ipc;
 pub mod lifecycle;
 pub mod rpc;
+pub mod transport;
 pub mod types;
 
 // Re-exports for convenience
@@ -54,4 +55,5 @@ pub use ipc::{
     JsonRpcRequest, JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
+pub use transport::{PeekedStream, Protocol, peek_protocol, resolve_socket_path, socket_path_in};
 pub use types::{ContentHash, Timestamp};

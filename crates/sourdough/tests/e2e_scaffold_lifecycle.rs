@@ -88,6 +88,68 @@ fn scaffold_build_test_validate() {
         !core_cargo.contains("sourdough"),
         "scaffolded core crate must not reference sourdough"
     );
+
+    // 6. Verify v0.2.0 scaffold artifacts
+    verify_v020_artifacts(&primal_path, &core_cargo);
+}
+
+fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
+    let deny_toml = std::fs::read_to_string(primal_path.join("deny.toml")).unwrap();
+    assert!(
+        deny_toml.contains("openssl-sys"),
+        "deny.toml must ban openssl-sys"
+    );
+    assert!(
+        deny_toml.contains("[licenses]"),
+        "deny.toml must have license config"
+    );
+
+    let ci_yml = std::fs::read_to_string(primal_path.join(".github/workflows/ci.yml")).unwrap();
+    assert!(ci_yml.contains("cargo clippy"), "ci.yml must run clippy");
+    assert!(ci_yml.contains("cargo test"), "ci.yml must run tests");
+
+    let notify_yml =
+        std::fs::read_to_string(primal_path.join(".github/workflows/notify-plasmidbin.yml"))
+            .unwrap();
+    assert!(
+        notify_yml.contains("primal-updated"),
+        "notify-plasmidbin.yml must dispatch primal-updated event"
+    );
+
+    let server_cargo =
+        std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/Cargo.toml")).unwrap();
+    assert!(
+        server_cargo.contains("e2eprimal-core"),
+        "server crate must depend on core crate"
+    );
+
+    assert!(
+        core_cargo.contains("[lints]"),
+        "core crate must have [lints] section for workspace inheritance"
+    );
+
+    let dispatch =
+        std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/dispatch.rs"))
+            .unwrap();
+    assert!(
+        dispatch.contains("health.liveness"),
+        "dispatch must handle health.liveness"
+    );
+    assert!(
+        dispatch.contains("capabilities.list"),
+        "dispatch must handle capabilities.list"
+    );
+
+    let server =
+        std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/server.rs")).unwrap();
+    assert!(
+        server.contains("fill_buf"),
+        "server must implement first-byte peek"
+    );
+    assert!(
+        server.contains("biomeos"),
+        "server must use biomeos socket directory"
+    );
 }
 
 /// Scaffold a primal, add a crate, then build the full workspace.

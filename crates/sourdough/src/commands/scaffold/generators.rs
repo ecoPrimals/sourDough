@@ -8,7 +8,9 @@ use anyhow::{Context, Result};
 use std::path::Path;
 
 pub(super) fn write_workspace_cargo_toml(dir: &Path, name: &str) -> Result<()> {
-    let core_crate_name = format!("{}-core", name.to_lowercase());
+    let name_lower = name.to_lowercase();
+    let core_crate_name = format!("{name_lower}-core");
+    let server_crate_name = format!("{name_lower}-server");
     std::fs::write(
         dir.join("Cargo.toml"),
         format!(
@@ -16,6 +18,7 @@ pub(super) fn write_workspace_cargo_toml(dir: &Path, name: &str) -> Result<()> {
 resolver = "2"
 members = [
     "crates/{core_crate_name}",
+    "crates/{server_crate_name}",
 ]
 
 [workspace.package]
@@ -54,12 +57,53 @@ toml = "0.8"
 thiserror = "2.0"
 anyhow = "1.0"
 
+# CLI
+clap = {{ version = "4.5", features = ["derive", "env"] }}
+
 # Logging
 tracing = "0.1"
 tracing-subscriber = {{ version = "0.3", features = ["env-filter"] }}
 "#,
         ),
     )?;
+    Ok(())
+}
+
+pub(super) fn create_server_crate(crates_dir: &Path, name: &str) -> Result<()> {
+    let name_lower = name.to_lowercase();
+    let server_crate_name = format!("{name_lower}-server");
+    let core_crate_name = format!("{name_lower}-core");
+    let server_dir = crates_dir.join(&server_crate_name);
+    let src_dir = server_dir.join("src");
+
+    std::fs::create_dir_all(&src_dir)?;
+
+    std::fs::write(
+        server_dir.join("Cargo.toml"),
+        templates::server_cargo_toml(&server_crate_name, &core_crate_name, name),
+    )?;
+    std::fs::write(src_dir.join("main.rs"), templates::server_main_rs(name))?;
+    std::fs::write(src_dir.join("server.rs"), templates::server_rs(name))?;
+    std::fs::write(src_dir.join("dispatch.rs"), templates::dispatch_rs(name))?;
+
+    Ok(())
+}
+
+pub(super) fn write_deny_toml(dir: &Path) -> Result<()> {
+    std::fs::write(dir.join("deny.toml"), templates::DENY_TOML)?;
+    Ok(())
+}
+
+pub(super) fn write_github_workflows(dir: &Path, name: &str) -> Result<()> {
+    let workflows_dir = dir.join(".github").join("workflows");
+    std::fs::create_dir_all(&workflows_dir)?;
+
+    std::fs::write(workflows_dir.join("ci.yml"), templates::ci_yml(name))?;
+    std::fs::write(
+        workflows_dir.join("notify-plasmidbin.yml"),
+        templates::NOTIFY_PLASMIDBIN_YML,
+    )?;
+
     Ok(())
 }
 
@@ -122,12 +166,14 @@ pub(super) fn write_specs_directory(dir: &Path, name: &str, description: &str) -
 }
 
 pub(super) fn write_readme(dir: &Path, name: &str, description: &str) -> Result<()> {
+    let name_lower = name.to_lowercase();
     std::fs::write(
         dir.join("README.md"),
         format!(
             r"# {name}
 
 **Status**: Draft
+**License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 **Purpose**: {description}
 
 ---
@@ -135,24 +181,38 @@ pub(super) fn write_readme(dir: &Path, name: &str, description: &str) -> Result<
 ## Quick Start
 
 ```bash
-cargo build
-cargo test
+cargo build --release
+cargo test --workspace
+./target/release/{name_lower}  # starts JSON-RPC server on UDS
 ```
 
 ## Structure
 
 ```
 {name}/
+├── .github/workflows/     CI + plasmidBin notification
 ├── crates/
-│   └── {core}-core/
+│   ├── {name_lower}-core/        Core traits (lifecycle, health)
+│   └── {name_lower}-server/      JSON-RPC server + capability wire
+├── deny.toml              Supply chain auditing
 └── specs/
 ```
+
+## Capability Wire
+
+The server exposes these JSON-RPC 2.0 methods on `$XDG_RUNTIME_DIR/biomeos/{name_lower}.sock`:
+
+| Method | Description |
+|--------|-------------|
+| `health.liveness` | Process liveness check |
+| `health.readiness` | Readiness + capabilities |
+| `health.check` | Full diagnostic report |
+| `capabilities.list` | Primal name, version, methods |
 
 ---
 
 *Scaffolded by sourDough — the nascent primal.*
 ",
-            core = name.to_lowercase(),
         ),
     )?;
 

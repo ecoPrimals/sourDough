@@ -1,12 +1,12 @@
 # sourDough Status
 
-**Version**: 0.1.0 (unreleased)
+**Version**: 0.2.0-dev (unreleased)
 **Edition**: Rust 2024
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 
 ## Current State
 
-- `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + tarpc RPC
+- `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + tarpc RPC + PeekedStream transport
 - `sourdough`: CLI binary (scaffold, validate, genomebin, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
@@ -34,6 +34,15 @@
 - [x] WHATS_NEXT.md and START_HERE.md documentation
 - [x] `deny.toml` supply chain auditing (SD-01 resolved)
 - [x] `tar` crate updated to 0.4.45 (RUSTSEC-2026-0067, RUSTSEC-2026-0068 resolved)
+- [x] **v0.2.0**: Scaffold generates `{name}-server` crate with JSON-RPC server + capability wire handlers
+- [x] **v0.2.0**: Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml`
+- [x] **v0.2.0**: Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
+- [x] **v0.2.0**: `PeekedStream` transport utility in sourdough-core (ecosystem convergence)
+- [x] **v0.2.0**: Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
+- [x] **v0.2.0**: First-byte peek in generated server (JSON-RPC vs BTSP auto-detection)
+- [x] **v0.2.0**: Capability wire standard (health.liveness, health.readiness, health.check, capabilities.list)
+- [x] **v0.2.0**: CONVENTIONS.md drift fixed (JSON-RPC 2.0 primary, tarpc secondary)
+- [x] **v0.2.0**: Scaffold core crate now inherits `[lints] workspace = true`
 - [ ] Cross-compilation validation (musl) — SD-02, stretch
 - [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
 
@@ -41,11 +50,23 @@
 
 | Crate | Tests | Coverage | Max Lines |
 |-------|-------|----------|-----------|
-| sourdough-core | 128 | ~95% | all < 650 |
-| sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 450 |
+| sourdough-core | 135 | ~95% | all < 650 |
+| sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 862 |
 | sourdough-genomebin | 79 | ~96% | all < 560 |
 
-## Recent Changes (April 3, 2026)
+## Recent Changes (April 30, 2026 — v0.2.0 scaffold evolution)
+
+- Scaffold now generates `{name}-core` + `{name}-server` crates (JSON-RPC server with capability wire standard)
+- Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml` (CI + genomeBin distribution)
+- Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
+- `PeekedStream` + `peek_protocol` added to sourdough-core (first-byte protocol auto-detection)
+- `resolve_socket_path` + `socket_path_in` added to sourdough-core (ecosystem socket naming)
+- CONVENTIONS.md corrected: JSON-RPC 2.0 as primary IPC, tarpc as secondary
+- Generated core crate now inherits `[lints] workspace = true`
+- 247 tests passing (up from 239), enhanced e2e assertions for v0.2.0 artifacts
+- Generated server includes: dispatch with 4 capability handlers, first-byte peek, socket naming, tracing
+
+## Prior Changes (April 3, 2026)
 
 - Workspace-level lint configuration (`[workspace.lints]`) replaces per-crate `#![warn]`
 - Release profile optimizations (LTO, codegen-units=1, strip)

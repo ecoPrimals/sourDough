@@ -5,9 +5,30 @@ All notable changes to sourDough will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — v0.2.0 Scaffold Evolution
 
-### Added
+### Added (v0.2.0 — April 30, 2026)
+- Scaffold generates `{name}-server` crate with JSON-RPC 2.0 server skeleton
+- Scaffold generates `.github/workflows/ci.yml` (lean single-job CI)
+- Scaffold generates `.github/workflows/notify-plasmidbin.yml` (genomeBin auto-distribution)
+- Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
+- `PeekedStream` transport utility in sourdough-core (ecosystem convergence for first-byte peek)
+- `peek_protocol` async function for JSON-RPC vs BTSP auto-detection
+- `resolve_socket_path` and `socket_path_in` for ecosystem socket naming convention
+- Generated server: `dispatch.rs` with 4 capability wire handlers (health.liveness, health.readiness, health.check, capabilities.list)
+- Generated server: `server.rs` with UDS listener, first-byte peek, newline-delimited JSON-RPC
+- Generated server: `main.rs` with clap CLI (`--family-id` arg, `FAMILY_ID` env var)
+- Enhanced e2e tests: 14 new assertions verifying deny.toml, CI workflows, server crate, dispatch handlers, socket naming
+
+### Changed (v0.2.0)
+- CONVENTIONS.md: JSON-RPC 2.0 is now documented as primary IPC (was incorrectly showing tarpc)
+- Scaffolded core crate now includes `[lints] workspace = true` (was missing)
+- Workspace Cargo.toml template adds `clap` to workspace dependencies
+- Scaffolded workspace members now include both `-core` and `-server` crates
+- README template updated with server crate structure and capability wire table
+- 247 tests passing (up from 239)
+
+### Added (prior)
 - `deny.toml` supply chain auditing with ecoBin v3.0 C-sys ban list (16 crates)
 - Workspace-level lint configuration (`[workspace.lints]`): pedantic, nursery, forbid(unsafe_code)
 - Release profile optimizations: LTO, codegen-units=1, strip

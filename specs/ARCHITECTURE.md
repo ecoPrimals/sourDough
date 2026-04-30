@@ -1,7 +1,7 @@
 # sourDough Architecture
 
-**Version**: 0.1.0
-**Date**: April 3, 2026
+**Version**: 0.2.0-dev
+**Date**: April 30, 2026
 **Type**: Reference Implementation (Nascent Budding Primal)
 
 ---
@@ -27,7 +27,7 @@ sourDough/
   Cargo.toml                            Workspace manifest + lints + release profile
   crates/
     sourdough-core/src/
-      lib.rs                            Re-exports (57 lines)
+      lib.rs                            Re-exports (59 lines)
       lifecycle.rs                      PrimalLifecycle trait (305 lines)
       health.rs                         PrimalHealth trait (371 lines)
       identity.rs                       PrimalIdentity trait (414 lines)
@@ -35,6 +35,7 @@ sourDough/
       config.rs                         PrimalConfig trait (290 lines)
       ipc.rs                            JSON-RPC 2.0 IPC, primary (637 lines)
       rpc.rs                            tarpc RPC, secondary (425 lines)
+      transport.rs                      PeekedStream, peek_protocol, socket_path (233 lines)
       error.rs                          Common error types (244 lines)
       types.rs                          Common types: ContentHash, Timestamp (444 lines)
     sourdough/src/
@@ -43,8 +44,8 @@ sourDough/
         mod.rs                          Command module declarations (11 lines)
         scaffold/
           mod.rs                        Command dispatch + orchestration (154 lines)
-          generators.rs                 File writing logic (220 lines)
-          templates.rs                  Inlined primal DNA constants (438 lines)
+          generators.rs                 File writing + CI/deny/server gen (280 lines)
+          templates.rs                  Inlined primal DNA + server + CI (862 lines)
         validate.rs                     primal, unibin, ecobin (279 lines)
         genomebin.rs                    create, test, sign (133 lines)
         doctor.rs                       System health diagnostics (133 lines)
@@ -66,7 +67,7 @@ sourDough/
   archive/                              Fossil record
 ```
 
-Total: ~8,100 lines of Rust across 29 files. Largest file: `ipc.rs` (637 lines).
+Total: ~9,400 lines of Rust across 30 files. Largest file: `templates.rs` (862 lines).
 
 ---
 

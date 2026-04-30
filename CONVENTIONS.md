@@ -80,35 +80,27 @@ info!(user = %user_id, action = "login", "user logged in");
 
 ## 3. API Conventions
 
-### RPC Communication (Primary)
+### JSON-RPC 2.0 (Primary IPC)
 
-- Use `tarpc` for type-safe inter-primal communication
-- Define service traits with `#[tarpc::service]`
-- All RPC methods are async
-- Use zero-copy types (`bytes::Bytes`) for large payloads
-- Implement `PrimalRpc` trait for standard methods
+- Newline-delimited JSON-RPC 2.0 over Unix domain sockets
+- Semantic `domain.verb` method naming (e.g., `health.check`, `capabilities.list`)
+- First-byte peek on socket accept: `{` → JSON-RPC, else BTSP binary framing
+- Socket path: `$XDG_RUNTIME_DIR/biomeos/{primal}-{family_id}.sock`
 
-```rust
-#[tarpc::service]
-pub trait MyPrimalRpc {
-    async fn my_method(data: Vec<u8>) -> Result<Response, String>;
-}
-```
+### Capability Wire Standard (L2+ required)
 
-### REST APIs (Optional)
+| Method | Response |
+|--------|----------|
+| `health.liveness` | `{ "alive": true }` |
+| `health.readiness` | `{ "ready": true, "capabilities": [...] }` |
+| `health.check` | Full diagnostic report |
+| `capabilities.list` | `{ "primal": "name", "version": "x.y.z", "methods": [...] }` |
 
-- Versioned paths: `/api/v1/...`
-- JSON responses
-- Standard HTTP status codes
-- OpenAPI 3.0 specs
+### tarpc (Secondary, High-Throughput)
 
-### Common Endpoints
-
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /health` | Health check |
-| `GET /ready` | Readiness check |
-| `GET /metrics` | Prometheus metrics |
+- Type-safe binary IPC for bulk/streaming operations
+- `bytes::Bytes` for zero-copy on the wire
+- Same semantic contract as JSON-RPC, different wire format
 
 ### Service Discovery
 
