@@ -61,7 +61,7 @@
 | sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
 | sourdough-genomebin | 79 | ~96% | all < 560 |
 
-## Recent Changes (April 30, 2026 — v0.2.0 scaffold evolution)
+## Recent Changes (May 2, 2026 — v0.2.0 scaffold evolution)
 
 - Scaffold now generates `{name}-core` + `{name}-server` crates (JSON-RPC server with capability wire standard)
 - Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml` (CI + genomeBin distribution)
@@ -74,7 +74,9 @@
 - deny.toml advisory ignores cleared (all were tarpc-transitive)
 - Generated core crate now inherits `[lints] workspace = true`
 - 247 tests passing (up from 239), enhanced e2e assertions for v0.2.0 artifacts
-- Generated server includes: dispatch with 4 capability handlers, first-byte peek, socket naming, tracing
+- Generated server includes: dispatch with 5 capability handlers (+ `btsp.negotiate`), first-byte peek, socket naming, tracing
+- Scaffold `ci.yml` now enforces `cargo deny check`
+- Scaffold `deny.toml` allows `cc` wrapper for blake3 (ecosystem standard)
 
 ## Prior Changes (April 3, 2026)
 

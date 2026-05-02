@@ -40,9 +40,9 @@ cargo build --release
 
 Scaffolded primals include:
 - **Core crate**: inlined traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalState`, `PrimalError`)
-- **Server crate**: JSON-RPC 2.0 server with capability wire handlers, first-byte peek, socket naming
-- **CI/CD**: GitHub Actions workflows (`ci.yml` + `notify-plasmidbin.yml`)
-- **Supply chain**: `deny.toml` (ecoBin v3.0 C-sys ban list)
+- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` (Phase 3 ready)
+- **CI/CD**: GitHub Actions workflows (`ci.yml` with `cargo deny check` + `notify-plasmidbin.yml`)
+- **Supply chain**: `deny.toml` (ecoBin v3.0, `cc` allowed for blake3 wrapper)
 
 No dependency on sourDough after creation.
 
