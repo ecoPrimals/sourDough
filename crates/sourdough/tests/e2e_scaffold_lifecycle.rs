@@ -148,6 +148,10 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
         dispatch.contains("capabilities.list"),
         "dispatch must handle capabilities.list"
     );
+    assert!(
+        dispatch.contains("btsp.negotiate"),
+        "dispatch must handle btsp.negotiate"
+    );
 
     let server =
         std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/server.rs")).unwrap();

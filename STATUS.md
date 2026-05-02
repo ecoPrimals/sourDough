@@ -49,6 +49,7 @@
 - [x] **v0.2.0**: `PrimalRpcClient::connect` returns `std::io::Result` (was `Box<dyn Error>`)
 - [x] **v0.2.0**: `bytes` patched 1.11.1 (RUSTSEC-2026-0007); deny.toml advisory ignores cleared
 - [x] **v0.2.0**: Total dependencies: 171 (down from 211)
+- [x] **v0.2.0**: Scaffold generates `btsp.negotiate` handler (NULL cipher fallback, BTSP Phase 3 ready)
 - [ ] Cross-compilation validation (musl) — SD-02, stretch
 - [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
 

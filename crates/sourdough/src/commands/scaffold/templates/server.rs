@@ -201,6 +201,7 @@ const METHODS: &[&str] = &[
     "health.readiness",
     "health.check",
     "capabilities.list",
+    "btsp.negotiate",
 ];
 
 /// Dispatch a JSON-RPC request and return the response string.
@@ -243,6 +244,15 @@ pub fn handle_request(
                 "methods": METHODS,
                 "protocol": "jsonrpc-2.0",
                 "transport": ["uds"],
+            }})
+        }}
+        "btsp.negotiate" => {{
+            // BTSP Phase 3: graceful NULL cipher fallback.
+            // Returning "null" cipher means plaintext continues — zero breakage.
+            // Evolve to ChaCha20-Poly1305 when ready (see petalTongue reference).
+            serde_json::json!({{
+                "cipher": "null",
+                "server_nonce": null,
             }})
         }}
         _ => return error_response(id, -32601, "Method not found"),
@@ -312,6 +322,14 @@ mod tests {{
         let resp: serde_json::Value =
             serde_json::from_str(&handle_request("not json", &primal)).unwrap();
         assert_eq!(resp["error"]["code"], -32700);
+    }}
+
+    #[test]
+    fn btsp_negotiate_returns_null_cipher() {{
+        let primal = make_primal();
+        let req = r#"{{"jsonrpc":"2.0","id":4,"method":"btsp.negotiate","params":{{"session_id":"test","preferred_cipher":"chacha20-poly1305","bond_type":"Covalent"}}}}"#;
+        let resp: serde_json::Value = serde_json::from_str(&handle_request(req, &primal)).unwrap();
+        assert_eq!(resp["result"]["cipher"], "null");
     }}
 }}
 "##,

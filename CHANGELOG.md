@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scaffold generates `.github/workflows/ci.yml` (lean single-job CI)
 - Scaffold generates `.github/workflows/notify-plasmidbin.yml` (genomeBin auto-distribution)
 - Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
+- Scaffold generates `btsp.negotiate` handler (NULL cipher fallback for BTSP Phase 3 compatibility)
 - `PeekedStream` transport utility in sourdough-core (ecosystem convergence for first-byte peek)
 - `peek_protocol` async function for JSON-RPC vs BTSP auto-detection
 - `resolve_socket_path` and `socket_path_in` for ecosystem socket naming convention
