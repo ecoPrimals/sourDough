@@ -125,6 +125,29 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
         "notify-plasmidbin.yml must dispatch primal-updated event"
     );
 
+    let release_yml =
+        std::fs::read_to_string(primal_path.join(".github/workflows/release.yml")).unwrap();
+    assert!(
+        release_yml.contains("x86_64-unknown-linux-musl"),
+        "release.yml must target x86_64-musl"
+    );
+    assert!(
+        release_yml.contains("aarch64-unknown-linux-musl"),
+        "release.yml must target aarch64-musl"
+    );
+    assert!(
+        release_yml.contains("armv7-unknown-linux-musleabihf"),
+        "release.yml must target armv7-musleabihf"
+    );
+    assert!(
+        release_yml.contains("b3sum"),
+        "release.yml must compute BLAKE3 checksums"
+    );
+    assert!(
+        release_yml.contains("softprops/action-gh-release"),
+        "release.yml must publish GitHub Releases"
+    );
+
     let server_cargo =
         std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/Cargo.toml")).unwrap();
     assert!(

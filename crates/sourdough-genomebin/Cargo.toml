@@ -24,6 +24,10 @@ flate2 = { workspace = true }
 blake3 = { workspace = true }
 sha2 = { workspace = true }
 
+# Signing - Pure Rust Ed25519 (ecoBin-compliant, zero C deps)
+ed25519-dalek = { workspace = true }
+rand_core = { workspace = true }
+
 # Zero-copy
 bytes = { workspace = true }
 
@@ -42,8 +46,6 @@ tempfile = { workspace = true }
 
 chrono = { workspace = true }
 
-# NOTE: GPG signing removed for now (gpgme has C dependencies)
-# Future: Add Pure Rust signing via sequoia-openpgp
 
 [lints]
 workspace = true

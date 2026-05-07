@@ -58,6 +58,7 @@ pub mod builder;
 pub mod error;
 pub mod metadata;
 pub mod platform;
+pub mod signing;
 pub mod validator;
 
 // Re-export main types for convenience

@@ -44,6 +44,88 @@ jobs:
           client-payload: '{"primal": "${{ github.event.repository.name }}", "sha": "${{ github.sha }}"}'
 "#;
 
+/// Generate `release.yml` GitHub Actions workflow for musl cross-compilation.
+///
+/// Produces Tier 1 genomeBin artifacts (`x86_64`, `aarch64`, `armv7` musl-static)
+/// on tag push, with BLAKE3 checksums and GitHub Release publishing.
+pub(in crate::commands::scaffold) fn release_yml(name: &str) -> String {
+    let name_lower = name.to_lowercase();
+    format!(
+        r#"name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            arch: x86_64
+            packages: musl-tools
+          - target: aarch64-unknown-linux-musl
+            arch: aarch64
+            packages: musl-tools gcc-aarch64-linux-gnu
+            linker_env: CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
+          - target: armv7-unknown-linux-musleabihf
+            arch: armv7
+            packages: musl-tools gcc-arm-linux-gnueabihf
+            linker_env: CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER=arm-linux-gnueabihf-gcc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{{{ matrix.target }}}}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{{{ matrix.target }}}}
+      - name: Install cross-compilation tools
+        run: sudo apt-get update && sudo apt-get install -y ${{{{ matrix.packages }}}}
+      - name: Build release binary
+        run: |
+          if [ -n "${{{{ matrix.linker_env }}}}" ]; then
+            export ${{{{ matrix.linker_env }}}}
+          fi
+          cargo build --release --target ${{{{ matrix.target }}}} -p {name_lower}-server
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          cp target/${{{{ matrix.target }}}}/release/{name_lower} dist/{name_lower}-${{{{ matrix.arch }}}}
+      - name: Compute BLAKE3 checksum
+        run: |
+          cargo install --locked b3sum 2>/dev/null || true
+          b3sum dist/{name_lower}-${{{{ matrix.arch }}}} > dist/{name_lower}-${{{{ matrix.arch }}}}.b3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: {name_lower}-${{{{ matrix.arch }}}}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+"#,
+    )
+}
+
 /// Generate `deny.toml` for a scaffolded primal.
 pub(in crate::commands::scaffold) const DENY_TOML: &str = r#"# cargo-deny configuration
 # https://embarkstudios.github.io/cargo-deny/

@@ -44,19 +44,24 @@ sourDough/
         mod.rs                          Command module declarations (11 lines)
         scaffold/
           mod.rs                        Command dispatch + orchestration (154 lines)
-          generators.rs                 File writing + CI/deny/server gen (280 lines)
-          templates.rs                  Inlined primal DNA + server + CI (862 lines)
+          generators.rs                 File writing + CI/deny/server gen (281 lines)
+          templates/
+            mod.rs                      Template re-exports (19 lines)
+            core.rs                     Core crate templates (440 lines)
+            server.rs                   Server crate templates (338 lines)
+            infra.rs                    CI workflows + deny.toml (180 lines)
         validate.rs                     primal, unibin, ecobin (279 lines)
         genomebin.rs                    create, test, sign (133 lines)
         doctor.rs                       System health diagnostics (133 lines)
       tests/
         cli_integration.rs              Integration tests (538 lines)
-        e2e_scaffold_lifecycle.rs       E2E scaffold lifecycle (153 lines)
+        e2e_scaffold_lifecycle.rs       E2E scaffold lifecycle (251 lines)
     sourdough-genomebin/src/
-      lib.rs                            Public API (68 lines)
+      lib.rs                            Public API (70 lines)
       platform.rs                       Runtime platform detection (535 lines)
       validator.rs                      genomeBin validation (553 lines)
       builder.rs                        genomeBin creation (415 lines)
+      signing.rs                        Ed25519 detached signatures (180 lines)
       archive.rs                        Pure Rust tar/gzip (251 lines)
       metadata.rs                       Type-safe metadata parsing (242 lines)
       error.rs                          Structured error types (169 lines)
@@ -67,7 +72,7 @@ sourDough/
   archive/                              Fossil record
 ```
 
-Total: ~9,400 lines of Rust across 30 files. Largest file: `templates.rs` (862 lines).
+Total: ~9,600 lines of Rust across 31 files. Largest file: `ipc.rs` (637 lines).
 
 ---
 

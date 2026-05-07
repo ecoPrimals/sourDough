@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — v0.2.0 Scaffold Evolution
 
+### Added (v0.2.0 — May 7, 2026)
+- Scaffold generates `.github/workflows/release.yml` (Tier 1 musl cross-compilation: x86_64, aarch64, armv7 — SD-02 resolved)
+- `sourdough-genomebin::signing` module: Ed25519 detached signatures for genomeBin artifacts (SD-03 resolved)
+- Signing API: `generate_keypair`, `sign_file`, `verify_file`, `write_signature`, `read_signature`, `write_verifying_key`, `read_verifying_key`
+- Pure Rust `ed25519-dalek` + `rand_core` dependencies (zero C deps, ecoBin-compliant)
+- Release workflow: BLAKE3 checksums via `b3sum`, GitHub Release publishing via `softprops/action-gh-release@v2`
+- 8 new signing tests + 5 new e2e assertions for release.yml
+
 ### Added (v0.2.0 — April 30, 2026)
 - Scaffold generates `{name}-server` crate with JSON-RPC 2.0 server skeleton
 - Scaffold generates `.github/workflows/ci.yml` (lean single-job CI)

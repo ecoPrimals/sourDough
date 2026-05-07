@@ -50,8 +50,8 @@
 - [x] **v0.2.0**: `bytes` patched 1.11.1 (RUSTSEC-2026-0007); deny.toml advisory ignores cleared
 - [x] **v0.2.0**: Total dependencies: 171 (down from 211)
 - [x] **v0.2.0**: Scaffold generates `btsp.negotiate` handler (NULL cipher fallback, BTSP Phase 3 ready)
-- [ ] Cross-compilation validation (musl) — SD-02, stretch
-- [ ] genomeBin signing (Pure Rust, sequoia-openpgp) — SD-03, stretch
+- [x] **v0.2.0**: Scaffold generates `release.yml` (musl cross-compilation matrix: x86_64, aarch64, armv7) — SD-02 resolved
+- [x] **v0.2.0**: genomeBin Ed25519 signing module (`ed25519-dalek`, pure Rust, zero C deps) — SD-03 resolved
 
 ## Crate Health
 
@@ -59,9 +59,20 @@
 |-------|-------|----------|-----------|
 | sourdough-core | 135 | ~95% | all < 650 |
 | sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
-| sourdough-genomebin | 79 | ~96% | all < 560 |
+| sourdough-genomebin | 87 | ~96% | all < 560 |
 
-## Recent Changes (May 2, 2026 — v0.2.0 scaffold evolution)
+## Recent Changes (May 7, 2026 — SD-02/SD-03 resolution)
+
+- Scaffold generates `.github/workflows/release.yml` (Tier 1 musl cross-compilation matrix: x86_64, aarch64, armv7)
+- `sourdough-genomebin` signing module: Ed25519 detached signatures (BLAKE3 hash → sign → `.sig` sidecar)
+- Pure Rust `ed25519-dalek` + `rand_core` — zero C dependencies, ecoBin-compliant
+- Signing API: `generate_keypair`, `sign_file`, `verify_file`, `write_signature`, `read_signature`, `write_verifying_key`, `read_verifying_key`
+- 8 new signing tests (keypair gen, sign/verify roundtrip, tamper detection, key persistence)
+- E2e tests: 5 new assertions for release.yml (musl targets, BLAKE3 checksums, GitHub Releases)
+- 255 tests passing (up from 247)
+- SD-02 (musl cross-compilation) and SD-03 (genomeBin signing) both resolved
+
+## Prior Changes (May 2, 2026 — v0.2.0 scaffold evolution)
 
 - Scaffold now generates `{name}-core` + `{name}-server` crates (JSON-RPC server with capability wire standard)
 - Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml` (CI + genomeBin distribution)

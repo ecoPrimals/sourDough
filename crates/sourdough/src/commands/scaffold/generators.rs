@@ -103,6 +103,10 @@ pub(super) fn write_github_workflows(dir: &Path, name: &str) -> Result<()> {
         workflows_dir.join("notify-plasmidbin.yml"),
         templates::NOTIFY_PLASMIDBIN_YML,
     )?;
+    std::fs::write(
+        workflows_dir.join("release.yml"),
+        templates::release_yml(name),
+    )?;
 
     Ok(())
 }
@@ -190,7 +194,7 @@ cargo test --workspace
 
 ```
 {name}/
-├── .github/workflows/     CI + plasmidBin notification
+├── .github/workflows/     CI + release + plasmidBin notification
 ├── crates/
 │   ├── {name_lower}-core/        Core traits (lifecycle, health)
 │   └── {name_lower}-server/      JSON-RPC server + capability wire
