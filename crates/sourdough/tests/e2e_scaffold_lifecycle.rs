@@ -186,6 +186,39 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
         server.contains("biomeos"),
         "server must use biomeos socket directory"
     );
+
+    let method_gate =
+        std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/method_gate.rs"))
+            .unwrap();
+    assert!(
+        method_gate.contains("MethodVisibility"),
+        "method_gate must define MethodVisibility"
+    );
+    assert!(
+        method_gate.contains("GateMode"),
+        "method_gate must define GateMode"
+    );
+    assert!(
+        method_gate.contains("classify_method"),
+        "method_gate must implement classify_method"
+    );
+    assert!(
+        method_gate.contains("CallerContext"),
+        "method_gate must define CallerContext for JH-2"
+    );
+    assert!(
+        method_gate.contains("ResourceEnvelope"),
+        "method_gate must define ResourceEnvelope for JH-2"
+    );
+    assert!(
+        method_gate.contains("Permissive"),
+        "method_gate must ship in Permissive mode"
+    );
+
+    assert!(
+        dispatch.contains("gate.check"),
+        "dispatch must wire method gate pre-dispatch"
+    );
 }
 
 /// Scaffold a primal, add a crate, then build the full workspace.

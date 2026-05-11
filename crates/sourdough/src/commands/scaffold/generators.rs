@@ -85,6 +85,7 @@ pub(super) fn create_server_crate(crates_dir: &Path, name: &str) -> Result<()> {
     std::fs::write(src_dir.join("main.rs"), templates::server_main_rs(name))?;
     std::fs::write(src_dir.join("server.rs"), templates::server_rs(name))?;
     std::fs::write(src_dir.join("dispatch.rs"), templates::dispatch_rs(name))?;
+    std::fs::write(src_dir.join("method_gate.rs"), templates::method_gate_rs())?;
 
     Ok(())
 }

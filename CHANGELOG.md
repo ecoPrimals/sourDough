@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — v0.2.0 Scaffold Evolution
 
+### Added (v0.2.0 — May 11, 2026)
+- Scaffold generates `method_gate.rs` in server crate (JH-0/JH-2 pre-dispatch capability gate)
+- MethodGate wired before dispatch: `gate.check(method)` with JSON-RPC error on denial
+- Generated types: `MethodVisibility`, `GateMode`, `CallerContext`, `ResourceEnvelope`, `GateDenial`
+- `classify_method()`: health.*, identity.get, capabilities.list, auth.*, lifecycle.status, btsp.negotiate → Public
+- Ships in `GateMode::Permissive` (ecosystem default, zero behavioral change until JH-2)
+- 11 unit tests in generated `method_gate.rs` (permissive, enforcing, allowlist, classify, serde)
+- `deny.toml`: explicit `ring` ban across sourDough and scaffold template (ecosystem parity)
+
 ### Added (v0.2.0 — May 7, 2026)
 - Scaffold generates `.github/workflows/release.yml` (Tier 1 musl cross-compilation: x86_64, aarch64, armv7 — SD-02 resolved)
 - `sourdough-genomebin::signing` module: Ed25519 detached signatures for genomeBin artifacts (SD-03 resolved)

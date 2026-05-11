@@ -52,6 +52,8 @@
 - [x] **v0.2.0**: Scaffold generates `btsp.negotiate` handler (NULL cipher fallback, BTSP Phase 3 ready)
 - [x] **v0.2.0**: Scaffold generates `release.yml` (musl cross-compilation matrix: x86_64, aarch64, armv7) — SD-02 resolved
 - [x] **v0.2.0**: genomeBin Ed25519 signing module (`ed25519-dalek`, pure Rust, zero C deps) — SD-03 resolved
+- [x] **v0.2.0**: Scaffold generates `method_gate.rs` (JH-0/JH-2 pre-dispatch gate, ecosystem stadial requirement)
+- [x] **v0.2.0**: MethodGate wired into dispatch (classify_method, CallerContext, ResourceEnvelope, Permissive default)
 
 ## Crate Health
 
@@ -61,7 +63,19 @@
 | sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
 | sourdough-genomebin | 87 | ~96% | all < 560 |
 
-## Recent Changes (May 7, 2026 — SD-02/SD-03 resolution)
+## Recent Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
+
+- Scaffold generates `method_gate.rs` in server crate (JH-0/JH-2 ecosystem standard)
+- MethodGate wired into dispatch: `gate.check(method)` runs before method routing
+- Generated gate: MethodVisibility, GateMode, CallerContext, ResourceEnvelope, classify_method()
+- Ships in Permissive mode (zero behavioral change, JH-2 ready)
+- 11 tests in generated method_gate.rs (permissive/enforcing, allowlist, classify, serde)
+- `deny.toml`: explicit `ring` ban added (ecosystem parity with 12/13 primals)
+- Scaffold `deny.toml` template also includes `ring` ban
+- E2e tests: 7 new assertions for method_gate (visibility, mode, classify, envelope, dispatch wiring)
+- 256 tests passing
+
+## Prior Changes (May 7, 2026 — SD-02/SD-03 resolution)
 
 - Scaffold generates `.github/workflows/release.yml` (Tier 1 musl cross-compilation matrix: x86_64, aarch64, armv7)
 - `sourdough-genomebin` signing module: Ed25519 detached signatures (BLAKE3 hash → sign → `.sig` sidecar)
@@ -69,7 +83,6 @@
 - Signing API: `generate_keypair`, `sign_file`, `verify_file`, `write_signature`, `read_signature`, `write_verifying_key`, `read_verifying_key`
 - 8 new signing tests (keypair gen, sign/verify roundtrip, tamper detection, key persistence)
 - E2e tests: 5 new assertions for release.yml (musl targets, BLAKE3 checksums, GitHub Releases)
-- 255 tests passing (up from 247)
 - SD-02 (musl cross-compilation) and SD-03 (genomeBin signing) both resolved
 
 ## Prior Changes (May 2, 2026 — v0.2.0 scaffold evolution)
