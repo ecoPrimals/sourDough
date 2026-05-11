@@ -185,6 +185,7 @@ deny = [
     { crate = "lz4-sys", wrappers = [] },
     { crate = "libsqlite3-sys", wrappers = [] },
     { crate = "cryptoki-sys", wrappers = [] },
+    { crate = "ring", wrappers = [], reason = "C crypto — ecosystem uses RustCrypto" },
 ]
 skip = []
 
