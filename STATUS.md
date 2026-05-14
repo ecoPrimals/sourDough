@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
-- `sourdough`: CLI binary (scaffold, validate, genomebin, doctor)
+- `sourdough`: CLI binary (scaffold, validate, genomebin, sign, verify, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
 ## Compliance
@@ -54,6 +54,11 @@
 - [x] **v0.2.0**: genomeBin Ed25519 signing module (`ed25519-dalek`, pure Rust, zero C deps) — SD-03 resolved
 - [x] **v0.2.0**: Scaffold generates `method_gate.rs` (JH-0/JH-2 pre-dispatch gate, ecosystem stadial requirement)
 - [x] **v0.2.0**: MethodGate wired into dispatch (classify_method, CallerContext, ResourceEnvelope, Permissive default)
+- [x] **v0.3.0**: `sourdough sign` top-level CLI command (Ed25519 detached signatures, wired from genomebin signing module)
+- [x] **v0.3.0**: `sourdough verify` top-level CLI command (signature verification)
+- [x] **v0.3.0**: `sourdough validate ecobin` evolved to validate compiled binaries (static, stripped, size budget, ldd checks)
+- [x] **v0.3.0**: `sourdough genomebin sign` now uses real Ed25519 signing (was error stub)
+- [x] **v0.3.0**: Deployment internalization contract aligned with primalSpring
 
 ## Crate Health
 
@@ -63,7 +68,18 @@
 | sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
 | sourdough-genomebin | 87 | ~96% | all < 560 |
 
-## Recent Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
+## Recent Changes (May 14, 2026 — v0.3.0 deployment internalization)
+
+- `sourdough sign <binary>` wired as top-level CLI command (Ed25519 detached `.sig` sidecar)
+- `sourdough sign --generate-key` generates Ed25519 keypair (signing.key + signing.pub)
+- `sourdough verify <binary>` verifies Ed25519 signatures against public key
+- `sourdough genomebin sign` now delegates to real signing (was sequoia-openpgp error stub)
+- `sourdough validate ecobin <binary>` validates compiled binaries: static linking, stripped, size budget, ldd
+- `sourdough validate ecobin <dir>` continues to validate project source (C deps, fmt, clippy)
+- Per deployment internalization contract (primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md)
+- 256 tests passing
+
+## Prior Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
 
 - Scaffold generates `method_gate.rs` in server crate (JH-0/JH-2 ecosystem standard)
 - MethodGate wired into dispatch: `gate.check(method)` runs before method routing

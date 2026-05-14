@@ -187,6 +187,15 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
         "server must use biomeos socket directory"
     );
 
+    assert!(
+        dispatch.contains("gate.check"),
+        "dispatch must wire method gate pre-dispatch"
+    );
+
+    verify_method_gate(primal_path);
+}
+
+fn verify_method_gate(primal_path: &std::path::Path) {
     let method_gate =
         std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/method_gate.rs"))
             .unwrap();
@@ -213,11 +222,6 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
     assert!(
         method_gate.contains("Permissive"),
         "method_gate must ship in Permissive mode"
-    );
-
-    assert!(
-        dispatch.contains("gate.check"),
-        "dispatch must wire method gate pre-dispatch"
     );
 }
 

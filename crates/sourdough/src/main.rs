@@ -55,6 +55,30 @@ enum Commands {
         validate_cmd: commands::validate::ValidateCommand,
     },
 
+    /// Sign a binary with Ed25519 (detached .sig sidecar)
+    Sign {
+        /// Path to the binary or artifact to sign
+        path: std::path::PathBuf,
+
+        /// Path to the Ed25519 signing key (default: signing.key)
+        #[arg(long)]
+        key: Option<std::path::PathBuf>,
+
+        /// Generate a new signing keypair instead of signing
+        #[arg(long)]
+        generate_key: bool,
+    },
+
+    /// Verify an Ed25519 signature
+    Verify {
+        /// Path to the signed binary or artifact
+        path: std::path::PathBuf,
+
+        /// Path to the Ed25519 public key (default: signing.pub)
+        #[arg(long)]
+        pub_key: Option<std::path::PathBuf>,
+    },
+
     /// Run health diagnostics
     Doctor {
         /// Run comprehensive checks
@@ -91,6 +115,16 @@ async fn main() -> Result<()> {
         }
         Commands::Validate { validate_cmd } => {
             commands::validate::run(validate_cmd)?;
+        }
+        Commands::Sign {
+            path,
+            key,
+            generate_key,
+        } => {
+            commands::sign::run(&path, key.as_deref(), generate_key)?;
+        }
+        Commands::Verify { path, pub_key } => {
+            commands::sign::verify(&path, pub_key.as_deref())?;
         }
         Commands::Doctor { comprehensive } => {
             commands::doctor::run(comprehensive)?;

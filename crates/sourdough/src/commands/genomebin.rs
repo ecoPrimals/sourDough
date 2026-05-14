@@ -118,15 +118,6 @@ async fn test_genomebin(genomebin: PathBuf) -> Result<()> {
 }
 
 fn sign_genomebin(genomebin: &Path) -> Result<()> {
-    let gb = genomebin.display();
-    crate::info(&format!("Signing genomeBin: {gb}"));
-
-    if !genomebin.exists() {
-        anyhow::bail!("genomeBin not found: {gb}");
-    }
-
-    anyhow::bail!(
-        "genomeBin signing requires Pure Rust cryptography (sequoia-openpgp). \
-         This will be implemented when identity services are available via capability discovery."
-    )
+    crate::info(&format!("Signing genomeBin: {}", genomebin.display()));
+    crate::commands::sign::run(genomebin, None, false)
 }

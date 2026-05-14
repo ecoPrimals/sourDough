@@ -19,10 +19,10 @@ pub(crate) enum ValidateCommand {
         path: PathBuf,
     },
 
-    /// Validate `ecoBin` compliance
+    /// Validate `ecoBin` compliance (project dir or compiled binary)
     #[command(name = "ecobin")]
     EcoBin {
-        /// Path to the primal directory
+        /// Path to the primal directory or compiled binary
         path: PathBuf,
     },
 }
@@ -123,7 +123,89 @@ fn validate_unibin(path: &Path) -> Result<()> {
 }
 
 fn validate_ecobin(path: &Path) -> Result<()> {
-    crate::info(&format!("Validating ecoBin at: {}", path.display()));
+    if path.is_file() {
+        return validate_ecobin_binary(path);
+    }
+    validate_ecobin_project(path)
+}
+
+fn validate_ecobin_binary(path: &Path) -> Result<()> {
+    crate::info(&format!("Validating ecoBin binary: {}", path.display()));
+    println!();
+
+    let mut errors: Vec<String> = Vec::new();
+    let mut warnings: Vec<String> = Vec::new();
+
+    let metadata = std::fs::metadata(path).context("Cannot read file metadata")?;
+    let size_bytes = metadata.len();
+    let size_kb = size_bytes / 1024;
+    let budget_mb: u64 = 50;
+
+    crate::info(&format!("Size: {size_kb} KB"));
+    if size_bytes > budget_mb * 1024 * 1024 {
+        errors.push(format!(
+            "Binary too large: {size_kb} KB (budget: {budget_mb} MB)"
+        ));
+    } else {
+        crate::success(&format!(
+            "Size within budget ({size_kb} KB < {budget_mb} MB)"
+        ));
+    }
+
+    match std::process::Command::new("file").arg(path).output() {
+        Ok(out) if out.status.success() => {
+            let desc = String::from_utf8_lossy(&out.stdout);
+            if desc.contains("statically linked") {
+                crate::success("Statically linked");
+            } else if desc.contains("dynamically linked") {
+                errors.push("Dynamically linked (ecoBin requires static)".into());
+            } else {
+                warnings.push("Could not determine linking type from `file` output".into());
+            }
+
+            if desc.contains("stripped") {
+                crate::success("Stripped");
+            } else if desc.contains("not stripped") {
+                warnings.push("Binary is not stripped (release builds should strip)".into());
+            }
+
+            if desc.contains("ELF") {
+                crate::success("ELF binary detected");
+            }
+        }
+        Ok(_) => warnings.push("`file` command failed".into()),
+        Err(_) => warnings.push("`file` command not available".into()),
+    }
+
+    match std::process::Command::new("ldd").arg(path).output() {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if stdout.contains("not a dynamic executable")
+                || stderr.contains("not a dynamic executable")
+                || stdout.contains("statically linked")
+            {
+                crate::success("ldd confirms static binary (no dynamic deps)");
+            } else if out.status.success() {
+                let deps: Vec<&str> = stdout.lines().collect();
+                let n = deps.len();
+                errors.push(format!(
+                    "ldd found {n} dynamic dependencies (ecoBin must be static)"
+                ));
+                for dep in deps.iter().take(5) {
+                    println!("    {dep}");
+                }
+            }
+        }
+        Err(_) => warnings.push("`ldd` not available (cannot verify static linking)".into()),
+    }
+
+    println!();
+    report_results(&errors, &warnings)
+}
+
+fn validate_ecobin_project(path: &Path) -> Result<()> {
+    crate::info(&format!("Validating ecoBin project: {}", path.display()));
     println!();
 
     validate_unibin(path)?;

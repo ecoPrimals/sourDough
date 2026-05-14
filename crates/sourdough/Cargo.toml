@@ -37,7 +37,10 @@ tracing-subscriber = { workspace = true }
 
 # Date/time
 chrono = { workspace = true }
+
+# genomeBin + signing
 sourdough-genomebin = { version = "0.1.0", path = "../sourdough-genomebin" }
+ed25519-dalek = { workspace = true }
 
 [lints]
 workspace = true

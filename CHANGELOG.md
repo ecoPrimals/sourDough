@@ -5,7 +5,21 @@ All notable changes to sourDough will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v0.2.0 Scaffold Evolution
+## [Unreleased] — v0.3.0 Deployment Internalization
+
+### Added (v0.3.0 — May 14, 2026)
+- `sourdough sign <binary>` top-level CLI command: Ed25519 detached signatures (`.sig` sidecar)
+- `sourdough sign --generate-key`: generates Ed25519 keypair (`signing.key` + `signing.pub`)
+- `sourdough verify <binary>`: verifies Ed25519 signatures against public key
+- `sourdough validate ecobin <binary>`: validates compiled binaries (static linking, stripped, size budget, ldd)
+- `sourdough genomebin sign` now delegates to real Ed25519 signing (was `sequoia-openpgp` error stub)
+- Deployment internalization contract alignment (per `primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md`)
+
+### Changed (v0.3.0)
+- `sourdough validate ecobin` auto-detects path type: file (binary validation) vs directory (project validation)
+- CLI help updated with `Sign` and `Verify` subcommands
+
+## v0.2.0 — Scaffold Evolution
 
 ### Added (v0.2.0 — May 11, 2026)
 - Scaffold generates `method_gate.rs` in server crate (JH-0/JH-2 pre-dispatch capability gate)

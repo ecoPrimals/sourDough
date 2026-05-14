@@ -8,4 +8,5 @@
 pub(crate) mod doctor;
 pub(crate) mod genomebin;
 pub(crate) mod scaffold;
+pub(crate) mod sign;
 pub(crate) mod validate;

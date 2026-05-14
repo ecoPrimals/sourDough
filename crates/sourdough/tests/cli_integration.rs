@@ -442,19 +442,20 @@ fn test_genomebin_test_missing_file() {
         .stderr(predicate::str::contains("not found"));
 }
 
-/// Test genomebin sign returns informative error
+/// Test genomebin sign fails gracefully when no signing key is available
 #[test]
-fn test_genomebin_sign_not_implemented() {
+fn test_genomebin_sign_no_key() {
     let temp_dir = TempDir::new().unwrap();
     let dummy = temp_dir.path().join("dummy.genome");
     std::fs::write(&dummy, "dummy content").unwrap();
 
     let mut cmd = sourdough_cmd();
     cmd.arg("genomebin").arg("sign").arg(&dummy);
+    cmd.current_dir(temp_dir.path());
 
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("sequoia-openpgp"));
+        .stderr(predicate::str::contains("Signing key not found"));
 }
 
 /// Test genomebin sign on missing file
