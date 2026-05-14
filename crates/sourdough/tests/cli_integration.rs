@@ -535,3 +535,213 @@ fn test_scaffold_new_crate() {
         std::fs::read_to_string(temp_dir.path().join(primal_name).join("Cargo.toml")).unwrap();
     assert!(workspace.contains("crates/crateprimal-storage"));
 }
+
+// ── Sign / Verify ───────────────────────────────────────────────────
+
+/// Test sign --generate-key creates keypair
+#[test]
+fn test_sign_generate_key() {
+    let temp_dir = TempDir::new().unwrap();
+    let dummy = temp_dir.path().join("dummy.bin");
+    std::fs::write(&dummy, "content").unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("sign")
+        .arg(&dummy)
+        .arg("--generate-key")
+        .current_dir(temp_dir.path());
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Generated signing key"));
+
+    assert!(temp_dir.path().join("signing.key").exists());
+    assert!(temp_dir.path().join("signing.pub").exists());
+}
+
+/// Test sign + verify roundtrip
+#[test]
+fn test_sign_verify_roundtrip() {
+    let temp_dir = TempDir::new().unwrap();
+    let binary = temp_dir.path().join("test.bin");
+    std::fs::write(&binary, b"binary content here").unwrap();
+
+    let mut gen_cmd = sourdough_cmd();
+    gen_cmd
+        .arg("sign")
+        .arg(&binary)
+        .arg("--generate-key")
+        .current_dir(temp_dir.path());
+    gen_cmd.assert().success();
+
+    let mut sign_cmd = sourdough_cmd();
+    sign_cmd
+        .arg("sign")
+        .arg(&binary)
+        .current_dir(temp_dir.path());
+    sign_cmd
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Signed"));
+
+    assert!(temp_dir.path().join("test.bin.sig").exists());
+
+    let mut verify_cmd = sourdough_cmd();
+    verify_cmd
+        .arg("verify")
+        .arg(&binary)
+        .current_dir(temp_dir.path());
+    verify_cmd
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Verified"));
+}
+
+/// Test verify detects tampering
+#[test]
+fn test_verify_detects_tamper() {
+    let temp_dir = TempDir::new().unwrap();
+    let binary = temp_dir.path().join("tamper.bin");
+    std::fs::write(&binary, b"original").unwrap();
+
+    let mut gen_cmd = sourdough_cmd();
+    gen_cmd
+        .arg("sign")
+        .arg(&binary)
+        .arg("--generate-key")
+        .current_dir(temp_dir.path());
+    gen_cmd.assert().success();
+
+    let mut sign_cmd = sourdough_cmd();
+    sign_cmd
+        .arg("sign")
+        .arg(&binary)
+        .current_dir(temp_dir.path());
+    sign_cmd.assert().success();
+
+    std::fs::write(&binary, b"tampered!").unwrap();
+
+    let mut verify_cmd = sourdough_cmd();
+    verify_cmd
+        .arg("verify")
+        .arg(&binary)
+        .current_dir(temp_dir.path());
+    verify_cmd
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Signature verification failed"));
+}
+
+// ── Scaffold systemd ────────────────────────────────────────────────
+
+/// Test scaffold systemd generates a service unit
+#[test]
+fn test_scaffold_systemd() {
+    let temp_dir = TempDir::new().unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("scaffold")
+        .arg("systemd")
+        .arg("bearDog")
+        .arg("--role")
+        .arg("membrane")
+        .arg("--output")
+        .arg(temp_dir.path());
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Generated"));
+
+    let service =
+        std::fs::read_to_string(temp_dir.path().join("beardog-membrane.service")).unwrap();
+    assert!(service.contains("[Unit]"));
+    assert!(service.contains("[Service]"));
+    assert!(service.contains("[Install]"));
+    assert!(service.contains("NoNewPrivileges=true"));
+    assert!(service.contains("ProtectSystem=strict"));
+    assert!(service.contains("/run/biomeos/beardog.sock"));
+    assert!(service.contains("BEARDOG_ROLE=membrane"));
+    assert!(service.contains("MemoryMax=128M"));
+}
+
+// ── Layout ──────────────────────────────────────────────────────────
+
+/// Test layout validation on empty directory
+#[test]
+fn test_layout_empty_dir() {
+    let temp_dir = TempDir::new().unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("layout").arg(temp_dir.path());
+
+    cmd.assert().success().stdout(predicate::str::contains(
+        "No binaries or triple directories found",
+    ));
+}
+
+/// Test layout validation with triple-first structure
+#[test]
+fn test_layout_triple_first() {
+    let temp_dir = TempDir::new().unwrap();
+    let triple_dir = temp_dir.path().join("x86_64-unknown-linux-musl");
+    std::fs::create_dir_all(&triple_dir).unwrap();
+    let binary = triple_dir.join("beardog");
+    std::fs::write(&binary, "binary").unwrap();
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("layout").arg(temp_dir.path());
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("x86_64-unknown-linux-musl"));
+}
+
+// ── Validate composition ────────────────────────────────────────────
+
+/// Test validate composition with missing binaries
+#[test]
+fn test_validate_composition_missing() {
+    let temp_dir = TempDir::new().unwrap();
+    let primals_dir = temp_dir.path().join("primals");
+    std::fs::create_dir_all(&primals_dir).unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("validate")
+        .arg("composition")
+        .arg("tower")
+        .arg("--primals-dir")
+        .arg(&primals_dir);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Composition incomplete"));
+}
+
+/// Test validate composition with all binaries present
+#[test]
+fn test_validate_composition_complete() {
+    let temp_dir = TempDir::new().unwrap();
+    let primals_dir = temp_dir.path().join("primals");
+    std::fs::create_dir_all(&primals_dir).unwrap();
+
+    for name in &["beardog", "songbird", "skunkbat"] {
+        std::fs::write(primals_dir.join(name), "binary").unwrap();
+    }
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("validate")
+        .arg("composition")
+        .arg("tower")
+        .arg("--primals-dir")
+        .arg(&primals_dir);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Composition is complete"));
+}

@@ -27,6 +27,21 @@ pub(crate) enum ScaffoldCommand {
         output: Option<PathBuf>,
     },
 
+    /// Generate a hardened systemd `.service` unit for a primal
+    #[command(name = "systemd")]
+    Systemd {
+        /// Name of the primal (e.g., "bearDog")
+        name: String,
+
+        /// Deployment role (e.g., "membrane", "gate", "nest")
+        #[arg(long, default_value = "gate")]
+        role: String,
+
+        /// Output directory (defaults to current directory)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
     /// Add a new crate to an existing primal
     #[command(name = "new-crate")]
     NewCrate {
@@ -49,6 +64,7 @@ pub(crate) fn run(cmd: ScaffoldCommand) -> Result<()> {
             description,
             output,
         } => create_primal(&name, &description, output),
+        ScaffoldCommand::Systemd { name, role, output } => create_systemd(&name, &role, output),
         ScaffoldCommand::NewCrate {
             primal,
             crate_name,
@@ -83,6 +99,26 @@ fn create_primal(name: &str, description: &str, output: Option<PathBuf>) -> Resu
     println!("  cd {}", output_dir.display());
     println!("  cargo build");
     println!("  cargo test");
+
+    Ok(())
+}
+
+fn create_systemd(name: &str, role: &str, output: Option<PathBuf>) -> Result<()> {
+    let name_lower = name.to_lowercase();
+    let service_name = format!("{name_lower}-{role}.service");
+
+    let output_dir = output.unwrap_or_else(|| PathBuf::from("."));
+    std::fs::create_dir_all(&output_dir).context("Failed to create output directory")?;
+
+    let service_content = templates::systemd_service(name, role);
+    let service_path = output_dir.join(&service_name);
+    std::fs::write(&service_path, service_content)?;
+
+    crate::success(&format!("Generated: {}", service_path.display()));
+    crate::info("Install:");
+    println!("  sudo cp {service_name} /etc/systemd/system/");
+    println!("  sudo systemctl daemon-reload");
+    println!("  sudo systemctl enable --now {service_name}");
 
     Ok(())
 }

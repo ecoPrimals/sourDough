@@ -25,6 +25,21 @@ pub(crate) enum ValidateCommand {
         /// Path to the primal directory or compiled binary
         path: PathBuf,
     },
+
+    /// Validate a primal composition (check binary presence)
+    #[command(name = "composition")]
+    Composition {
+        /// Composition name (tower, node, nest, nucleus, full) or comma-separated primal list
+        composition: String,
+
+        /// Path to the primals binary directory
+        #[arg(long, default_value = "primals")]
+        primals_dir: PathBuf,
+
+        /// Use triple-first layout (`primals/{triple}/{name}`)
+        #[arg(long)]
+        triple_first: bool,
+    },
 }
 
 pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
@@ -32,6 +47,11 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
         ValidateCommand::Primal { path } => validate_primal(&path),
         ValidateCommand::UniBin { path } => validate_unibin(&path),
         ValidateCommand::EcoBin { path } => validate_ecobin(&path),
+        ValidateCommand::Composition {
+            composition,
+            primals_dir,
+            triple_first,
+        } => validate_composition(&composition, &primals_dir, triple_first),
     }
 }
 
@@ -358,4 +378,130 @@ fn report_results(errors: &[String], warnings: &[String]) -> Result<()> {
         let n = errors.len();
         anyhow::bail!("Validation failed with {n} error(s)");
     }
+}
+
+fn validate_composition(composition: &str, primals_dir: &Path, triple_first: bool) -> Result<()> {
+    let primals = resolve_composition(composition);
+    let n = primals.len();
+    crate::info(&format!(
+        "Validating composition '{composition}' ({n} primals)"
+    ));
+    println!();
+
+    let mut missing: Vec<String> = Vec::new();
+    let mut found: Vec<String> = Vec::new();
+
+    for primal in &primals {
+        if binary_exists(primals_dir, primal, triple_first) {
+            found.push(primal.clone());
+            crate::success(primal);
+        } else {
+            missing.push(primal.clone());
+            crate::error(&format!("{primal} — binary not found"));
+        }
+    }
+
+    println!();
+    crate::info(&format!("Result: {}/{n} primals present", found.len()));
+
+    if missing.is_empty() {
+        crate::success("Composition is complete");
+        Ok(())
+    } else {
+        let m = missing.len();
+        let list = missing.join(", ");
+        anyhow::bail!("Composition incomplete: {m} missing ({list})");
+    }
+}
+
+fn resolve_composition(name: &str) -> Vec<String> {
+    let predefined: &[(&str, &[&str])] = &[
+        ("tower", &["beardog", "songbird", "skunkbat"]),
+        (
+            "node",
+            &[
+                "beardog",
+                "songbird",
+                "skunkbat",
+                "toadstool",
+                "barracuda",
+                "coralreef",
+            ],
+        ),
+        (
+            "nest",
+            &[
+                "beardog",
+                "songbird",
+                "skunkbat",
+                "nestgate",
+                "rhizocrypt",
+                "loamspine",
+                "sweetgrass",
+            ],
+        ),
+        (
+            "nucleus",
+            &[
+                "beardog",
+                "songbird",
+                "skunkbat",
+                "toadstool",
+                "barracuda",
+                "coralreef",
+                "nestgate",
+                "rhizocrypt",
+                "loamspine",
+                "sweetgrass",
+            ],
+        ),
+        ("meta", &["biomeos", "squirrel", "petaltongue"]),
+        (
+            "full",
+            &[
+                "beardog",
+                "songbird",
+                "skunkbat",
+                "toadstool",
+                "barracuda",
+                "coralreef",
+                "nestgate",
+                "rhizocrypt",
+                "loamspine",
+                "sweetgrass",
+                "biomeos",
+                "squirrel",
+                "petaltongue",
+            ],
+        ),
+    ];
+
+    for (comp_name, members) in predefined {
+        if name.eq_ignore_ascii_case(comp_name) {
+            return members.iter().map(|s| (*s).to_owned()).collect();
+        }
+    }
+
+    name.split(',')
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+fn binary_exists(primals_dir: &Path, primal: &str, triple_first: bool) -> bool {
+    if primals_dir.join(primal).exists() {
+        return true;
+    }
+
+    if triple_first {
+        if let Ok(entries) = std::fs::read_dir(primals_dir) {
+            for entry in entries.filter_map(std::result::Result::ok) {
+                if entry.path().is_dir() && entry.path().join(primal).exists() {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
 }

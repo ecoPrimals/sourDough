@@ -126,6 +126,62 @@ jobs:
     )
 }
 
+/// Generate a hardened systemd `.service` unit for a primal deployment.
+///
+/// Follows the ecosystem membrane pattern: `Type=simple`, restart policy,
+/// security hardening (`NoNewPrivileges`, `ProtectSystem=strict`),
+/// resource limits, and UDS socket under `/run/biomeos/`.
+pub(in crate::commands::scaffold) fn systemd_service(name: &str, role: &str) -> String {
+    let name_lower = name.to_lowercase();
+    let upper = name_lower.to_uppercase();
+    format!(
+        "# SPDX-License-Identifier: AGPL-3.0-or-later\n\
+         #\n\
+         # {name} — {role} deployment\n\
+         #\n\
+         # Install:\n\
+         #   cp {name_lower}-{role}.service /etc/systemd/system/\n\
+         #   systemctl daemon-reload\n\
+         #   systemctl enable --now {name_lower}-{role}\n\
+         \n\
+         [Unit]\n\
+         Description={name} ({role})\n\
+         Documentation=https://primals.eco\n\
+         After=network-online.target\n\
+         Wants=network-online.target\n\
+         StartLimitIntervalSec=60\n\
+         StartLimitBurst=5\n\
+         \n\
+         [Service]\n\
+         Type=simple\n\
+         ExecStart=/opt/{role}/{name_lower} server \\\n\
+         \x20   --socket /run/biomeos/{name_lower}.sock\n\
+         \n\
+         Environment={upper}_SOCKET_MODE=0660\n\
+         Environment={upper}_LOG_LEVEL=info\n\
+         Environment={upper}_ROLE={role}\n\
+         EnvironmentFile=-/opt/{role}/{name_lower}.env\n\
+         \n\
+         Restart=always\n\
+         RestartSec=5\n\
+         \n\
+         # Security hardening\n\
+         NoNewPrivileges=true\n\
+         PrivateTmp=true\n\
+         ProtectSystem=strict\n\
+         ProtectHome=true\n\
+         ReadWritePaths=/run/biomeos\n\
+         ReadOnlyPaths=/opt/{role}\n\
+         \n\
+         # Resource limits\n\
+         MemoryMax=128M\n\
+         CPUQuota=50%\n\
+         \n\
+         [Install]\n\
+         WantedBy=multi-user.target\n"
+    )
+}
+
 /// Generate `deny.toml` for a scaffolded primal.
 pub(in crate::commands::scaffold) const DENY_TOML: &str = r#"# cargo-deny configuration
 # https://embarkstudios.github.io/cargo-deny/

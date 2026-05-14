@@ -13,11 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sourdough verify <binary>`: verifies Ed25519 signatures against public key
 - `sourdough validate ecobin <binary>`: validates compiled binaries (static linking, stripped, size budget, ldd)
 - `sourdough genomebin sign` now delegates to real Ed25519 signing (was `sequoia-openpgp` error stub)
-- Deployment internalization contract alignment (per `primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md`)
+- `sourdough scaffold systemd <primal>`: generates hardened systemd `.service` units (ecosystem membrane pattern)
+- `sourdough layout <dir>`: validates triple-first binary layout (`primals/{triple}/{name}`)
+- `sourdough validate composition <name>`: validates composition binary presence (tower, node, nest, nucleus, meta, full)
+- Predefined compositions match `ports.env` atomic model (tower = beardog+songbird+skunkbat, etc.)
+- 8 new CLI integration tests (sign roundtrip, tamper detection, systemd generation, layout, composition)
+- Deployment internalization contract fully aligned (per `primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md`)
 
 ### Changed (v0.3.0)
 - `sourdough validate ecobin` auto-detects path type: file (binary validation) vs directory (project validation)
-- CLI help updated with `Sign` and `Verify` subcommands
+- CLI help updated with `Sign`, `Verify`, `Layout` subcommands
 
 ## v0.2.0 — Scaffold Evolution
 

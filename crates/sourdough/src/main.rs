@@ -79,6 +79,13 @@ enum Commands {
         pub_key: Option<std::path::PathBuf>,
     },
 
+    /// Validate binary layout (triple-first convention)
+    Layout {
+        /// Path to the primals binary directory
+        #[arg(default_value = "primals")]
+        dir: std::path::PathBuf,
+    },
+
     /// Run health diagnostics
     Doctor {
         /// Run comprehensive checks
@@ -125,6 +132,9 @@ async fn main() -> Result<()> {
         }
         Commands::Verify { path, pub_key } => {
             commands::sign::verify(&path, pub_key.as_deref())?;
+        }
+        Commands::Layout { dir } => {
+            commands::layout::validate(&dir)?;
         }
         Commands::Doctor { comprehensive } => {
             commands::doctor::run(comprehensive)?;

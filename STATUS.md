@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
-- `sourdough`: CLI binary (scaffold, validate, genomebin, sign, verify, doctor)
+- `sourdough`: CLI binary (scaffold, validate, genomebin, sign, verify, layout, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
 ## Compliance
@@ -58,14 +58,17 @@
 - [x] **v0.3.0**: `sourdough verify` top-level CLI command (signature verification)
 - [x] **v0.3.0**: `sourdough validate ecobin` evolved to validate compiled binaries (static, stripped, size budget, ldd checks)
 - [x] **v0.3.0**: `sourdough genomebin sign` now uses real Ed25519 signing (was error stub)
-- [x] **v0.3.0**: Deployment internalization contract aligned with primalSpring
+- [x] **v0.3.0**: `sourdough scaffold systemd` generates hardened `.service` units (ecosystem membrane pattern)
+- [x] **v0.3.0**: `sourdough layout` validates triple-first binary layout (`primals/{triple}/{name}`)
+- [x] **v0.3.0**: `sourdough validate composition` validates composition binary presence (tower/node/nest/nucleus/full)
+- [x] **v0.3.0**: Deployment internalization contract fully aligned with primalSpring
 
 ## Crate Health
 
 | Crate | Tests | Coverage | Max Lines |
 |-------|-------|----------|-----------|
 | sourdough-core | 135 | ~95% | all < 650 |
-| sourdough (CLI) | 25+ (integration + e2e) | ~90% | all < 540 |
+| sourdough (CLI) | 33+ (integration + e2e) | ~90% | all < 750 |
 | sourdough-genomebin | 87 | ~96% | all < 560 |
 
 ## Recent Changes (May 14, 2026 — v0.3.0 deployment internalization)
@@ -76,8 +79,11 @@
 - `sourdough genomebin sign` now delegates to real signing (was sequoia-openpgp error stub)
 - `sourdough validate ecobin <binary>` validates compiled binaries: static linking, stripped, size budget, ldd
 - `sourdough validate ecobin <dir>` continues to validate project source (C deps, fmt, clippy)
+- `sourdough scaffold systemd <primal> --role <role>` generates hardened `.service` units
+- `sourdough layout <dir>` validates triple-first binary layout
+- `sourdough validate composition <name>` validates composition binary presence (predefined: tower, node, nest, nucleus, meta, full)
 - Per deployment internalization contract (primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md)
-- 256 tests passing
+- 264 tests passing (8 new integration tests for sign/verify/systemd/layout/composition)
 
 ## Prior Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
 
