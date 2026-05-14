@@ -1,6 +1,6 @@
 # sourDough Status
 
-**Version**: 0.2.0-dev (unreleased)
+**Version**: 0.3.0
 **Edition**: Rust 2024
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 
@@ -24,7 +24,7 @@
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 95%+ test coverage via `cargo llvm-cov` (247 tests, target: 90%)
+- [x] 95%+ test coverage via `cargo llvm-cov` (281 tests, target: 90%)
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Release profile: LTO, codegen-units=1, strip
 - [x] scaffold.rs refactored into module (mod + generators + templates)

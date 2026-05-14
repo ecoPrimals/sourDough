@@ -1,7 +1,7 @@
 # sourDough Specification
 
-**Version**: 0.2.0-dev
-**Date**: April 30, 2026
+**Version**: 0.3.0
+**Date**: May 14, 2026
 **Status**: Reference Implementation
 **Role**: Nascent Primal (Budding Primal) + Standardization Framework
 
@@ -259,25 +259,24 @@ sourdough genomebin sign myPrimal.genome
 
 ## Future Evolution
 
-### Near Term
+### Near Term (v0.4.0)
 
-- Cross-compilation validation (musl targets)
-- genomeBin signing (Pure Rust, sequoia-openpgp)
+- `sourdough harvest` — cross-compile and release via CLI
+- `sourdough validate composition` Phase 3 live health probes
 
-### Medium Term
+### Medium Term (v0.5.0-v0.6.0)
 
+- `sourdough package` — self-extracting genomeBin archives
+- `sourdough deploy --target membrane` — full deploy+verify cycle
 - EphemeralOwner<T> for short-lived primals (see EPHEMERAL_PRIMAL_SCAFFOLDING.md)
-- biomeOS integration library
-- neuralAPI integration library
 
 ### Long Term
 
 - Complete integration platform
 - Ephemeral-to-permanent primal promotion
-- Ephemeral mesh coordination
 
 ---
 
-**Date**: April 30, 2026
-**Version**: 0.2.0-dev
+**Date**: May 14, 2026
+**Version**: 0.3.0
 **Status**: Reference Implementation

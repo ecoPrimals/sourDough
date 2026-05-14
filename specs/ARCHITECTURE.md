@@ -1,7 +1,7 @@
 # sourDough Architecture
 
-**Version**: 0.2.0-dev
-**Date**: April 30, 2026
+**Version**: 0.3.0
+**Date**: May 14, 2026
 **Type**: Reference Implementation (Nascent Budding Primal)
 
 ---
@@ -190,14 +190,19 @@ sourdough
   scaffold
     new-primal <name> "<description>" [--output <dir>]
     new-crate <primal> <crate>
+    systemd <name> [--role <role>] [--output <dir>]
+  sign <binary> [--key <path>] [--generate-key]
+  verify <binary> [--pub-key <path>]
+  validate
+    primal <dir>
+    unibin <dir>
+    ecobin <dir|binary>
+    composition <name> [--primals-dir <dir>] [--triple-first]
+  layout <dir>
   genomebin
     create --primal <name> --version <ver> --ecobins <dir>
     test <genomeBin>
     sign <genomeBin>
-  validate
-    primal <dir>
-    unibin <dir>
-    ecobin <dir>
   doctor [--comprehensive]
 ```
 
@@ -274,20 +279,28 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 - Comprehensive validation
 - Parallel ecoBin processing
 
-### Phase 4: Cross-Compilation and Signing -- IN PROGRESS
+### Phase 4: Cross-Compilation and Signing -- COMPLETE
 
-- Cross-compile to x86_64-musl, aarch64-musl
-- genomeBin signing via Pure Rust sequoia-openpgp
-- Binary analysis and static linking validation
+- Scaffold generates musl cross-compilation workflow (x86_64, aarch64, armv7)
+- Ed25519 detached signatures via `ed25519-dalek` (pure Rust)
+- Binary validation: static linking, stripped, size budget
 
-### Phase 5: Integration Libraries -- PLANNED
+### Phase 5: Deployment Internalization -- COMPLETE
 
-- EphemeralOwner<T> for short-lived primals (see EPHEMERAL_PRIMAL_SCAFFOLDING.md)
-- biomeOS launcher integration
-- neuralAPI registry integration
+- `sourdough sign` / `sourdough verify` CLI commands
+- `sourdough scaffold systemd` (hardened service units)
+- `sourdough layout` (triple-first layout validation)
+- `sourdough validate composition` (atomic + niche compositions)
+- `sourdough validate ecobin <binary>` (binary-level checks)
+
+### Phase 6: Harvest + Release -- PLANNED
+
+- `sourdough harvest` — cross-compile and release to GitHub
+- `sourdough package` — self-extracting genomeBin archives
+- `sourdough deploy` — full deploy+verify cycle
 
 ---
 
-**Date**: April 30, 2026
-**Version**: 0.2.0-dev
+**Date**: May 14, 2026
+**Version**: 0.3.0
 **Status**: Reference Implementation

@@ -36,10 +36,12 @@ cargo test --workspace
 sourDough/
 ├── Cargo.toml                     Workspace manifest (lints, deps, release profile)
 ├── crates/
-│   ├── sourdough/                 CLI binary (scaffold, validate, genomebin, doctor)
+│   ├── sourdough/                 CLI binary (scaffold, sign, verify, validate, layout, genomebin, doctor)
 │   │   ├── src/commands/
 │   │   │   ├── scaffold/          Primal scaffolding (mod + generators + templates)
-│   │   │   ├── validate.rs        Compliance validation
+│   │   │   ├── validate/          Compliance validation (primal, unibin, ecobin, composition)
+│   │   │   ├── sign.rs            Ed25519 binary signing
+│   │   │   ├── layout.rs          Triple-first layout validation
 │   │   │   ├── genomebin.rs       genomeBin CLI commands
 │   │   │   └── doctor.rs          Health diagnostics
 │   │   └── tests/                 Integration + e2e tests
@@ -60,6 +62,7 @@ sourDough/
 │           ├── platform.rs        Runtime OS/arch detection
 │           ├── builder.rs         genomeBin creation pipeline
 │           ├── validator.rs       genomeBin validation
+│           ├── signing.rs         Ed25519 detached signatures
 │           ├── metadata.rs        TOML metadata handling
 │           ├── archive.rs         tar/gzip operations
 │           └── error.rs           Error types
@@ -108,6 +111,23 @@ cd ../myPrimal && cargo build && cargo test
 ./target/release/sourdough validate primal ../myPrimal
 ./target/release/sourdough validate unibin ../myPrimal
 ./target/release/sourdough validate ecobin ../myPrimal
+./target/release/sourdough validate ecobin target/release/myprimal  # binary checks
+./target/release/sourdough validate composition tower --primals-dir primals/
+```
+
+### Sign binaries
+
+```bash
+./target/release/sourdough sign target/release/myprimal --generate-key
+./target/release/sourdough sign target/release/myprimal
+./target/release/sourdough verify target/release/myprimal
+```
+
+### Deployment tooling
+
+```bash
+./target/release/sourdough scaffold systemd myPrimal --role gate
+./target/release/sourdough layout primals/  # validate triple-first layout
 ```
 
 ### Run diagnostics

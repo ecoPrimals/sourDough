@@ -2,7 +2,7 @@
 
 The nascent primal. The budding primal. The starter culture for ecoPrimals.
 
-**Version**: 0.2.0-dev (unreleased)
+**Version**: 0.3.0
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 **Edition**: Rust 2024
 
@@ -20,8 +20,8 @@ UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
 | Crate | Role |
 |-------|------|
 | `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, zero-copy RPC, PeekedStream transport |
-| `sourdough` | UniBin CLI: scaffold, validate, genomebin, doctor |
-| `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation |
+| `sourdough` | UniBin CLI: scaffold, sign, verify, validate, layout, genomebin, doctor |
+| `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
 ## Quick Start
 
@@ -40,9 +40,9 @@ cargo build --release
 
 Scaffolded primals include:
 - **Core crate**: inlined traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalState`, `PrimalError`)
-- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` (Phase 3 ready)
-- **CI/CD**: GitHub Actions workflows (`ci.yml` with `cargo deny check` + `notify-plasmidbin.yml`)
-- **Supply chain**: `deny.toml` (ecoBin v3.0, `cc` allowed for blake3 wrapper)
+- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` + `MethodGate`
+- **CI/CD**: GitHub Actions workflows (`ci.yml`, `notify-plasmidbin.yml`, `release.yml` musl cross-compilation)
+- **Supply chain**: `deny.toml` (ecoBin v3.0, explicit `ring` ban, `cc` allowed for blake3)
 
 No dependency on sourDough after creation.
 
@@ -50,13 +50,13 @@ No dependency on sourDough after creation.
 
 | Metric | Value |
 |--------|-------|
-| Tests | 247 passing (135 unit, 23 CLI integration, 2 e2e, 8 doc, 79 genomebin) |
+| Tests | 281 passing (152 unit, 31 CLI integration, 2 e2e, 8 doc, 88 genomebin) |
 | Coverage | 95%+ (llvm-cov, target: 90%) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
 | C deps | zero (Pure Rust, blake3 `pure` feature) |
-| LOC | ~8,900 Rust across 33 files |
-| Max file | < 650 lines (target: 1000) |
+| LOC | ~10,500 Rust across 37 files |
+| Max file | < 750 lines (target: 1000) |
 
 ## Standards Compliance
 
@@ -74,7 +74,7 @@ sourDough/
   Cargo.toml                  Workspace manifest
   crates/
     sourdough-core/           Core traits + IPC
-    sourdough/                UniBin CLI
+    sourdough/                UniBin CLI (sign, verify, validate, layout, scaffold, genomebin, doctor)
     sourdough-genomebin/      Pure Rust genomeBin library
   specs/
     ARCHITECTURE.md           Technical architecture
