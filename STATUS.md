@@ -61,6 +61,9 @@
 - [x] **v0.3.0**: `sourdough scaffold systemd` generates hardened `.service` units (ecosystem membrane pattern)
 - [x] **v0.3.0**: `sourdough layout` validates triple-first binary layout (`primals/{triple}/{name}`)
 - [x] **v0.3.0**: `sourdough validate composition` validates composition binary presence (tower/node/nest/nucleus/full)
+- [x] **v0.3.0**: Niche compositions (per-spring: hotspring, neuralspring, wetspring, groundspring, healthspring)
+- [x] **v0.3.0**: `validate.rs` refactored into module: `mod.rs` (383L) + `composition.rs` (280L)
+- [x] **v0.3.0**: Scaffold README template includes deployment section (sign, validate, systemd)
 - [x] **v0.3.0**: Deployment internalization contract fully aligned with primalSpring
 
 ## Crate Health
@@ -83,7 +86,7 @@
 - `sourdough layout <dir>` validates triple-first binary layout
 - `sourdough validate composition <name>` validates composition binary presence (predefined: tower, node, nest, nucleus, meta, full)
 - Per deployment internalization contract (primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md)
-- 264 tests passing (8 new integration tests for sign/verify/systemd/layout/composition)
+- 281 tests passing (15 unit tests for composition/layout + 8 integration tests)
 
 ## Prior Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
 

@@ -214,6 +214,19 @@ The server exposes these JSON-RPC 2.0 methods on `$XDG_RUNTIME_DIR/biomeos/{name
 | `health.check` | Full diagnostic report |
 | `capabilities.list` | Primal name, version, methods |
 
+## Deployment
+
+```bash
+# Validate the release binary
+sourdough validate ecobin target/x86_64-unknown-linux-musl/release/{name_lower}
+
+# Sign for distribution
+sourdough sign target/release/{name_lower} --key signing.key
+
+# Generate systemd service
+sourdough scaffold systemd {name} --role gate
+```
+
 ---
 
 *Scaffolded by sourDough — the nascent primal.*

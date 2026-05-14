@@ -117,3 +117,35 @@ fn check_triple_dir(path: &Path, triple: &str, errors: &mut Vec<String>) {
         Err(e) => errors.push(format!("Cannot read triple directory '{triple}': {e}")),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_triple_recognizes_musl_targets() {
+        assert!(is_triple("x86_64-unknown-linux-musl"));
+        assert!(is_triple("aarch64-unknown-linux-musl"));
+        assert!(is_triple("armv7-unknown-linux-musleabihf"));
+    }
+
+    #[test]
+    fn is_triple_rejects_primal_names() {
+        assert!(!is_triple("beardog"));
+        assert!(!is_triple("songbird"));
+        assert!(!is_triple("README.md"));
+    }
+
+    #[test]
+    fn is_triple_rejects_short_names() {
+        assert!(!is_triple("x86_64"));
+        assert!(!is_triple("linux-musl"));
+    }
+
+    #[test]
+    fn tier1_triples_all_recognized() {
+        for triple in TIER1_TRIPLES {
+            assert!(is_triple(triple), "Tier 1 triple '{triple}' not recognized");
+        }
+    }
+}
