@@ -1,11 +1,12 @@
-# sourDough — sporePrint Validation Summary
++++
+title = "sourDough Validation Summary"
+description = "Ecosystem scaffolding meta-primal — nascent primal generation, binary signing, deployment validation. 281 tests, 95%+ coverage."
+date = 2026-05-20
 
-**Primal**: sourDough
-**Version**: 0.3.0
-**Domain**: Scaffolding — nascent primal generation, ecosystem tooling, deployment validation
-**License**: AGPL-3.0-or-later
-
----
+[taxonomies]
+primals = ["sourdough"]
+springs = []
++++
 
 ## Status
 
@@ -40,18 +41,6 @@
 - `sourdough layout` — triple-first directory structure validation
 - `sourdough genomebin create|test|sign` — genomeBin archive operations
 - `sourdough doctor` — toolchain and environment diagnostics
-
-## Scaffolded Primal Output
-
-A `sourdough scaffold new-primal` produces:
-
-- `{name}-core` crate with inlined traits (zero sourDough dependency)
-- `{name}-server` crate with JSON-RPC 2.0 server + capability wire + MethodGate (JH-0/JH-2)
-- `btsp.negotiate` handler with NULL cipher fallback
-- `.github/workflows/ci.yml` + `notify-plasmidbin.yml` + `release.yml` (musl cross-compilation)
-- `deny.toml` (ecoBin v3.0, explicit `ring` ban)
-- Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
-- First-byte peek (JSON-RPC vs BTSP auto-detection)
 
 ## Crates (3)
 
