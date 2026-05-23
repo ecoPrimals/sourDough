@@ -65,6 +65,9 @@
 - [x] **v0.3.0**: `validate.rs` refactored into module: `mod.rs` (383L) + `composition.rs` (280L)
 - [x] **v0.3.0**: Scaffold README template includes deployment section (sign, validate, systemd)
 - [x] **v0.3.0**: Deployment internalization contract fully aligned with primalSpring
+- [x] **v0.3.1**: Scaffold generates `announce.rs` (Neural API `primal.announce` Wave 42 standard)
+- [x] **v0.3.1**: Scaffolded primals auto-announce to biomeOS on startup (fire-and-forget)
+- [x] **v0.3.1**: `primal.announce` classified Public in MethodGate
 
 ## Crate Health
 

@@ -18,5 +18,5 @@ pub(super) use self::infra::{
     DENY_TOML, NOTIFY_PLASMIDBIN_YML, ci_yml, release_yml, systemd_service,
 };
 pub(super) use self::server::{
-    dispatch_rs, method_gate_rs, server_cargo_toml, server_main_rs, server_rs,
+    announce_rs, dispatch_rs, method_gate_rs, server_cargo_toml, server_main_rs, server_rs,
 };

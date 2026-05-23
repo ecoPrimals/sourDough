@@ -5,7 +5,17 @@ All notable changes to sourDough will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v0.3.0 Deployment Internalization
+## [Unreleased]
+
+### Added (v0.3.1 — May 23, 2026)
+- Scaffold generates `announce.rs` in server crate: Neural API `primal.announce` startup logic (Wave 42/43 standard)
+- Scaffolded primals auto-announce to biomeOS on startup for adaptive routing (fire-and-forget, graceful degradation)
+- `primal.announce` classified as Public in MethodGate (JH-0 compliant)
+- Tiered biomeOS socket discovery: `$NEURAL_API_SOCKET` → `$XDG_RUNTIME_DIR/biomeos/` → `/tmp/biomeos/`
+- `dispatch.rs` METHODS constant includes `primal.announce` (advertised in capabilities.list)
+- Announce template includes TODO markers for team-specific capabilities, signal_tiers, cost_hints, latency_estimates
+
+## v0.3.0 — Deployment Internalization
 
 ### Added (v0.3.0 — May 14, 2026)
 - `sourdough sign <binary>` top-level CLI command: Ed25519 detached signatures (`.sig` sidecar)

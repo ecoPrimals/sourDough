@@ -34,7 +34,7 @@ springs = []
 
 ## CLI Surface (sourdough UniBin)
 
-- `sourdough scaffold new-primal` — full primal workspace with JSON-RPC server + MethodGate + CI/CD
+- `sourdough scaffold new-primal` — full primal workspace with JSON-RPC server + MethodGate + `primal.announce` + CI/CD
 - `sourdough scaffold systemd` — hardened systemd service unit generation
 - `sourdough sign` / `sourdough verify` — Ed25519 binary signing
 - `sourdough validate primal|unibin|ecobin|composition` — compliance validation

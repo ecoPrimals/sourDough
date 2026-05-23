@@ -40,7 +40,8 @@ cargo build --release
 
 Scaffolded primals include:
 - **Core crate**: inlined traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalState`, `PrimalError`)
-- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` + `MethodGate`
+- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` + `MethodGate` + `primal.announce`
+- **Neural API**: Auto-announces to biomeOS on startup for adaptive routing (Wave 42 standard)
 - **CI/CD**: GitHub Actions workflows (`ci.yml`, `notify-plasmidbin.yml`, `release.yml` musl cross-compilation)
 - **Supply chain**: `deny.toml` (ecoBin v3.0, explicit `ring` ban, `cc` allowed for blake3)
 
