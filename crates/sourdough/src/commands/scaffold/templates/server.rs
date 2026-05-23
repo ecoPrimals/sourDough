@@ -281,7 +281,8 @@ pub fn handle_request(
             serde_json::json!({{
                 "primal": PRIMAL_NAME,
                 "version": PRIMAL_VERSION,
-                "capabilities": METHODS,
+                "capabilities": crate::announce::capabilities(),
+                "methods": METHODS,
                 "signal_tiers": crate::announce::signal_tiers(),
             }})
         }}
@@ -472,7 +473,8 @@ fn discover_neural_api_socket(family: &str) -> Option<PathBuf> {{
 /// Capability domains this primal serves.
 ///
 /// Update this list as you add capabilities to your primal.
-fn capabilities() -> &'static [&'static str] {{
+/// These are domain names (e.g. "crypto", "storage"), not method names.
+pub fn capabilities() -> &'static [&'static str] {{
     // TODO: Replace with your primal's actual capability domains.
     &[]
 }}
