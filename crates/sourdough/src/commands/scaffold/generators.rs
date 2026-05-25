@@ -187,9 +187,9 @@ pub(super) fn write_readme(dir: &Path, name: &str, description: &str) -> Result<
 ## Quick Start
 
 ```bash
-cargo build --release
 cargo test --workspace
-./target/release/{name_lower}  # starts JSON-RPC server on UDS
+cargo build --release
+./target/release/{name_lower}  # local dev — production binary from plasmidBin
 ```
 
 ## Structure
@@ -217,12 +217,15 @@ The server exposes these JSON-RPC 2.0 methods on `$XDG_RUNTIME_DIR/biomeos/{name
 
 ## Deployment
 
+Production binary is built and distributed via plasmidBin (triggered by
+`notify-plasmidbin.yml` on push to main).
+
 ```bash
-# Validate the release binary
-sourdough validate ecobin target/x86_64-unknown-linux-musl/release/{name_lower}
+# Validate the plasmidBin binary
+sourdough validate ecobin primals/x86_64-unknown-linux-musl/{name_lower}
 
 # Sign for distribution
-sourdough sign target/release/{name_lower} --key signing.key
+sourdough sign primals/x86_64-unknown-linux-musl/{name_lower} --key signing.key
 
 # Generate systemd service
 sourdough scaffold systemd {name} --role gate

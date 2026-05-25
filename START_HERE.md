@@ -24,8 +24,8 @@ sourDough is the **nascent primal** for ecoPrimals. It has three jobs:
 ## Build and Test
 
 ```bash
-cargo build --release
 cargo test --workspace
+cargo build --release  # for local development; production binary from plasmidBin
 ```
 
 ---
@@ -101,39 +101,39 @@ capability-based addressing. No hardcoded service names, ports, or endpoints.
 ### Scaffold a new primal
 
 ```bash
-./target/release/sourdough scaffold new-primal myPrimal "Description" --output ../myPrimal
+sourdough scaffold new-primal myPrimal "Description" --output ../myPrimal
 cd ../myPrimal && cargo build && cargo test
 ```
 
 ### Validate compliance
 
 ```bash
-./target/release/sourdough validate primal ../myPrimal
-./target/release/sourdough validate unibin ../myPrimal
-./target/release/sourdough validate ecobin ../myPrimal
-./target/release/sourdough validate ecobin target/release/myprimal  # binary checks
-./target/release/sourdough validate composition tower --primals-dir primals/
+sourdough validate primal ../myPrimal
+sourdough validate unibin ../myPrimal
+sourdough validate ecobin ../myPrimal
+sourdough validate ecobin primals/x86_64-unknown-linux-musl/myprimal  # binary checks
+sourdough validate composition tower --primals-dir primals/
 ```
 
 ### Sign binaries
 
 ```bash
-./target/release/sourdough sign target/release/myprimal --generate-key
-./target/release/sourdough sign target/release/myprimal
-./target/release/sourdough verify target/release/myprimal
+sourdough sign primals/x86_64-unknown-linux-musl/myprimal --generate-key
+sourdough sign primals/x86_64-unknown-linux-musl/myprimal
+sourdough verify primals/x86_64-unknown-linux-musl/myprimal
 ```
 
 ### Deployment tooling
 
 ```bash
-./target/release/sourdough scaffold systemd myPrimal --role gate
-./target/release/sourdough layout primals/  # validate triple-first layout
+sourdough scaffold systemd myPrimal --role gate
+sourdough layout primals/  # validate triple-first layout
 ```
 
 ### Run diagnostics
 
 ```bash
-./target/release/sourdough doctor --comprehensive
+sourdough doctor --comprehensive
 ```
 
 ---

@@ -26,16 +26,20 @@ UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
 ## Quick Start
 
 ```bash
-cargo build --release
-
 # Scaffold a new self-contained primal
-./target/release/sourdough scaffold new-primal myPrimal "Purpose of my primal" --output ../myPrimal
+sourdough scaffold new-primal myPrimal "Purpose of my primal" --output ../myPrimal
 
 # Validate primal compliance
-./target/release/sourdough validate primal ../myPrimal
+sourdough validate primal ../myPrimal
 
 # System health check
-./target/release/sourdough doctor
+sourdough doctor
+```
+
+Production binary comes from plasmidBin. For local development:
+```bash
+cargo build --release
+./target/release/sourdough --help
 ```
 
 Scaffolded primals include:
