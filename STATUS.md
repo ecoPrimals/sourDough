@@ -68,6 +68,9 @@
 - [x] **v0.3.1**: Scaffold generates `announce.rs` (Neural API `primal.announce` Wave 42 standard)
 - [x] **v0.3.1**: Scaffolded primals auto-announce to biomeOS on startup (fire-and-forget)
 - [x] **v0.3.1**: `primal.announce` classified Public in MethodGate
+- [x] **v0.3.1**: Announce handler separates capabilities (domains) from methods (Wave 44 fix)
+- [x] **v0.3.1**: `notify-plasmidbin.yml` workflow added (Wave 49 post-primordial compliance)
+- [x] **v0.3.1**: Docs use plasmidBin-first patterns, no stale `target/release/` deployment paths
 
 ## Crate Health
 

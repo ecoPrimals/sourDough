@@ -1,9 +1,18 @@
 # What's Next for sourDough
 
-**Version**: 0.3.0
-**Date**: May 14, 2026
+**Version**: 0.3.1
+**Date**: May 25, 2026
 
 ---
+
+## Shipped (v0.3.1 — May 23-25, 2026)
+
+- [x] Scaffold generates `announce.rs` — Neural API `primal.announce` (Wave 42/43)
+- [x] Scaffolded primals auto-announce to biomeOS on startup (fire-and-forget)
+- [x] `primal.announce` classified Public in MethodGate
+- [x] Announce handler separates capabilities (domains) from methods (Wave 44)
+- [x] `notify-plasmidbin.yml` workflow (Wave 49 post-primordial compliance)
+- [x] Docs use plasmidBin-first patterns, triple-first binary paths
 
 ## Shipped (v0.3.0 — May 14, 2026)
 
@@ -97,5 +106,5 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
 
 ---
 
-**Date**: May 14, 2026
-**Status**: v0.3.0 deployment internalization complete, harvest and release next
+**Date**: May 25, 2026
+**Status**: v0.3.1 Neural API + post-primordial compliance shipped, harvest and release next

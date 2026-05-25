@@ -7,13 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added (v0.3.1 — May 23, 2026)
+### Added (v0.3.1 — May 23-25, 2026)
 - Scaffold generates `announce.rs` in server crate: Neural API `primal.announce` startup logic (Wave 42/43 standard)
 - Scaffolded primals auto-announce to biomeOS on startup for adaptive routing (fire-and-forget, graceful degradation)
 - `primal.announce` classified as Public in MethodGate (JH-0 compliant)
 - Tiered biomeOS socket discovery: `$NEURAL_API_SOCKET` → `$XDG_RUNTIME_DIR/biomeos/` → `/tmp/biomeos/`
 - `dispatch.rs` METHODS constant includes `primal.announce` (advertised in capabilities.list)
 - Announce template includes TODO markers for team-specific capabilities, signal_tiers, cost_hints, latency_estimates
+- `.github/workflows/notify-plasmidbin.yml` added (Wave 49 — triggers plasmidBin auto-build on push)
+
+### Fixed (v0.3.1)
+- Inbound `primal.announce` handler no longer conflates capabilities with methods (Wave 44 audit)
+  - `capabilities` field now returns domain names via `crate::announce::capabilities()`
+  - `methods` field returns individual RPC method names from `METHODS` constant
+
+### Changed (v0.3.1)
+- Docs updated to plasmidBin-first patterns (Wave 49 post-primordial mandate)
+- Scaffolded README template references plasmidBin as production channel
+- Binary paths in docs use triple-first layout (`primals/<triple>/<name>`)
 
 ## v0.3.0 — Deployment Internalization
 
