@@ -2,7 +2,7 @@
 
 The nascent primal. The budding primal. The starter culture for ecoPrimals.
 
-**Version**: 0.3.0
+**Version**: 0.3.1
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 **Edition**: Rust 2024
 

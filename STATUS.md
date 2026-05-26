@@ -1,6 +1,6 @@
 # sourDough Status
 
-**Version**: 0.3.0
+**Version**: 0.3.1
 **Edition**: Rust 2024
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 
