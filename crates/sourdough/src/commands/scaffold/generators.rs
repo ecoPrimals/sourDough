@@ -125,6 +125,7 @@ pub(super) fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
         templates::core_cargo_toml(&core_crate_name, name),
     )?;
     std::fs::write(src_dir.join("error.rs"), templates::ERROR_RS)?;
+    std::fs::write(src_dir.join("env_keys.rs"), templates::ENV_KEYS_RS)?;
     std::fs::write(src_dir.join("lifecycle.rs"), templates::LIFECYCLE_RS)?;
     std::fs::write(src_dir.join("health.rs"), templates::HEALTH_RS)?;
     std::fs::write(src_dir.join("lib.rs"), templates::lib_rs(name))?;

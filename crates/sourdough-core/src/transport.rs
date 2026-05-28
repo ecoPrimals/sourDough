@@ -4,6 +4,8 @@
 //! socket accept. Primals use this to multiplex JSON-RPC 2.0 and BTSP
 //! binary framing on the same listener.
 
+use crate::env_keys;
+
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
@@ -137,8 +139,9 @@ pub async fn peek_protocol<S: AsyncRead + Unpin>(
 /// Falls back to `/tmp/biomeos/` if neither env var is set.
 #[must_use]
 pub fn resolve_socket_path(primal_name: &str, family_id: Option<&str>) -> std::path::PathBuf {
-    let socket_dir = std::env::var("BIOMEOS_SOCKET_DIR").unwrap_or_else(|_| {
-        let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned());
+    let socket_dir = std::env::var(env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {
+        let runtime_dir =
+            std::env::var(env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());
         format!("{runtime_dir}/biomeos")
     });
 

@@ -35,6 +35,7 @@
 
 pub mod config;
 pub mod discovery;
+pub mod env_keys;
 pub mod error;
 pub mod health;
 pub mod identity;

@@ -110,9 +110,9 @@ pub async fn run(
     primal: &{core_ident}::{type_name}Primal,
 ) -> Result<()> {{
     let gate = crate::method_gate::MethodGate::permissive();
-    let socket_dir = std::env::var("BIOMEOS_SOCKET_DIR").unwrap_or_else(|_| {{
+    let socket_dir = std::env::var({core_ident}::env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {{
         let runtime_dir =
-            std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned());
+            std::env::var({core_ident}::env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());
         format!("{{runtime_dir}}/biomeos")
     }});
     tokio::fs::create_dir_all(&socket_dir).await?;
@@ -381,6 +381,7 @@ mod tests {{
 /// Generate the server `announce.rs` with Neural API `primal.announce` startup logic.
 pub(in crate::commands::scaffold) fn announce_rs(name: &str) -> String {
     let name_lower = name.to_lowercase();
+    let core_ident = format!("{}_core", name_lower.replace('-', "_"));
     format!(
         r#"//! Neural API self-announcement (Wave 42 `primal.announce` standard).
 //!
@@ -449,14 +450,14 @@ pub async fn announce_to_biomeos(primal_name: &str, socket: &Path, family: &str)
 /// Discover biomeOS neural-api socket via tiered lookup.
 fn discover_neural_api_socket(family: &str) -> Option<PathBuf> {{
     // Tier 1: explicit env override
-    if let Ok(path) = std::env::var("NEURAL_API_SOCKET") {{
+    if let Ok(path) = std::env::var({core_ident}::env_keys::NEURAL_API_SOCKET) {{
         let p = PathBuf::from(&path);
         if p.exists() {{
             return Some(p);
         }}
     }}
     // Tier 2: XDG_RUNTIME_DIR
-    if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {{
+    if let Ok(runtime_dir) = std::env::var({core_ident}::env_keys::XDG_RUNTIME_DIR) {{
         let p = PathBuf::from(format!("{{runtime_dir}}/biomeos/neural-api-{{family}}.sock"));
         if p.exists() {{
             return Some(p);
