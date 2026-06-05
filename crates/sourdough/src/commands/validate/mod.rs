@@ -41,6 +41,10 @@ pub(crate) enum ValidateCommand {
         /// Use triple-first layout (`primals/{triple}/{name}`)
         #[arg(long)]
         triple_first: bool,
+
+        /// Path to a custom compositions manifest (TOML)
+        #[arg(long)]
+        manifest: Option<PathBuf>,
     },
 }
 
@@ -53,7 +57,13 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             composition,
             primals_dir,
             triple_first,
-        } => composition::validate(&composition, &primals_dir, triple_first),
+            manifest,
+        } => composition::validate(
+            &composition,
+            &primals_dir,
+            triple_first,
+            manifest.as_deref(),
+        ),
     }
 }
 

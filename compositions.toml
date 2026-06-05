@@ -1,0 +1,78 @@
+# Ecosystem composition definitions.
+#
+# Defines which primals belong to each named composition.
+# Used by `sourdough validate composition <name>`.
+#
+# Teams can override with `--manifest <path>` or by placing a
+# custom compositions.toml alongside the primals directory.
+
+[compositions.tower]
+primals = ["beardog", "songbird", "skunkbat"]
+
+[compositions.node]
+primals = [
+    "beardog", "songbird", "skunkbat",
+    "toadstool", "barracuda", "coralreef",
+]
+
+[compositions.nest]
+primals = [
+    "beardog", "songbird", "skunkbat",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+]
+
+[compositions.nucleus]
+primals = [
+    "beardog", "songbird", "skunkbat",
+    "toadstool", "barracuda", "coralreef",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+]
+
+[compositions.meta]
+primals = ["biomeos", "squirrel", "petaltongue"]
+
+[compositions.full]
+primals = [
+    "beardog", "songbird", "skunkbat",
+    "toadstool", "barracuda", "coralreef",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+    "biomeos", "squirrel", "petaltongue",
+]
+
+# Per-spring niche compositions
+
+[compositions.niche-hotspring]
+primals = [
+    "beardog", "songbird",
+    "toadstool", "barracuda", "coralreef",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+]
+
+[compositions.niche-neuralspring]
+primals = [
+    "beardog", "songbird",
+    "toadstool", "barracuda", "coralreef",
+    "biomeos", "squirrel",
+]
+
+[compositions.niche-wetspring]
+primals = [
+    "beardog", "songbird",
+    "toadstool", "barracuda", "coralreef",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+    "biomeos", "squirrel", "petaltongue",
+]
+
+[compositions.niche-groundspring]
+primals = [
+    "beardog", "songbird",
+    "toadstool", "barracuda", "coralreef",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+]
+
+[compositions.niche-healthspring]
+primals = [
+    "beardog", "songbird",
+    "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
+    "biomeos", "squirrel",
+]

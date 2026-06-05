@@ -9,14 +9,18 @@
 //! - [`server`] — `{name}-server` crate templates (Cargo.toml, main, server, dispatch)
 //! - [`infra`] — CI workflows and deny.toml
 
+mod announce;
 mod core;
 mod infra;
 mod server;
 
-pub(super) use self::core::{ENV_KEYS_RS, ERROR_RS, HEALTH_RS, LIFECYCLE_RS, core_cargo_toml, lib_rs};
+pub(super) use self::announce::announce_rs;
+pub(super) use self::core::{
+    ENV_KEYS_RS, ERROR_RS, HEALTH_RS, LIFECYCLE_RS, core_cargo_toml, lib_rs,
+};
 pub(super) use self::infra::{
     DENY_TOML, NOTIFY_PLASMIDBIN_YML, ci_yml, release_yml, systemd_service,
 };
 pub(super) use self::server::{
-    announce_rs, dispatch_rs, method_gate_rs, server_cargo_toml, server_main_rs, server_rs,
+    dispatch_rs, method_gate_rs, server_cargo_toml, server_main_rs, server_rs,
 };
