@@ -87,6 +87,7 @@ fn create_primal(name: &str, description: &str, output: Option<PathBuf>) -> Resu
     generators::create_server_crate(&crates_dir, name)?;
     generators::write_deny_toml(&output_dir)?;
     generators::write_github_workflows(&output_dir, name)?;
+    generators::write_capability_registry(&output_dir, name)?;
     generators::write_specs_directory(&output_dir, name, description)?;
     generators::write_readme(&output_dir, name, description)?;
     generators::write_conventions(&output_dir)?;

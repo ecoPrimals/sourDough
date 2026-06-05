@@ -242,6 +242,57 @@ sourdough scaffold systemd {name} --role gate
     Ok(())
 }
 
+pub(super) fn write_capability_registry(dir: &Path, name: &str) -> Result<()> {
+    let config_dir = dir.join("config");
+    std::fs::create_dir_all(&config_dir)?;
+
+    let name_lower = name.to_lowercase();
+    std::fs::write(
+        config_dir.join("capability_registry.toml"),
+        format!(
+            r#"# Capability Registry — {name}
+# Machine-readable declaration of this primal's IPC surface.
+# Used by primalSpring ecosystem tooling and biomeOS routing.
+
+[meta]
+primal = "{name_lower}"
+version = "0.1.0"
+wire_standard = "L2"
+method_gate = "JH-0"
+btsp_phase = 3
+
+# Define your capability domains below.
+# Each domain groups related RPC methods.
+
+# [capabilities.example]
+# owner = "{name_lower}"
+# methods = [
+#     "example.method_one",
+#     "example.method_two",
+# ]
+
+[capabilities.health]
+owner = "{name_lower}"
+methods = [
+    "health.liveness",
+    "health.readiness",
+    "health.check",
+]
+
+[capabilities.lifecycle]
+owner = "{name_lower}"
+methods = [
+    "capabilities.list",
+    "primal.announce",
+    "btsp.negotiate",
+]
+"#,
+        ),
+    )?;
+
+    Ok(())
+}
+
 pub(super) fn write_conventions(dir: &Path) -> Result<()> {
     std::fs::write(
         dir.join("CONVENTIONS.md"),
