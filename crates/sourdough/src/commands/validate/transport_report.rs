@@ -13,6 +13,7 @@ struct PrimalAudit {
     self_bind_count: usize,
     injection_count: usize,
     platform_issues: usize,
+    has_sourdough_dep: bool,
     status: AuditStatus,
 }
 
@@ -63,6 +64,7 @@ pub(crate) fn run(primals_dir: &Path, output: Option<&Path>, exempt: &[String]) 
                 self_bind_count: 0,
                 injection_count: 0,
                 platform_issues: 0,
+                has_sourdough_dep: false,
                 status: AuditStatus::Skipped,
             });
             continue;
@@ -110,9 +112,12 @@ fn audit_primal(name: &str, path: &Path) -> PrimalAudit {
             self_bind_count: 0,
             injection_count: 0,
             platform_issues: 0,
+            has_sourdough_dep: false,
             status: AuditStatus::Skipped,
         };
     };
+
+    let has_sourdough_dep = detect_sourdough_dep(path);
 
     let rs_files = super::collect_rs_files(&src_dir);
     let mut self_bind_count = 0;
@@ -172,8 +177,35 @@ fn audit_primal(name: &str, path: &Path) -> PrimalAudit {
         self_bind_count,
         injection_count,
         platform_issues,
+        has_sourdough_dep,
         status,
     }
+}
+
+/// Check if any Cargo.toml in the primal depends on sourdough-core.
+fn detect_sourdough_dep(path: &Path) -> bool {
+    let check_file = |p: &Path| -> bool {
+        std::fs::read_to_string(p)
+            .unwrap_or_default()
+            .contains("sourdough-core")
+    };
+
+    if check_file(&path.join("Cargo.toml")) {
+        return true;
+    }
+
+    let crates_dir = path.join("crates");
+    if crates_dir.exists() {
+        if let Ok(entries) = std::fs::read_dir(&crates_dir) {
+            for entry in entries.flatten() {
+                if check_file(&entry.path().join("Cargo.toml")) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
 }
 
 fn format_report(audits: &[PrimalAudit]) -> String {
@@ -186,8 +218,8 @@ fn format_report(audits: &[PrimalAudit]) -> String {
         "Generated: {}\n",
         chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")
     );
-    out.push_str("| Primal | Status | Self-bind | Injection | Platform |\n");
-    out.push_str("|--------|--------|-----------|-----------|----------|\n");
+    out.push_str("| Primal | Status | Self-bind | Injection | Platform | Dep |\n");
+    out.push_str("|--------|--------|-----------|-----------|----------|-----|\n");
 
     for audit in audits {
         let status_icon = match audit.status {
@@ -196,9 +228,14 @@ fn format_report(audits: &[PrimalAudit]) -> String {
             AuditStatus::NonCompliant => "✗",
             AuditStatus::Skipped => "—",
         };
+        let dep_flag = if audit.has_sourdough_dep {
+            "⚠ sd"
+        } else {
+            "—"
+        };
         let _ = writeln!(
             out,
-            "| {} | {status_icon} | {} | {} | {} |",
+            "| {} | {status_icon} | {} | {} | {} | {dep_flag} |",
             audit.name, audit.self_bind_count, audit.injection_count, audit.platform_issues,
         );
     }
@@ -220,10 +257,25 @@ fn format_report(audits: &[PrimalAudit]) -> String {
         .filter(|a| matches!(a.status, AuditStatus::Skipped))
         .count();
 
+    let dep_violators: Vec<&str> = audits
+        .iter()
+        .filter(|a| a.has_sourdough_dep)
+        .map(|a| a.name.as_str())
+        .collect();
+
     let _ = write!(
         out,
         "\n**Summary**: {compliant} compliant, {warnings} warnings, {non_compliant} non-compliant, {skipped} exempt\n"
     );
+
+    if !dep_violators.is_empty() {
+        let _ = write!(
+            out,
+            "\n**⚠ sourdough-core dependency violation**: {}\n\
+             Primals must implement TransportEndpoint locally — the wire format is the contract.\n",
+            dep_violators.join(", ")
+        );
+    }
 
     out
 }

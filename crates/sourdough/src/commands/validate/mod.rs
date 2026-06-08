@@ -66,8 +66,12 @@ pub(crate) enum ValidateCommand {
         #[arg(long, short)]
         output: Option<PathBuf>,
 
-        /// Exempt primals (comma-separated, e.g. "biomeOS,songBird")
-        #[arg(long, value_delimiter = ',', default_value = "biomeOS,songBird")]
+        /// Exempt primals (comma-separated, e.g. "biomeOS,songBird,sourDough")
+        #[arg(
+            long,
+            value_delimiter = ',',
+            default_value = "biomeOS,songBird,sourDough"
+        )]
         exempt: Vec<String>,
     },
 }
