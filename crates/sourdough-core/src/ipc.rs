@@ -21,6 +21,12 @@ use std::collections::HashMap;
 /// JSON-RPC 2.0 version constant.
 pub const JSONRPC_VERSION: &str = "2.0";
 
+/// Default IPC timeout for inter-primal calls (5 seconds).
+///
+/// Sufficient for local UDS and TCP on the same host. Override for
+/// cross-gate mesh relay calls that traverse the network.
+pub const DEFAULT_IPC_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// JSON-RPC 2.0 request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
@@ -292,6 +298,18 @@ impl IpcError {
     }
 }
 
+impl std::fmt::Display for IpcError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(primal) = &self.source_primal {
+            write!(f, "[{}] {:?}: {}", primal, self.kind, self.message)
+        } else {
+            write!(f, "{:?}: {}", self.kind, self.message)
+        }
+    }
+}
+
+impl std::error::Error for IpcError {}
+
 // --- Capability Declaration ---
 
 /// A capability that a primal can expose via `capabilities.list`.
@@ -474,6 +492,33 @@ impl IpcClient {
         })
     }
 
+    /// Send a JSON-RPC request with a timeout.
+    ///
+    /// Equivalent to [`call`](Self::call) but returns `IpcError` with
+    /// `IpcErrorKind::Timeout` if the operation exceeds the given duration.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] on transport failure, protocol error, or timeout.
+    pub async fn call_with_timeout(
+        &self,
+        request: &JsonRpcRequest,
+        timeout: std::time::Duration,
+    ) -> Result<JsonRpcResponse, IpcError> {
+        tokio::time::timeout(timeout, self.call(request))
+            .await
+            .map_err(|_| {
+                IpcError::new(
+                    IpcErrorKind::Timeout,
+                    format!(
+                        "request to {} timed out after {}ms",
+                        self.endpoint,
+                        timeout.as_millis()
+                    ),
+                )
+            })?
+    }
+
     /// Probe liveness of the target primal.
     ///
     /// Returns `Ok(true)` if the primal responds with a result, `Ok(false)` if
@@ -643,9 +688,28 @@ mod tests {
     #[test]
     fn ipc_error_retryable_by_kind() {
         assert!(IpcError::new(IpcErrorKind::Transport, "t").retryable);
+        assert!(IpcError::new(IpcErrorKind::Timeout, "t").retryable);
         assert!(IpcError::new(IpcErrorKind::NotReady, "n").retryable);
         assert!(!IpcError::new(IpcErrorKind::CircuitBreakerOpen, "c").retryable);
         assert!(!IpcError::new(IpcErrorKind::Internal, "i").retryable);
+    }
+
+    #[tokio::test]
+    async fn call_with_timeout_returns_timeout_error() {
+        let client = IpcClient::new(crate::transport::TransportEndpoint::uds(
+            "/tmp/nonexistent-primal-for-timeout-test.sock",
+        ));
+        let req = JsonRpcRequest::new("health.liveness", 1);
+        let result = client
+            .call_with_timeout(&req, std::time::Duration::from_millis(50))
+            .await;
+        let err = result.unwrap_err();
+        assert!(err.kind == IpcErrorKind::Transport || err.kind == IpcErrorKind::Timeout);
+    }
+
+    #[test]
+    fn default_timeout_is_reasonable() {
+        assert_eq!(DEFAULT_IPC_TIMEOUT, std::time::Duration::from_secs(5));
     }
 
     #[test]

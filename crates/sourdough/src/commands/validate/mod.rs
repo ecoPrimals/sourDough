@@ -1,6 +1,7 @@
 //! Validation commands for checking primal compliance.
 
 mod composition;
+mod transport_report;
 
 use anyhow::{Context, Result};
 use clap::Subcommand;
@@ -53,6 +54,22 @@ pub(crate) enum ValidateCommand {
         /// Path to the primal directory
         path: PathBuf,
     },
+
+    /// Run transport compliance audit across all primals in a directory
+    #[command(name = "transport-report")]
+    TransportReport {
+        /// Parent directory containing primal checkouts
+        #[arg(long, default_value = "..")]
+        primals_dir: PathBuf,
+
+        /// Write report to file (in addition to stdout)
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+
+        /// Exempt primals (comma-separated, e.g. "biomeOS,songBird")
+        #[arg(long, value_delimiter = ',', default_value = "biomeOS,songBird")]
+        exempt: Vec<String>,
+    },
 }
 
 pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
@@ -72,6 +89,11 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             manifest.as_deref(),
         ),
         ValidateCommand::Transport { path } => validate_transport(&path),
+        ValidateCommand::TransportReport {
+            primals_dir,
+            output,
+            exempt,
+        } => transport_report::run(&primals_dir, output.as_deref(), &exempt),
     }
 }
 
@@ -352,7 +374,7 @@ fn validate_ecobin_project(path: &Path) -> Result<()> {
 // --- Transport compliance checks ---
 
 /// Anti-patterns that indicate self-binding transport (primals should not do this).
-const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
+pub(super) const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
     ("TcpListener::bind", "hardcoded TCP self-binding"),
     ("UnixListener::bind", "hardcoded UDS self-binding"),
     (".bind(\"0.0.0.0", "hardcoded bind-all address"),
@@ -362,7 +384,7 @@ const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
 ];
 
 /// Positive patterns that indicate transport injection compliance.
-const INJECTION_PATTERNS: &[(&str, &str)] = &[
+pub(super) const INJECTION_PATTERNS: &[(&str, &str)] = &[
     ("TransportEndpoint", "uses TransportEndpoint enum"),
     ("connect_transport", "uses connect_transport()"),
     ("TRANSPORT_ENDPOINT", "accepts injected endpoint env var"),
@@ -490,7 +512,7 @@ fn validate_transport(path: &Path) -> Result<()> {
     report_results(&errors, &warnings)
 }
 
-fn find_source_dir(path: &Path) -> Option<PathBuf> {
+pub(super) fn find_source_dir(path: &Path) -> Option<PathBuf> {
     let crates_dir = path.join("crates");
     if crates_dir.exists() {
         for entry in std::fs::read_dir(&crates_dir).ok()?.flatten() {
@@ -507,7 +529,7 @@ fn find_source_dir(path: &Path) -> Option<PathBuf> {
     None
 }
 
-fn collect_rs_files(dir: &Path) -> Vec<PathBuf> {
+pub(super) fn collect_rs_files(dir: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     collect_rs_files_recursive(dir, &mut files);
     files

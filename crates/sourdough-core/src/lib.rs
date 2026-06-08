@@ -11,7 +11,7 @@
 //! - Be observable (health checks)
 //! - Be configurable
 //!
-//! ## Example
+//! ## Lifecycle Example
 //!
 //! ```
 //! use sourdough_core::{PrimalLifecycle, PrimalState, PrimalError};
@@ -31,6 +31,37 @@
 //!         Ok(())
 //!     }
 //! }
+//! ```
+//!
+//! ## Transport Adoption (5-step pattern)
+//!
+//! Every primal adopts transport injection with this pattern:
+//!
+//! ```no_run
+//! use sourdough_core::transport::TransportEndpoint;
+//! use sourdough_core::ipc::{IpcClient, JsonRpcRequest, DEFAULT_IPC_TIMEOUT};
+//!
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! // Step 1: Accept TRANSPORT_ENDPOINT from launcher
+//! let endpoint: TransportEndpoint = std::env::var("TRANSPORT_ENDPOINT")
+//!     .ok()
+//!     .and_then(|s| serde_json::from_str(&s).ok())
+//!     .unwrap_or_else(|| TransportEndpoint::uds("/tmp/biomeos/myprimal.sock"));
+//!
+//! // Step 2: Connect to other primals via IpcClient
+//! let songbird = IpcClient::from_primal("songbird", None);
+//!
+//! // Step 3: Make calls with timeout protection
+//! let req = JsonRpcRequest::new("health.liveness", 1);
+//! let resp = songbird.call_with_timeout(&req, DEFAULT_IPC_TIMEOUT).await?;
+//!
+//! // Step 4: Use connect_transport for raw stream access
+//! let stream = sourdough_core::transport::connect_transport(&endpoint).await?;
+//!
+//! // Step 5: Never self-bind — let the launcher handle the listener
+//! # Ok(())
+//! # }
 //! ```
 
 pub mod circuit_breaker;
@@ -54,8 +85,8 @@ pub use error::{PrimalError, PrimalResult};
 pub use health::{DependencyHealth, HealthStatus, PrimalHealth};
 pub use identity::{Did, PrimalIdentity, Signature};
 pub use ipc::{
-    Capability, HealthProbe, IpcClient, IpcError, IpcErrorKind, JsonRpcError, JsonRpcRequest,
-    JsonRpcResponse,
+    Capability, DEFAULT_IPC_TIMEOUT, HealthProbe, IpcClient, IpcError, IpcErrorKind, JsonRpcError,
+    JsonRpcRequest, JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
 pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};
