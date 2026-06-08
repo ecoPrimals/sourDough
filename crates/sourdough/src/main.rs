@@ -86,6 +86,12 @@ enum Commands {
         dir: std::path::PathBuf,
     },
 
+    /// Migrate existing primals toward ecosystem standards
+    Migrate {
+        #[command(subcommand)]
+        migrate_cmd: commands::migrate::MigrateCommand,
+    },
+
     /// Run health diagnostics
     Doctor {
         /// Run comprehensive checks
@@ -135,6 +141,9 @@ async fn main() -> Result<()> {
         }
         Commands::Layout { dir } => {
             commands::layout::validate(&dir)?;
+        }
+        Commands::Migrate { migrate_cmd } => {
+            commands::migrate::run(migrate_cmd)?;
         }
         Commands::Doctor { comprehensive } => {
             commands::doctor::run(comprehensive)?;
