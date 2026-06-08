@@ -33,6 +33,7 @@
 //! }
 //! ```
 
+pub mod circuit_breaker;
 pub mod config;
 pub mod discovery;
 pub mod env_keys;
@@ -46,14 +47,15 @@ pub mod transport;
 pub mod types;
 
 // Re-exports for convenience
+pub use circuit_breaker::{CircuitBreaker, CircuitState};
 pub use config::{ConfigLoader, PrimalConfig};
 pub use discovery::{PrimalDiscovery, ServiceRegistration, UpaCapability};
 pub use error::{PrimalError, PrimalResult};
 pub use health::{DependencyHealth, HealthStatus, PrimalHealth};
 pub use identity::{Did, PrimalIdentity, Signature};
 pub use ipc::{
-    Capability, CircuitBreaker, CircuitState, HealthProbe, IpcClient, IpcError, IpcErrorKind,
-    JsonRpcError, JsonRpcRequest, JsonRpcResponse,
+    Capability, HealthProbe, IpcClient, IpcError, IpcErrorKind, JsonRpcError, JsonRpcRequest,
+    JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
 pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};

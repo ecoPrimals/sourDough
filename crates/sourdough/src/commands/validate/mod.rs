@@ -284,6 +284,24 @@ fn validate_ecobin_project(path: &Path) -> Result<()> {
         }
     }
 
+    crate::info("Checking cargo-deny configuration...");
+    let deny_path = path.join("deny.toml");
+    if deny_path.exists() {
+        let deny_content = std::fs::read_to_string(&deny_path).unwrap_or_default();
+        if deny_content.contains("ring") {
+            crate::success("deny.toml present with ring ban");
+        } else {
+            errors.push("deny.toml exists but does not ban `ring`".to_string());
+        }
+        if deny_content.contains("openssl-sys") || deny_content.contains("openssl") {
+            crate::success("deny.toml bans OpenSSL");
+        } else {
+            errors.push("deny.toml does not ban OpenSSL".to_string());
+        }
+    } else {
+        errors.push("Missing deny.toml (required for ecoBin compliance)".to_string());
+    }
+
     crate::info("Checking cross-compilation readiness...");
     println!("  (Full check requires building for all targets)");
 
@@ -385,17 +403,16 @@ fn validate_transport(path: &Path) -> Result<()> {
         let content = std::fs::read_to_string(file).unwrap_or_default();
         let rel = file.strip_prefix(path).unwrap_or(file);
 
-        let in_test = rel
-            .to_string_lossy()
-            .contains("test")
+        let rel_str = rel.to_string_lossy();
+        let in_test = rel_str.contains("/tests/")
+            || rel_str.starts_with("tests/")
+            || rel_str.ends_with("_test.rs")
             || content.contains("#[cfg(test)]");
 
         for &(pattern, description) in SELF_BIND_PATTERNS {
             if content.contains(pattern) && !in_test {
-                self_bind_violations.push(format!(
-                    "  {}: {description} (`{pattern}`)",
-                    rel.display()
-                ));
+                self_bind_violations
+                    .push(format!("  {}: {description} (`{pattern}`)", rel.display()));
             }
         }
 
@@ -419,7 +436,10 @@ fn validate_transport(path: &Path) -> Result<()> {
 
     println!();
     if injection_found.is_empty() {
-        errors.push("No transport injection patterns found (TransportEndpoint, connect_transport, etc.)".to_string());
+        errors.push(
+            "No transport injection patterns found (TransportEndpoint, connect_transport, etc.)"
+                .to_string(),
+        );
     } else {
         crate::info("Transport injection patterns detected:");
         for p in &injection_found {
@@ -458,9 +478,7 @@ fn validate_transport(path: &Path) -> Result<()> {
             println!("{p}");
         }
         let n = platform_issues.len();
-        warnings.push(format!(
-            "{n} file(s) use Unix APIs without platform guards"
-        ));
+        warnings.push(format!("{n} file(s) use Unix APIs without platform guards"));
     }
 
     println!();

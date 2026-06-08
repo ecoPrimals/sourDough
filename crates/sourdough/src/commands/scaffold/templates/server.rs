@@ -105,6 +105,7 @@ async fn main() -> Result<()> {{
 }
 
 /// Generate the server `server.rs` with transport injection.
+#[expect(clippy::too_many_lines, reason = "static template string")]
 pub(in crate::commands::scaffold) fn server_rs(name: &str) -> String {
     let core_ident = format!("{}_core", name.to_lowercase().replace('-', "_"));
     let type_name = super::super::primal_rust_type_name(name);
@@ -182,11 +183,18 @@ pub async fn run(
             let announce_socket = socket_path.clone();
             let announce_family = family_id.unwrap_or("ecoPrimal").to_owned();
             let announce_name = primal_name.to_owned();
+            let register_name = primal_name.to_owned();
+            let register_endpoint = serde_json::to_value(&endpoint).unwrap_or_default();
             tokio::spawn(async move {{
                 crate::announce::announce_to_biomeos(
                     &announce_name,
                     &announce_socket,
                     &announce_family,
+                )
+                .await;
+                crate::announce::register_with_songbird(
+                    &register_name,
+                    &register_endpoint,
                 )
                 .await;
             }});

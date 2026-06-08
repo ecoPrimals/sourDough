@@ -1,6 +1,7 @@
 //! Health diagnostics for `SourDough` and the ecosystem.
 
 use anyhow::Result;
+use sourdough_core::env_keys;
 use sourdough_genomebin::Platform;
 
 pub(crate) fn run(comprehensive: bool) -> Result<()> {
@@ -89,8 +90,8 @@ fn check_cross_compilation_targets() {
     let targets = [
         "x86_64-unknown-linux-musl",
         "aarch64-unknown-linux-musl",
-        "x86_64-apple-darwin",
-        "aarch64-apple-darwin",
+        "armv7-unknown-linux-musleabihf",
+        "aarch64-linux-android",
     ];
 
     if let Ok(output) = std::process::Command::new("rustup")
@@ -127,7 +128,39 @@ fn check_genome_bin_tools() {
     println!("  ✓ Archive operations (tar + flate2, Pure Rust)");
     println!("  ✓ Checksum (BLAKE3 + SHA256, Pure Rust)");
     println!("  ✓ Metadata (TOML, Pure Rust)");
-    println!("  ⚠ Signing (sequoia-openpgp, planned)");
+    println!("  ✓ Signing (Ed25519 via ed25519-dalek, Pure Rust)");
+
+    check_biomeos_socket_dir();
 
     crate::success("genomeBin tooling OK");
+}
+
+fn check_biomeos_socket_dir() {
+    crate::info("Checking biomeOS socket directory...");
+
+    let socket_dir = std::env::var(env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {
+        let runtime_dir =
+            std::env::var(env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());
+        format!("{runtime_dir}/biomeos")
+    });
+
+    let path = std::path::Path::new(&socket_dir);
+    if path.exists() {
+        let sockets: Vec<_> = std::fs::read_dir(path)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "sock"))
+            .collect();
+        if sockets.is_empty() {
+            println!("  ⚠ {socket_dir} exists but no .sock files found");
+        } else {
+            println!("  ✓ {socket_dir} ({} socket(s) found)", sockets.len());
+            for sock in &sockets {
+                println!("    • {}", sock.file_name().to_string_lossy());
+            }
+        }
+    } else {
+        println!("  ⚠ {socket_dir} does not exist (no primals running locally)");
+    }
 }

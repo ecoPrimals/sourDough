@@ -383,92 +383,13 @@ pub mod methods {
         /// Get primal version.
         pub const VERSION: &str = "system.version";
     }
-}
 
-// --- Circuit Breaker ---
-
-/// Simple circuit breaker for IPC resilience.
-#[derive(Debug)]
-pub struct CircuitBreaker {
-    service: String,
-    state: CircuitState,
-    failure_count: u32,
-    failure_threshold: u32,
-    last_failure: Option<std::time::Instant>,
-    reset_timeout: std::time::Duration,
-}
-
-/// Circuit breaker state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CircuitState {
-    /// Normal operation.
-    Closed,
-    /// Too many failures, rejecting calls.
-    Open,
-    /// Testing if service recovered.
-    HalfOpen,
-}
-
-impl CircuitBreaker {
-    /// Create a new circuit breaker.
-    #[must_use]
-    pub fn new(
-        service: impl Into<String>,
-        failure_threshold: u32,
-        reset_timeout: std::time::Duration,
-    ) -> Self {
-        Self {
-            service: service.into(),
-            state: CircuitState::Closed,
-            failure_count: 0,
-            failure_threshold,
-            last_failure: None,
-            reset_timeout,
-        }
-    }
-
-    /// Check if a call is allowed.
-    #[must_use]
-    pub fn allow_call(&mut self) -> bool {
-        match self.state {
-            CircuitState::Closed | CircuitState::HalfOpen => true,
-            CircuitState::Open => {
-                if let Some(last) = self.last_failure {
-                    if last.elapsed() >= self.reset_timeout {
-                        self.state = CircuitState::HalfOpen;
-                        return true;
-                    }
-                }
-                false
-            }
-        }
-    }
-
-    /// Record a successful call.
-    pub const fn record_success(&mut self) {
-        self.failure_count = 0;
-        self.state = CircuitState::Closed;
-    }
-
-    /// Record a failed call.
-    pub fn record_failure(&mut self) {
-        self.failure_count += 1;
-        self.last_failure = Some(std::time::Instant::now());
-        if self.failure_count >= self.failure_threshold {
-            self.state = CircuitState::Open;
-        }
-    }
-
-    /// Get current state.
-    #[must_use]
-    pub const fn state(&self) -> CircuitState {
-        self.state
-    }
-
-    /// Get the service name.
-    #[must_use]
-    pub fn service(&self) -> &str {
-        &self.service
+    /// IPC domain methods (songbird-mediated).
+    pub mod ipc {
+        /// Resolve a primal's transport endpoint.
+        pub const RESOLVE: &str = "ipc.resolve";
+        /// Register capabilities at startup.
+        pub const REGISTER: &str = "ipc.register";
     }
 }
 
@@ -487,7 +408,7 @@ pub struct IpcClient {
 impl IpcClient {
     /// Create a new client targeting the given endpoint.
     #[must_use]
-    pub fn new(endpoint: crate::transport::TransportEndpoint) -> Self {
+    pub const fn new(endpoint: crate::transport::TransportEndpoint) -> Self {
         Self { endpoint }
     }
 
@@ -495,16 +416,13 @@ impl IpcClient {
     #[must_use]
     pub fn from_primal(primal_name: &str, family_id: Option<&str>) -> Self {
         Self {
-            endpoint: crate::transport::TransportEndpoint::from_primal_name(
-                primal_name,
-                family_id,
-            ),
+            endpoint: crate::transport::TransportEndpoint::from_primal_name(primal_name, family_id),
         }
     }
 
     /// The endpoint this client targets.
     #[must_use]
-    pub fn endpoint(&self) -> &crate::transport::TransportEndpoint {
+    pub const fn endpoint(&self) -> &crate::transport::TransportEndpoint {
         &self.endpoint
     }
 
@@ -517,10 +435,7 @@ impl IpcClient {
     /// # Errors
     ///
     /// Returns `IpcError` on transport or protocol failure.
-    pub async fn call(
-        &self,
-        request: &JsonRpcRequest,
-    ) -> Result<JsonRpcResponse, IpcError> {
+    pub async fn call(&self, request: &JsonRpcRequest) -> Result<JsonRpcResponse, IpcError> {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
         let stream = crate::transport::connect_transport(&self.endpoint)
@@ -555,10 +470,72 @@ impl IpcClient {
             .map_err(|e| IpcError::new(IpcErrorKind::Transport, format!("read response: {e}")))?;
 
         serde_json::from_str(response_line.trim()).map_err(|e| {
-            IpcError::new(
-                IpcErrorKind::Internal,
-                format!("deserialize response: {e}"),
-            )
+            IpcError::new(IpcErrorKind::Internal, format!("deserialize response: {e}"))
+        })
+    }
+
+    /// Probe liveness of the target primal.
+    ///
+    /// Returns `Ok(true)` if the primal responds with a result, `Ok(false)` if
+    /// it responds with an error, or an `Err` if the transport fails entirely.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] if the transport connection fails.
+    pub async fn health_liveness(&self) -> Result<bool, IpcError> {
+        let req = JsonRpcRequest::new(methods::health::LIVENESS, 1);
+        let resp = self.call(&req).await?;
+        Ok(resp.error.is_none())
+    }
+
+    /// Register a capability set with songbird via `ipc.register`.
+    ///
+    /// This is the ecosystem standard for primals to announce their
+    /// capabilities at startup so other primals can discover them.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] on transport or protocol failure.
+    pub async fn register_capabilities(
+        &self,
+        primal_name: &str,
+        capabilities: &[Capability],
+        endpoint: &crate::transport::TransportEndpoint,
+    ) -> Result<JsonRpcResponse, IpcError> {
+        let params = serde_json::json!({
+            "primal": primal_name,
+            "capabilities": capabilities,
+            "endpoint": endpoint,
+        });
+        let req = JsonRpcRequest::new(methods::ipc::REGISTER, 1).with_params(params);
+        self.call(&req).await
+    }
+
+    /// Resolve another primal's endpoint via songbird `ipc.resolve`.
+    ///
+    /// Returns the structured `TransportEndpoint` for the given primal,
+    /// enabling fully dynamic discovery without hardcoded paths.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] if transport fails or songbird returns an error.
+    pub async fn resolve_primal(
+        &self,
+        primal_name: &str,
+    ) -> Result<crate::transport::TransportEndpoint, IpcError> {
+        let params = serde_json::json!({ "primal": primal_name });
+        let req = JsonRpcRequest::new(methods::ipc::RESOLVE, 1).with_params(params);
+        let resp = self.call(&req).await?;
+
+        let result = resp.result.ok_or_else(|| {
+            let msg = resp
+                .error
+                .map_or_else(|| "no result".to_owned(), |e| e.message);
+            IpcError::new(IpcErrorKind::DependencyUnavailable, msg)
+        })?;
+
+        serde_json::from_value(result).map_err(|e| {
+            IpcError::new(IpcErrorKind::Internal, format!("deserialize endpoint: {e}"))
         })
     }
 }
@@ -573,7 +550,7 @@ impl std::fmt::Debug for IpcClient {
 
 #[cfg(test)]
 mod tests {
-    use super::methods::{capabilities, health, identity, lifecycle, system};
+    use super::methods::{capabilities, health, identity, ipc, lifecycle, system};
     use super::*;
 
     #[test]
@@ -654,32 +631,6 @@ mod tests {
     }
 
     #[test]
-    fn circuit_breaker_closed_allows_and_opens() {
-        let mut cb = CircuitBreaker::new("svc", 2, std::time::Duration::from_secs(60));
-        assert!(cb.allow_call());
-        assert_eq!(cb.state(), CircuitState::Closed);
-        cb.record_failure();
-        assert_eq!(cb.state(), CircuitState::Closed);
-        cb.record_failure();
-        assert_eq!(cb.state(), CircuitState::Open);
-        assert!(!cb.allow_call());
-    }
-
-    #[test]
-    fn circuit_breaker_opens_then_half_open_after_reset() {
-        let reset = std::time::Duration::from_millis(20);
-        let mut cb = CircuitBreaker::new("svc", 1, reset);
-        cb.record_failure();
-        assert_eq!(cb.state(), CircuitState::Open);
-        assert!(!cb.allow_call());
-        std::thread::sleep(reset + std::time::Duration::from_millis(10));
-        assert!(cb.allow_call());
-        assert_eq!(cb.state(), CircuitState::HalfOpen);
-        cb.record_success();
-        assert_eq!(cb.state(), CircuitState::Closed);
-    }
-
-    #[test]
     fn capability_builder() {
         let cap = Capability::new("health", "1.0.0")
             .with_method("check")
@@ -714,6 +665,19 @@ mod tests {
         assert_eq!(identity::DID, "identity.did");
         assert_eq!(system::PING, "system.ping");
         assert_eq!(system::VERSION, "system.version");
+        assert_eq!(ipc::RESOLVE, "ipc.resolve");
+        assert_eq!(ipc::REGISTER, "ipc.register");
+    }
+
+    #[test]
+    fn ipc_client_from_primal_constructs_uds() {
+        let client = IpcClient::from_primal("songbird", None);
+        let ep = client.endpoint();
+        assert!(matches!(
+            ep,
+            crate::transport::TransportEndpoint::Uds { .. }
+        ));
+        assert!(ep.uds_path().unwrap().contains("songbird"));
     }
 
     #[test]

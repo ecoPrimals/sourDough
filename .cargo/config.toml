@@ -6,3 +6,9 @@ rustflags = ["-D", "warnings", "-C", "target-feature=+crt-static", "-C", "link-s
 
 [target.aarch64-unknown-linux-musl]
 rustflags = ["-D", "warnings", "-C", "target-feature=+crt-static", "-C", "link-self-contained=yes"]
+
+[target.armv7-unknown-linux-musleabihf]
+rustflags = ["-D", "warnings", "-C", "target-feature=+crt-static", "-C", "link-self-contained=yes"]
+
+[target.aarch64-linux-android]
+rustflags = ["-D", "warnings"]
