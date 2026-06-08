@@ -105,7 +105,6 @@ async fn main() -> Result<()> {{
 }
 
 /// Generate the server `server.rs` with transport injection.
-#[expect(clippy::too_many_lines, reason = "static template string")]
 pub(in crate::commands::scaffold) fn server_rs(name: &str) -> String {
     let core_ident = format!("{}_core", name.to_lowercase().replace('-', "_"));
     let type_name = super::super::primal_rust_type_name(name);

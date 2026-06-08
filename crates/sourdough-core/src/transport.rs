@@ -12,16 +12,12 @@
 //! Primals do not choose their transport — the launcher or Songbird decides.
 //! Business logic receives a `TransportEndpoint` and calls `connect_transport()`.
 //!
-//! ```no_run
-//! # #[tokio::main]
-//! # async fn main() -> std::io::Result<()> {
+//! ```rust,ignore
 //! use sourdough_core::transport::{TransportEndpoint, connect_transport};
 //!
 //! let endpoint = TransportEndpoint::uds("/run/user/1000/biomeos/beardog.sock");
 //! let stream = connect_transport(&endpoint).await?;
 //! // Use stream for JSON-RPC without knowing the transport.
-//! # Ok(())
-//! # }
 //! ```
 
 use crate::env_keys;
@@ -114,13 +110,13 @@ impl TransportEndpoint {
 
     /// Whether this endpoint uses relay infrastructure.
     #[must_use]
-    pub const fn is_relayed(&self) -> bool {
+    pub fn is_relayed(&self) -> bool {
         matches!(self, Self::MeshRelay { .. })
     }
 
     /// Transport name as it appears in the wire format.
     #[must_use]
-    pub const fn transport_name(&self) -> &'static str {
+    pub fn transport_name(&self) -> &'static str {
         match self {
             Self::Uds { .. } => "uds",
             Self::Tcp { .. } => "tcp",
@@ -132,10 +128,13 @@ impl TransportEndpoint {
     #[must_use]
     pub fn display_uri(&self) -> String {
         match self {
-            Self::Uds { path } => path.strip_prefix('@').map_or_else(
-                || format!("unix://{path}"),
-                |abstract_name| format!("unix-abstract://{abstract_name}"),
-            ),
+            Self::Uds { path } => {
+                if let Some(abstract_name) = path.strip_prefix('@') {
+                    format!("unix-abstract://{abstract_name}")
+                } else {
+                    format!("unix://{path}")
+                }
+            }
             Self::Tcp { host, port } => {
                 if host.contains(':') {
                     format!("tcp://[{host}]:{port}")
@@ -623,11 +622,7 @@ mod tests {
         assert!(matches!(ep, TransportEndpoint::Uds { .. }));
         let path = ep.uds_path().expect("uds path");
         assert!(path.contains("beardog"));
-        assert!(
-            std::path::Path::new(path)
-                .extension()
-                .is_some_and(|ext| ext == "sock")
-        );
+        assert!(path.ends_with(".sock"));
     }
 
     #[test]

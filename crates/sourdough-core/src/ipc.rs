@@ -487,7 +487,7 @@ pub struct IpcClient {
 impl IpcClient {
     /// Create a new client targeting the given endpoint.
     #[must_use]
-    pub const fn new(endpoint: crate::transport::TransportEndpoint) -> Self {
+    pub fn new(endpoint: crate::transport::TransportEndpoint) -> Self {
         Self { endpoint }
     }
 
@@ -495,13 +495,16 @@ impl IpcClient {
     #[must_use]
     pub fn from_primal(primal_name: &str, family_id: Option<&str>) -> Self {
         Self {
-            endpoint: crate::transport::TransportEndpoint::from_primal_name(primal_name, family_id),
+            endpoint: crate::transport::TransportEndpoint::from_primal_name(
+                primal_name,
+                family_id,
+            ),
         }
     }
 
     /// The endpoint this client targets.
     #[must_use]
-    pub const fn endpoint(&self) -> &crate::transport::TransportEndpoint {
+    pub fn endpoint(&self) -> &crate::transport::TransportEndpoint {
         &self.endpoint
     }
 
@@ -514,7 +517,10 @@ impl IpcClient {
     /// # Errors
     ///
     /// Returns `IpcError` on transport or protocol failure.
-    pub async fn call(&self, request: &JsonRpcRequest) -> Result<JsonRpcResponse, IpcError> {
+    pub async fn call(
+        &self,
+        request: &JsonRpcRequest,
+    ) -> Result<JsonRpcResponse, IpcError> {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
         let stream = crate::transport::connect_transport(&self.endpoint)
@@ -549,7 +555,10 @@ impl IpcClient {
             .map_err(|e| IpcError::new(IpcErrorKind::Transport, format!("read response: {e}")))?;
 
         serde_json::from_str(response_line.trim()).map_err(|e| {
-            IpcError::new(IpcErrorKind::Internal, format!("deserialize response: {e}"))
+            IpcError::new(
+                IpcErrorKind::Internal,
+                format!("deserialize response: {e}"),
+            )
         })
     }
 }

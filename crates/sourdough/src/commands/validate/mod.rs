@@ -385,12 +385,17 @@ fn validate_transport(path: &Path) -> Result<()> {
         let content = std::fs::read_to_string(file).unwrap_or_default();
         let rel = file.strip_prefix(path).unwrap_or(file);
 
-        let in_test = rel.to_string_lossy().contains("test") || content.contains("#[cfg(test)]");
+        let in_test = rel
+            .to_string_lossy()
+            .contains("test")
+            || content.contains("#[cfg(test)]");
 
         for &(pattern, description) in SELF_BIND_PATTERNS {
             if content.contains(pattern) && !in_test {
-                self_bind_violations
-                    .push(format!("  {}: {description} (`{pattern}`)", rel.display()));
+                self_bind_violations.push(format!(
+                    "  {}: {description} (`{pattern}`)",
+                    rel.display()
+                ));
             }
         }
 
@@ -414,10 +419,7 @@ fn validate_transport(path: &Path) -> Result<()> {
 
     println!();
     if injection_found.is_empty() {
-        errors.push(
-            "No transport injection patterns found (TransportEndpoint, connect_transport, etc.)"
-                .to_string(),
-        );
+        errors.push("No transport injection patterns found (TransportEndpoint, connect_transport, etc.)".to_string());
     } else {
         crate::info("Transport injection patterns detected:");
         for p in &injection_found {
@@ -456,7 +458,9 @@ fn validate_transport(path: &Path) -> Result<()> {
             println!("{p}");
         }
         let n = platform_issues.len();
-        warnings.push(format!("{n} file(s) use Unix APIs without platform guards"));
+        warnings.push(format!(
+            "{n} file(s) use Unix APIs without platform guards"
+        ));
     }
 
     println!();
