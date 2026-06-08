@@ -79,6 +79,9 @@ jobs:
             arch: armv7
             packages: musl-tools gcc-arm-linux-gnueabihf
             linker_env: CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER=arm-linux-gnueabihf-gcc
+          - target: aarch64-linux-android
+            arch: aarch64-android
+            ndk: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +92,13 @@ jobs:
         with:
           key: ${{{{ matrix.target }}}}
       - name: Install cross-compilation tools
+        if: matrix.packages
         run: sudo apt-get update && sudo apt-get install -y ${{{{ matrix.packages }}}}
+      - name: Setup Android NDK
+        if: matrix.ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27
       - name: Build release binary
         run: |
           if [ -n "${{{{ matrix.linker_env }}}}" ]; then
@@ -154,10 +163,9 @@ pub(in crate::commands::scaffold) fn systemd_service(name: &str, role: &str) -> 
          \n\
          [Service]\n\
          Type=simple\n\
-         ExecStart=/opt/{role}/{name_lower} server \\\n\
-         \x20   --socket /run/biomeos/{name_lower}.sock\n\
+         ExecStart=/opt/{role}/{name_lower}\n\
          \n\
-         Environment={upper}_SOCKET_MODE=0660\n\
+         Environment=TRANSPORT_ENDPOINT={{\"transport\":\"uds\",\"path\":\"/run/biomeos/{name_lower}.sock\"}}\n\
          Environment={upper}_LOG_LEVEL=info\n\
          Environment={upper}_ROLE={role}\n\
          EnvironmentFile=-/opt/{role}/{name_lower}.env\n\

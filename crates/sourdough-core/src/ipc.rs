@@ -472,6 +472,105 @@ impl CircuitBreaker {
     }
 }
 
+// --- Transport-aware JSON-RPC Client ---
+
+/// A transport-aware JSON-RPC 2.0 client that connects via [`TransportEndpoint`].
+///
+/// Uses `connect_transport()` under the hood — the caller never needs to know
+/// whether the remote primal is on UDS, TCP, or relay.
+///
+/// [`TransportEndpoint`]: crate::transport::TransportEndpoint
+pub struct IpcClient {
+    endpoint: crate::transport::TransportEndpoint,
+}
+
+impl IpcClient {
+    /// Create a new client targeting the given endpoint.
+    #[must_use]
+    pub fn new(endpoint: crate::transport::TransportEndpoint) -> Self {
+        Self { endpoint }
+    }
+
+    /// Resolve a primal by name using ecosystem socket conventions, then build a client.
+    #[must_use]
+    pub fn from_primal(primal_name: &str, family_id: Option<&str>) -> Self {
+        Self {
+            endpoint: crate::transport::TransportEndpoint::from_primal_name(
+                primal_name,
+                family_id,
+            ),
+        }
+    }
+
+    /// The endpoint this client targets.
+    #[must_use]
+    pub fn endpoint(&self) -> &crate::transport::TransportEndpoint {
+        &self.endpoint
+    }
+
+    /// Send a JSON-RPC request and return the response.
+    ///
+    /// Opens a connection, writes the request as a newline-delimited JSON line,
+    /// reads the response line, and closes. This is the standard ecoPrimals
+    /// one-shot RPC pattern.
+    ///
+    /// # Errors
+    ///
+    /// Returns `IpcError` on transport or protocol failure.
+    pub async fn call(
+        &self,
+        request: &JsonRpcRequest,
+    ) -> Result<JsonRpcResponse, IpcError> {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+        let stream = crate::transport::connect_transport(&self.endpoint)
+            .await
+            .map_err(|e| {
+                IpcError::new(
+                    IpcErrorKind::Transport,
+                    format!("connect to {}: {e}", self.endpoint),
+                )
+            })?;
+
+        let mut buf_stream = BufReader::new(stream);
+
+        let req_json = serde_json::to_string(request).map_err(|e| {
+            IpcError::new(IpcErrorKind::Internal, format!("serialize request: {e}"))
+        })?;
+
+        let writer = buf_stream.get_mut();
+        writer
+            .write_all(req_json.as_bytes())
+            .await
+            .map_err(|e| IpcError::new(IpcErrorKind::Transport, format!("write: {e}")))?;
+        writer
+            .write_all(b"\n")
+            .await
+            .map_err(|e| IpcError::new(IpcErrorKind::Transport, format!("write newline: {e}")))?;
+
+        let mut response_line = String::new();
+        buf_stream
+            .read_line(&mut response_line)
+            .await
+            .map_err(|e| IpcError::new(IpcErrorKind::Transport, format!("read response: {e}")))?;
+
+        serde_json::from_str(response_line.trim()).map_err(|e| {
+            IpcError::new(
+                IpcErrorKind::Internal,
+                format!("deserialize response: {e}"),
+            )
+        })
+    }
+}
+
+impl std::fmt::Debug for IpcClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("IpcClient")
+            .field("endpoint", &self.endpoint)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::methods::{capabilities, health, identity, lifecycle, system};

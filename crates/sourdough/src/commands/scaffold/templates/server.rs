@@ -41,7 +41,7 @@ clap = {{ workspace = true }}
     )
 }
 
-/// Generate the server `main.rs` with CLI entry point.
+/// Generate the server `main.rs` with CLI entry point and transport injection.
 pub(in crate::commands::scaffold) fn server_main_rs(name: &str) -> String {
     let type_name = super::super::primal_rust_type_name(name);
     let name_lower = name.to_lowercase();
@@ -49,7 +49,8 @@ pub(in crate::commands::scaffold) fn server_main_rs(name: &str) -> String {
     format!(
         r#"//! {name} server binary.
 //!
-//! JSON-RPC 2.0 server with capability wire standard handlers.
+//! JSON-RPC 2.0 server with transport injection — the primal does not choose
+//! its transport. The launcher or Songbird provides it.
 
 mod announce;
 mod dispatch;
@@ -65,6 +66,11 @@ struct Cli {{
     /// Family ID for socket naming (production mode).
     #[arg(long, env = "FAMILY_ID")]
     family_id: Option<String>,
+
+    /// Transport endpoint override (JSON, e.g. '{{"transport":"tcp","host":"0.0.0.0","port":7800}}').
+    /// When set, the primal binds to this endpoint instead of deriving from socket conventions.
+    #[arg(long, env = "TRANSPORT_ENDPOINT")]
+    transport_endpoint: Option<String>,
 }}
 
 #[tokio::main]
@@ -85,83 +91,154 @@ async fn main() -> Result<()> {{
 
     tracing::info!("{name} started");
 
-    server::run("{name_lower}", cli.family_id.as_deref(), &primal).await
+    let endpoint: Option<server::TransportEndpoint> = cli
+        .transport_endpoint
+        .as_deref()
+        .map(|s| serde_json::from_str(s))
+        .transpose()
+        .map_err(|e| anyhow::anyhow!("invalid TRANSPORT_ENDPOINT: {{e}}"))?;
+
+    server::run("{name_lower}", cli.family_id.as_deref(), endpoint.as_ref(), &primal).await
 }}
 "#,
     )
 }
 
-/// Generate the server `server.rs` with UDS listener + first-byte peek.
+/// Generate the server `server.rs` with transport injection.
 pub(in crate::commands::scaffold) fn server_rs(name: &str) -> String {
     let core_ident = format!("{}_core", name.to_lowercase().replace('-', "_"));
     let type_name = super::super::primal_rust_type_name(name);
     format!(
-        r#"//! Unix domain socket server with first-byte protocol detection.
+        r#"//! Transport-injected server with first-byte protocol detection.
+//!
+//! The primal does not choose its transport — the launcher or Songbird
+//! provides a `TransportEndpoint`. Defaults to UDS from socket conventions.
 
 use anyhow::Result;
+use serde::{{Deserialize, Serialize}};
 use tokio::io::{{AsyncBufReadExt, AsyncWriteExt, BufReader}};
-use tokio::net::UnixListener;
 use tracing::{{info, warn}};
 
-/// Run the JSON-RPC server on a Unix domain socket.
-pub async fn run(
-    primal_name: &str,
-    family_id: Option<&str>,
-    primal: &{core_ident}::{type_name}Primal,
-) -> Result<()> {{
-    let gate = crate::method_gate::MethodGate::permissive();
+/// Structured transport endpoint — wire-compatible with songbird_types.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "transport")]
+pub enum TransportEndpoint {{
+    /// Unix Domain Socket.
+    #[serde(rename = "uds")]
+    Uds {{ path: String }},
+    /// TCP socket.
+    #[serde(rename = "tcp")]
+    Tcp {{ host: String, port: u16 }},
+    /// Mesh relay (not directly bindable, routed via Songbird).
+    #[serde(rename = "mesh_relay")]
+    MeshRelay {{ peer_id: String, capability: String }},
+}}
+
+/// Resolve the default listen endpoint from ecosystem socket conventions.
+fn default_endpoint(primal_name: &str, family_id: Option<&str>) -> TransportEndpoint {{
     let socket_dir = std::env::var({core_ident}::env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {{
         let runtime_dir =
             std::env::var({core_ident}::env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());
         format!("{{runtime_dir}}/biomeos")
     }});
-    tokio::fs::create_dir_all(&socket_dir).await?;
 
     let filename = match family_id.filter(|id| !id.is_empty() && *id != "default") {{
         Some(fid) => format!("{{primal_name}}-{{fid}}.sock"),
         None => format!("{{primal_name}}.sock"),
     }};
-    let socket_path = std::path::PathBuf::from(&socket_dir).join(&filename);
 
-    // Clean up stale socket
-    let _ = tokio::fs::remove_file(&socket_path).await;
+    TransportEndpoint::Uds {{
+        path: std::path::PathBuf::from(&socket_dir)
+            .join(&filename)
+            .to_string_lossy()
+            .into_owned(),
+    }}
+}}
 
-    let listener = UnixListener::bind(&socket_path)?;
-    info!("Listening on {{}}", socket_path.display());
+/// Run the JSON-RPC server on the given (or default) transport endpoint.
+pub async fn run(
+    primal_name: &str,
+    family_id: Option<&str>,
+    injected_endpoint: Option<&TransportEndpoint>,
+    primal: &{core_ident}::{type_name}Primal,
+) -> Result<()> {{
+    let endpoint = injected_endpoint
+        .cloned()
+        .unwrap_or_else(|| default_endpoint(primal_name, family_id));
 
-    // Neural API: announce to biomeOS for adaptive routing
-    let announce_socket = socket_path.clone();
-    let announce_family = family_id.unwrap_or("ecoPrimal").to_owned();
-    let announce_name = primal_name.to_owned();
-    tokio::spawn(async move {{
-        crate::announce::announce_to_biomeos(&announce_name, &announce_socket, &announce_family).await;
-    }});
+    let gate = crate::method_gate::MethodGate::permissive();
 
-    loop {{
-        let (stream, _addr) = listener.accept().await?;
-
-        let mut reader = BufReader::new(stream);
-        let first_byte = match reader.fill_buf().await {{
-            Ok(buf) if !buf.is_empty() => buf[0],
-            Ok(_) => continue,
-            Err(e) => {{
-                warn!("Connection error: {{e}}");
-                continue;
+    match &endpoint {{
+        TransportEndpoint::Uds {{ path }} => {{
+            let socket_path = std::path::PathBuf::from(path);
+            if let Some(parent) = socket_path.parent() {{
+                tokio::fs::create_dir_all(parent).await?;
             }}
-        }};
+            let _ = tokio::fs::remove_file(&socket_path).await;
 
-        if first_byte == b'{{' {{
-            // JSON-RPC 2.0
-            handle_jsonrpc(reader, primal, &gate).await;
-        }} else {{
-            // BTSP binary framing (not yet implemented)
-            warn!("BTSP connection detected — not yet implemented");
+            let listener = tokio::net::UnixListener::bind(&socket_path)?;
+            info!("Listening on unix://{{path}}");
+
+            let announce_socket = socket_path.clone();
+            let announce_family = family_id.unwrap_or("ecoPrimal").to_owned();
+            let announce_name = primal_name.to_owned();
+            tokio::spawn(async move {{
+                crate::announce::announce_to_biomeos(
+                    &announce_name,
+                    &announce_socket,
+                    &announce_family,
+                )
+                .await;
+            }});
+
+            loop {{
+                let (stream, _) = listener.accept().await?;
+                handle_connection(stream, primal, &gate).await;
+            }}
+        }}
+        TransportEndpoint::Tcp {{ host, port }} => {{
+            let addr = format!("{{host}}:{{port}}");
+            let listener = tokio::net::TcpListener::bind(&addr).await?;
+            info!("Listening on tcp://{{addr}}");
+
+            loop {{
+                let (stream, _) = listener.accept().await?;
+                handle_connection(stream, primal, &gate).await;
+            }}
+        }}
+        TransportEndpoint::MeshRelay {{ .. }} => {{
+            anyhow::bail!(
+                "MeshRelay endpoints are not directly bindable — \
+                 register capabilities with Songbird and let it route traffic"
+            );
         }}
     }}
 }}
 
-async fn handle_jsonrpc(
-    mut reader: BufReader<tokio::net::UnixStream>,
+async fn handle_connection<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin>(
+    stream: S,
+    primal: &{core_ident}::{type_name}Primal,
+    gate: &crate::method_gate::MethodGate,
+) {{
+    let mut reader = BufReader::new(stream);
+    let first_byte = match reader.fill_buf().await {{
+        Ok(buf) if !buf.is_empty() => buf[0],
+        Ok(_) => return,
+        Err(e) => {{
+            warn!("Connection error: {{e}}");
+            return;
+        }}
+    }};
+
+    if first_byte == b'{{' {{
+        handle_jsonrpc(reader, primal, gate).await;
+    }} else {{
+        warn!("BTSP connection detected — not yet implemented");
+    }}
+}}
+
+async fn handle_jsonrpc<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin>(
+    mut reader: BufReader<S>,
     primal: &{core_ident}::{type_name}Primal,
     gate: &crate::method_gate::MethodGate,
 ) {{
@@ -264,7 +341,7 @@ pub fn handle_request(
                 "version": PRIMAL_VERSION,
                 "methods": METHODS,
                 "protocol": "jsonrpc-2.0",
-                "transport": ["uds"],
+                "transport": ["uds", "tcp"],
             }})
         }}
         "btsp.negotiate" => {{

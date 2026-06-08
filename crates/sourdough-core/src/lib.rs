@@ -52,10 +52,13 @@ pub use error::{PrimalError, PrimalResult};
 pub use health::{DependencyHealth, HealthStatus, PrimalHealth};
 pub use identity::{Did, PrimalIdentity, Signature};
 pub use ipc::{
-    Capability, CircuitBreaker, CircuitState, HealthProbe, IpcError, IpcErrorKind, JsonRpcError,
-    JsonRpcRequest, JsonRpcResponse,
+    Capability, CircuitBreaker, CircuitState, HealthProbe, IpcClient, IpcError, IpcErrorKind,
+    JsonRpcError, JsonRpcRequest, JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
 pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};
-pub use transport::{PeekedStream, Protocol, peek_protocol, resolve_socket_path, socket_path_in};
+pub use transport::{
+    PeekedStream, Protocol, TransportEndpoint, TransportStream, connect_transport, peek_protocol,
+    resolve_socket_path, socket_path_in,
+};
 pub use types::{ContentHash, Timestamp};

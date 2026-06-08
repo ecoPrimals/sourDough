@@ -46,6 +46,13 @@ pub(crate) enum ValidateCommand {
         #[arg(long)]
         manifest: Option<PathBuf>,
     },
+
+    /// Validate transport abstraction compliance
+    #[command(name = "transport")]
+    Transport {
+        /// Path to the primal directory
+        path: PathBuf,
+    },
 }
 
 pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
@@ -64,6 +71,7 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             triple_first,
             manifest.as_deref(),
         ),
+        ValidateCommand::Transport { path } => validate_transport(&path),
     }
 }
 
@@ -321,6 +329,184 @@ fn validate_ecobin_project(path: &Path) -> Result<()> {
 
     println!();
     report_results(&errors, &[])
+}
+
+// --- Transport compliance checks ---
+
+/// Anti-patterns that indicate self-binding transport (primals should not do this).
+const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
+    ("TcpListener::bind", "hardcoded TCP self-binding"),
+    ("UnixListener::bind", "hardcoded UDS self-binding"),
+    (".bind(\"0.0.0.0", "hardcoded bind-all address"),
+    (".bind(\"127.0.0.1", "hardcoded localhost bind"),
+    ("--port", "CLI port flag (transport should be injected)"),
+    ("--socket", "CLI socket flag (transport should be injected)"),
+];
+
+/// Positive patterns that indicate transport injection compliance.
+const INJECTION_PATTERNS: &[(&str, &str)] = &[
+    ("TransportEndpoint", "uses TransportEndpoint enum"),
+    ("connect_transport", "uses connect_transport()"),
+    ("TRANSPORT_ENDPOINT", "accepts injected endpoint env var"),
+    ("ipc.resolve", "resolves endpoints via Songbird"),
+    ("ipc.register", "registers capabilities with Songbird"),
+];
+
+fn validate_transport(path: &Path) -> Result<()> {
+    crate::info(&format!(
+        "Validating transport abstraction compliance: {}",
+        path.display()
+    ));
+    println!();
+
+    let mut errors: Vec<String> = Vec::new();
+    let mut warnings: Vec<String> = Vec::new();
+    let mut compliant: Vec<String> = Vec::new();
+
+    let src_dir = find_source_dir(path);
+    let Some(src_dir) = src_dir else {
+        anyhow::bail!(
+            "No source directory found at {} — expected crates/*/src/ or src/",
+            path.display()
+        );
+    };
+
+    crate::info("Scanning for self-binding anti-patterns...");
+    let rs_files = collect_rs_files(&src_dir);
+
+    if rs_files.is_empty() {
+        warnings.push("No .rs source files found".to_string());
+    }
+
+    let mut self_bind_violations = Vec::new();
+    let mut injection_found = Vec::new();
+
+    for file in &rs_files {
+        let content = std::fs::read_to_string(file).unwrap_or_default();
+        let rel = file.strip_prefix(path).unwrap_or(file);
+
+        let in_test = rel
+            .to_string_lossy()
+            .contains("test")
+            || content.contains("#[cfg(test)]");
+
+        for &(pattern, description) in SELF_BIND_PATTERNS {
+            if content.contains(pattern) && !in_test {
+                self_bind_violations.push(format!(
+                    "  {}: {description} (`{pattern}`)",
+                    rel.display()
+                ));
+            }
+        }
+
+        for &(pattern, description) in INJECTION_PATTERNS {
+            if content.contains(pattern) {
+                injection_found.push(format!("  {}: {description}", rel.display()));
+            }
+        }
+    }
+
+    if self_bind_violations.is_empty() {
+        compliant.push("No self-binding anti-patterns found in business logic".to_string());
+    } else {
+        crate::warning("Self-binding patterns found (should use transport injection):");
+        for v in &self_bind_violations {
+            println!("{v}");
+        }
+        let n = self_bind_violations.len();
+        warnings.push(format!("{n} self-binding pattern(s) found"));
+    }
+
+    println!();
+    if injection_found.is_empty() {
+        errors.push("No transport injection patterns found (TransportEndpoint, connect_transport, etc.)".to_string());
+    } else {
+        crate::info("Transport injection patterns detected:");
+        for p in &injection_found {
+            println!("{p}");
+        }
+        let n = injection_found.len();
+        compliant.push(format!("{n} transport injection pattern(s) found"));
+    }
+
+    println!();
+    crate::info("Checking platform-specific socket API usage...");
+    let mut platform_issues = Vec::new();
+    for file in &rs_files {
+        let content = std::fs::read_to_string(file).unwrap_or_default();
+        let rel = file.strip_prefix(path).unwrap_or(file);
+
+        let has_cfg_guard = content.contains("#[cfg(unix)]")
+            || content.contains("#[cfg(target_os")
+            || content.contains("cfg!(unix)");
+        let uses_unix_api = content.contains("tokio::net::UnixStream")
+            || content.contains("tokio::net::UnixListener")
+            || content.contains("std::os::unix");
+
+        if uses_unix_api && !has_cfg_guard {
+            platform_issues.push(format!(
+                "  {}: Unix-only APIs without #[cfg(unix)] guard",
+                rel.display()
+            ));
+        }
+    }
+
+    if platform_issues.is_empty() {
+        compliant.push("Platform-specific APIs properly gated or not used".to_string());
+    } else {
+        for p in &platform_issues {
+            println!("{p}");
+        }
+        let n = platform_issues.len();
+        warnings.push(format!(
+            "{n} file(s) use Unix APIs without platform guards"
+        ));
+    }
+
+    println!();
+    for c in &compliant {
+        crate::success(c);
+    }
+
+    println!();
+    report_results(&errors, &warnings)
+}
+
+fn find_source_dir(path: &Path) -> Option<PathBuf> {
+    let crates_dir = path.join("crates");
+    if crates_dir.exists() {
+        for entry in std::fs::read_dir(&crates_dir).ok()?.flatten() {
+            let src = entry.path().join("src");
+            if src.exists() {
+                return Some(crates_dir);
+            }
+        }
+    }
+    let src = path.join("src");
+    if src.exists() {
+        return Some(src);
+    }
+    None
+}
+
+fn collect_rs_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    collect_rs_files_recursive(dir, &mut files);
+    files
+}
+
+fn collect_rs_files_recursive(dir: &Path, files: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rs_files_recursive(&path, files);
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            files.push(path);
+        }
+    }
 }
 
 fn check_trait_implementations(path: &Path) -> Result<()> {
