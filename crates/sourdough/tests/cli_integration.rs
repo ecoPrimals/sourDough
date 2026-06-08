@@ -745,3 +745,91 @@ fn test_validate_composition_complete() {
         .success()
         .stdout(predicate::str::contains("Composition is complete"));
 }
+
+// ── Migrate transport ─────────────────────────────────────────────
+
+/// Test migrate transport dry-run on compliant codebase
+#[test]
+fn test_migrate_transport_already_compliant() {
+    let temp_dir = TempDir::new().unwrap();
+    let src_dir = temp_dir.path().join("crates/core/src");
+    std::fs::create_dir_all(&src_dir).unwrap();
+
+    std::fs::write(
+        src_dir.join("lib.rs"),
+        "use sourdough_core::transport::{TransportEndpoint, connect_transport};\n\
+         pub const TRANSPORT_ENDPOINT: &str = \"TRANSPORT_ENDPOINT\";\n\
+         pub fn connect(ep: &TransportEndpoint) { let _ = ep; }\n",
+    )
+    .unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("migrate").arg("transport").arg(temp_dir.path());
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("already transport-compliant"));
+}
+
+/// Test migrate transport detects violations in fixture
+#[test]
+fn test_migrate_transport_detects_violations() {
+    let temp_dir = TempDir::new().unwrap();
+    let src_dir = temp_dir.path().join("crates/server/src");
+    std::fs::create_dir_all(&src_dir).unwrap();
+
+    std::fs::write(
+        src_dir.join("main.rs"),
+        r#"
+use tokio::net::TcpListener;
+
+#[tokio::main]
+async fn main() {
+    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    drop(listener);
+}
+"#,
+    )
+    .unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("migrate").arg("transport").arg(temp_dir.path());
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Self-binding violations"))
+        .stdout(predicate::str::contains("TcpListener::bind("))
+        .stdout(predicate::str::contains("TRANSPORT_ENDPOINT"));
+}
+
+/// Test migrate transport --apply generates files
+#[test]
+fn test_migrate_transport_apply() {
+    let temp_dir = TempDir::new().unwrap();
+    let src_dir = temp_dir.path().join("crates/server/src");
+    std::fs::create_dir_all(&src_dir).unwrap();
+
+    std::fs::write(
+        src_dir.join("main.rs"),
+        "use tokio::net::TcpListener;\nfn main() {\n    TcpListener::bind(\"127.0.0.1:9000\");\n}\n",
+    )
+    .unwrap();
+
+    let mut cmd = sourdough_cmd();
+    cmd.arg("migrate")
+        .arg("transport")
+        .arg(temp_dir.path())
+        .arg("--apply");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Generated:"))
+        .stdout(predicate::str::contains("transport_config.rs"));
+
+    let config_path = src_dir.join("transport_config.rs");
+    assert!(config_path.exists());
+
+    let content = std::fs::read_to_string(&config_path).unwrap();
+    assert!(content.contains("TRANSPORT_ENDPOINT"));
+    assert!(content.contains("BindTarget"));
+}

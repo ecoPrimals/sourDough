@@ -4,8 +4,18 @@
 //! loading configuration from files, environment variables, and runtime.
 
 use crate::error::PrimalError;
+use crate::transport::TransportEndpoint;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::path::Path;
+
+/// Default primal name when none is configured.
+const DEFAULT_NAME: &str = "primal";
+/// Default log level.
+const DEFAULT_LOG_LEVEL: &str = "info";
+/// Default data directory.
+const DEFAULT_DATA_DIR: &str = "./data";
+/// Default listen address (all interfaces).
+const DEFAULT_LISTEN_ADDR: &str = "0.0.0.0";
 
 /// Common configuration that all primals share.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -18,27 +28,50 @@ pub struct CommonConfig {
     pub log_level: String,
     /// Data directory.
     pub data_dir: String,
-    /// Listen address.
+    /// Listen address (legacy — prefer `transport_endpoint` when available).
     pub listen_addr: String,
     /// Listen port (0 = OS assigns ephemeral port, discovered via service registration).
     pub listen_port: u16,
+    /// Transport endpoint (injected by launcher). Supersedes `listen_addr`/`listen_port`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transport_endpoint: Option<TransportEndpoint>,
     /// Identity service endpoint (discovered at runtime via universal adapter).
     pub identity_service_endpoint: Option<String>,
     /// Discovery service endpoint (discovered at runtime via universal adapter or multicast).
     pub discovery_service_endpoint: Option<String>,
 }
 
+impl CommonConfig {
+    /// Resolve the effective transport endpoint.
+    ///
+    /// Priority: `transport_endpoint` field > `TRANSPORT_ENDPOINT` env var >
+    /// legacy `listen_addr:listen_port`.
+    #[must_use]
+    pub fn effective_endpoint(&self) -> TransportEndpoint {
+        if let Some(ep) = &self.transport_endpoint {
+            return ep.clone();
+        }
+
+        if let Ok(json) = std::env::var("TRANSPORT_ENDPOINT") {
+            if let Ok(ep) = serde_json::from_str(&json) {
+                return ep;
+            }
+        }
+
+        TransportEndpoint::tcp(&self.listen_addr, self.listen_port)
+    }
+}
+
 impl Default for CommonConfig {
     fn default() -> Self {
         Self {
-            name: "primal".to_string(),
+            name: DEFAULT_NAME.to_owned(),
             instance_id: new_instance_id(),
-            log_level: "info".to_string(),
-            data_dir: "./data".to_string(),
-            listen_addr: "0.0.0.0".to_string(),
-            // Port 0 = OS assigns available port, discovered via universal adapter
+            log_level: DEFAULT_LOG_LEVEL.to_owned(),
+            data_dir: DEFAULT_DATA_DIR.to_owned(),
+            listen_addr: DEFAULT_LISTEN_ADDR.to_owned(),
             listen_port: 0,
-            // All service endpoints discovered at runtime via universal adapter (zero hardcoding)
+            transport_endpoint: None,
             identity_service_endpoint: None,
             discovery_service_endpoint: None,
         }
@@ -286,5 +319,43 @@ mod tests {
 
         // Should return false for nonexistent files
         assert!(!watcher.has_changed());
+    }
+
+    #[test]
+    fn effective_endpoint_from_field() {
+        let config = CommonConfig {
+            transport_endpoint: Some(TransportEndpoint::uds("/run/biomeos/test.sock")),
+            ..CommonConfig::default()
+        };
+        let ep = config.effective_endpoint();
+        assert_eq!(ep, TransportEndpoint::uds("/run/biomeos/test.sock"));
+    }
+
+    #[test]
+    fn effective_endpoint_falls_back_to_legacy() {
+        let config = CommonConfig::default();
+        let ep = config.effective_endpoint();
+        assert_eq!(ep, TransportEndpoint::tcp("0.0.0.0", 0));
+    }
+
+    #[test]
+    fn transport_endpoint_omitted_in_toml_when_none() {
+        let config = CommonConfig::default();
+        let toml_str = toml::to_string(&config).unwrap();
+        assert!(!toml_str.contains("transport_endpoint"));
+    }
+
+    #[test]
+    fn transport_endpoint_roundtrips_in_toml() {
+        let config = CommonConfig {
+            transport_endpoint: Some(TransportEndpoint::tcp("10.0.0.1", 7700)),
+            ..CommonConfig::default()
+        };
+        let toml_str = toml::to_string(&config).unwrap();
+        let parsed: CommonConfig = toml::from_str(&toml_str).unwrap();
+        assert_eq!(
+            parsed.transport_endpoint,
+            Some(TransportEndpoint::tcp("10.0.0.1", 7700))
+        );
     }
 }

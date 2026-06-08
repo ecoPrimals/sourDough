@@ -305,6 +305,10 @@ pub mod client {
 pub mod server {
     use std::net::SocketAddr;
 
+    use crate::transport::TransportEndpoint;
+
+    const DEFAULT_BIND_ADDR: &str = "0.0.0.0";
+
     /// RPC server configuration.
     #[derive(Clone, Debug)]
     pub struct ServerConfig {
@@ -317,8 +321,8 @@ pub mod server {
     impl Default for ServerConfig {
         fn default() -> Self {
             Self {
-                bind_addr: "0.0.0.0".to_string(),
-                port: 0, // OS assigns available port
+                bind_addr: DEFAULT_BIND_ADDR.to_owned(),
+                port: 0,
             }
         }
     }
@@ -331,6 +335,17 @@ pub mod server {
                 bind_addr: bind_addr.into(),
                 port,
             }
+        }
+
+        /// Create from a [`TransportEndpoint`] (preferred for transport-injected primals).
+        ///
+        /// Only TCP endpoints produce a valid `ServerConfig`; UDS/mesh endpoints
+        /// return `None` (they don't bind TCP).
+        #[must_use]
+        pub fn from_endpoint(endpoint: &TransportEndpoint) -> Option<Self> {
+            endpoint
+                .tcp_addr()
+                .map(|(host, port)| Self::new(host, port))
         }
 
         /// Get the socket address.
@@ -397,6 +412,22 @@ mod client_server_tests {
 
         assert_eq!(config1.bind_addr, config2.bind_addr);
         assert_eq!(config1.port, config2.port);
+    }
+
+    #[tokio::test]
+    async fn server_config_from_tcp_endpoint() {
+        use crate::transport::TransportEndpoint;
+        let ep = TransportEndpoint::tcp("10.0.0.5", 7700);
+        let config = server::ServerConfig::from_endpoint(&ep).unwrap();
+        assert_eq!(config.bind_addr, "10.0.0.5");
+        assert_eq!(config.port, 7700);
+    }
+
+    #[tokio::test]
+    async fn server_config_from_uds_endpoint_returns_none() {
+        use crate::transport::TransportEndpoint;
+        let ep = TransportEndpoint::uds("/tmp/test.sock");
+        assert!(server::ServerConfig::from_endpoint(&ep).is_none());
     }
 
     #[tokio::test]
