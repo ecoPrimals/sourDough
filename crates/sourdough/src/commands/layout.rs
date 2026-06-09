@@ -6,11 +6,12 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
-/// Known Tier 1 musl triples for genomeBin distribution.
+/// Known Tier 1 triples for genomeBin distribution.
 const TIER1_TRIPLES: &[&str] = &[
     "x86_64-unknown-linux-musl",
     "aarch64-unknown-linux-musl",
     "armv7-unknown-linux-musleabihf",
+    "aarch64-linux-android",
 ];
 
 /// Validate that a directory uses triple-first layout.

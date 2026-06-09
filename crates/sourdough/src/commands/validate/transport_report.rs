@@ -37,9 +37,16 @@ impl std::fmt::Display for AuditStatus {
 }
 
 /// Run a transport compliance report across all primals in a directory.
-pub(crate) fn run(primals_dir: &Path, output: Option<&Path>, exempt: &[String]) -> Result<()> {
-    crate::info(&format!("Scanning primals in: {}", primals_dir.display()));
-    println!();
+pub(crate) fn run(
+    primals_dir: &Path,
+    output: Option<&Path>,
+    json: bool,
+    exempt: &[String],
+) -> Result<()> {
+    if !json {
+        crate::info(&format!("Scanning primals in: {}", primals_dir.display()));
+        println!();
+    }
 
     let entries = std::fs::read_dir(primals_dir)
         .with_context(|| format!("Cannot read primals directory: {}", primals_dir.display()))?;
@@ -76,30 +83,39 @@ pub(crate) fn run(primals_dir: &Path, output: Option<&Path>, exempt: &[String]) 
 
     audits.sort_by(|a, b| a.name.cmp(&b.name));
 
-    let report = format_report(&audits);
-    println!("{report}");
+    if json {
+        let json_output = format_json(&audits);
+        println!("{json_output}");
+        if let Some(out_path) = output {
+            std::fs::write(out_path, &json_output)
+                .with_context(|| format!("Cannot write report to: {}", out_path.display()))?;
+        }
+    } else {
+        let report = format_report(&audits);
+        println!("{report}");
 
-    if let Some(out_path) = output {
-        std::fs::write(out_path, &report)
-            .with_context(|| format!("Cannot write report to: {}", out_path.display()))?;
-        crate::success(&format!("Report written to: {}", out_path.display()));
+        if let Some(out_path) = output {
+            std::fs::write(out_path, &report)
+                .with_context(|| format!("Cannot write report to: {}", out_path.display()))?;
+            crate::success(&format!("Report written to: {}", out_path.display()));
+        }
+
+        let compliant = audits
+            .iter()
+            .filter(|a| matches!(a.status, AuditStatus::Compliant))
+            .count();
+        let total = audits.len();
+        let skipped = audits
+            .iter()
+            .filter(|a| matches!(a.status, AuditStatus::Skipped))
+            .count();
+        let audited = total - skipped;
+
+        println!();
+        crate::info(&format!(
+            "Summary: {compliant}/{audited} compliant ({skipped} exempt, {total} total)"
+        ));
     }
-
-    let compliant = audits
-        .iter()
-        .filter(|a| matches!(a.status, AuditStatus::Compliant))
-        .count();
-    let total = audits.len();
-    let skipped = audits
-        .iter()
-        .filter(|a| matches!(a.status, AuditStatus::Skipped))
-        .count();
-    let audited = total - skipped;
-
-    println!();
-    crate::info(&format!(
-        "Summary: {compliant}/{audited} compliant ({skipped} exempt, {total} total)"
-    ));
 
     Ok(())
 }
@@ -206,6 +222,28 @@ fn detect_sourdough_dep(path: &Path) -> bool {
     }
 
     false
+}
+
+fn format_json(audits: &[PrimalAudit]) -> String {
+    let items: Vec<serde_json::Value> = audits
+        .iter()
+        .map(|a| {
+            serde_json::json!({
+                "primal": a.name,
+                "status": match a.status {
+                    AuditStatus::Compliant => "compliant",
+                    AuditStatus::Warnings => "warnings",
+                    AuditStatus::NonCompliant => "non_compliant",
+                    AuditStatus::Skipped => "skipped",
+                },
+                "self_bind_count": a.self_bind_count,
+                "injection_count": a.injection_count,
+                "platform_issues": a.platform_issues,
+                "has_sourdough_dep": a.has_sourdough_dep,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&items).unwrap_or_default()
 }
 
 fn format_report(audits: &[PrimalAudit]) -> String {

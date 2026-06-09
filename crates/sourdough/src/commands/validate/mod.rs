@@ -1,6 +1,7 @@
 //! Validation commands for checking primal compliance.
 
 mod composition;
+mod depot;
 mod transport_report;
 
 use anyhow::{Context, Result};
@@ -55,6 +56,26 @@ pub(crate) enum ValidateCommand {
         path: PathBuf,
     },
 
+    /// Check depot binary freshness (detect stale binaries)
+    #[command(name = "depot")]
+    Depot {
+        /// Path to the depot directory (primals binary tree)
+        #[arg(default_value = "primals")]
+        depot_dir: PathBuf,
+
+        /// Source directory to compare against (uses latest file mtime)
+        #[arg(long)]
+        source: Option<PathBuf>,
+
+        /// Hours after which a binary is considered stale (default: 48)
+        #[arg(long, default_value = "48")]
+        stale_hours: u64,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Run transport compliance audit across all primals in a directory
     #[command(name = "transport-report")]
     TransportReport {
@@ -65,6 +86,10 @@ pub(crate) enum ValidateCommand {
         /// Write report to file (in addition to stdout)
         #[arg(long, short)]
         output: Option<PathBuf>,
+
+        /// Output as JSON (machine-readable for CI/depot automation)
+        #[arg(long)]
+        json: bool,
 
         /// Exempt primals (comma-separated, e.g. "biomeOS,songBird,sourDough")
         #[arg(
@@ -93,11 +118,18 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             manifest.as_deref(),
         ),
         ValidateCommand::Transport { path } => validate_transport(&path),
+        ValidateCommand::Depot {
+            depot_dir,
+            source,
+            stale_hours,
+            json,
+        } => depot::run(&depot_dir, source.as_deref(), stale_hours, json),
         ValidateCommand::TransportReport {
             primals_dir,
             output,
+            json,
             exempt,
-        } => transport_report::run(&primals_dir, output.as_deref(), &exempt),
+        } => transport_report::run(&primals_dir, output.as_deref(), json, &exempt),
     }
 }
 
