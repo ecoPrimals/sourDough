@@ -73,6 +73,7 @@ pub mod health;
 pub mod identity;
 pub mod ipc;
 pub mod lifecycle;
+pub mod methods;
 pub mod rpc;
 pub mod transport;
 pub mod types;

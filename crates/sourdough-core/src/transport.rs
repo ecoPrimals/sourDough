@@ -207,6 +207,20 @@ impl TransportEndpoint {
             }
         }
     }
+
+    /// Parse from the `TRANSPORT_ENDPOINT` env var, falling back to UDS default.
+    ///
+    /// This is the canonical entry point for primals accepting injected transport:
+    /// ```text
+    /// TRANSPORT_ENDPOINT='{"transport":"uds","path":"/run/user/1000/biomeos/myprimal.sock"}'
+    /// ```
+    #[must_use]
+    pub fn from_env_or_default(primal_name: &str, family_id: Option<&str>) -> Self {
+        std::env::var(env_keys::TRANSPORT_ENDPOINT)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_else(|| Self::from_primal_name(primal_name, family_id))
+    }
 }
 
 impl fmt::Display for TransportEndpoint {
@@ -229,6 +243,31 @@ pub enum TransportStream {
     Unix(tokio::net::UnixStream),
     /// Connected TCP stream.
     Tcp(tokio::net::TcpStream),
+}
+
+impl TransportStream {
+    /// The transport kind as a static string (for logging/diagnostics).
+    #[must_use]
+    pub const fn transport_name(&self) -> &'static str {
+        match self {
+            #[cfg(unix)]
+            Self::Unix(_) => "uds",
+            Self::Tcp(_) => "tcp",
+        }
+    }
+
+    /// Set `TCP_NODELAY` on TCP connections (no-op for UDS).
+    ///
+    /// # Errors
+    ///
+    /// Returns an I/O error if the TCP socket option cannot be set.
+    pub fn set_nodelay(&self, nodelay: bool) -> std::io::Result<()> {
+        match self {
+            #[cfg(unix)]
+            Self::Unix(_) => Ok(()),
+            Self::Tcp(s) => s.set_nodelay(nodelay),
+        }
+    }
 }
 
 impl AsyncRead for TransportStream {
@@ -704,5 +743,26 @@ mod tests {
     fn socket_path_empty_family_id_ignored() {
         let path = socket_path_in("/tmp/biomeos", "myprimal", Some(""));
         assert_eq!(path, std::path::PathBuf::from("/tmp/biomeos/myprimal.sock"));
+    }
+
+    #[test]
+    fn from_env_parses_tcp_json() {
+        let json = r#"{"transport":"tcp","host":"10.0.0.5","port":7700}"#;
+        let ep: TransportEndpoint = serde_json::from_str(json).unwrap();
+        assert_eq!(ep, TransportEndpoint::tcp("10.0.0.5", 7700));
+    }
+
+    #[test]
+    fn from_env_parses_uds_json() {
+        let json = r#"{"transport":"uds","path":"/run/user/1000/biomeos/myprimal.sock"}"#;
+        let ep: TransportEndpoint = serde_json::from_str(json).unwrap();
+        assert_eq!(ep.uds_path(), Some("/run/user/1000/biomeos/myprimal.sock"));
+    }
+
+    #[test]
+    fn from_env_or_default_falls_back_without_env() {
+        let ep = TransportEndpoint::from_primal_name("fallback", None);
+        assert!(ep.uds_path().is_some());
+        assert!(ep.uds_path().unwrap().contains("fallback"));
     }
 }

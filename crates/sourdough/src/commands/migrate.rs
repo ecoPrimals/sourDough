@@ -177,8 +177,11 @@ fn report_plan(plan: &MigrationPlan, root: &Path) {
     }
 
     if plan.missing_transport_dep {
-        crate::info("Missing: sourdough-core TransportEndpoint dependency");
-        println!("    → Add `sourdough-core` to Cargo.toml or copy transport types");
+        crate::info("Missing: local TransportEndpoint type");
+        println!(
+            "    → Run `sourdough scaffold transport-kit <name>` to generate a self-contained transport module"
+        );
+        println!("    → Do NOT add sourdough-core as a dependency (primals only know themselves)");
         println!();
     }
 

@@ -10,7 +10,7 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 
 pub(crate) mod commands;
 

@@ -137,10 +137,14 @@ impl std::fmt::Debug for Timestamp {
 
 impl std::fmt::Display for Timestamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // ISO 8601 format
-        use std::time::{Duration, UNIX_EPOCH};
-        let time = UNIX_EPOCH + Duration::new(self.secs, self.nanos);
-        write!(f, "{time:?}")
+        let dt = chrono::DateTime::from_timestamp(
+            i64::try_from(self.secs).unwrap_or(i64::MAX),
+            self.nanos,
+        );
+        match dt {
+            Some(dt) => write!(f, "{}", dt.format("%Y-%m-%dT%H:%M:%S%.3fZ")),
+            None => write!(f, "Timestamp({}.{:09})", self.secs, self.nanos),
+        }
     }
 }
 
@@ -334,10 +338,10 @@ mod tests {
     #[test]
     fn timestamp_display() {
         let ts = Timestamp::from_secs(0);
-        let display = format!("{ts}");
+        assert_eq!(format!("{ts}"), "1970-01-01T00:00:00.000Z");
 
-        // Should contain time information
-        assert!(!display.is_empty());
+        let ts2 = Timestamp::from_secs(1_000_000_000);
+        assert_eq!(format!("{ts2}"), "2001-09-09T01:46:40.000Z");
     }
 
     #[test]

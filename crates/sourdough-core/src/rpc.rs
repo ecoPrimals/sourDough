@@ -267,11 +267,17 @@ mod tests {
 }
 
 /// RPC client helper for connecting to primals.
+///
+/// **Prefer [`crate::ipc::IpcClient`]** for JSON-RPC 2.0 communication.
+/// This module is retained for binary RPC (high-throughput) use cases only.
 pub mod client {
     use std::net::SocketAddr;
     use tokio::net::ToSocketAddrs;
 
-    /// RPC client for primal communication.
+    /// RPC client for primal communication (binary protocol path).
+    ///
+    /// For JSON-RPC 2.0 (the standard ecosystem protocol), use
+    /// [`crate::ipc::IpcClient`] which supports transport injection.
     pub struct PrimalRpcClient {
         addr: SocketAddr,
     }

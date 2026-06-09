@@ -11,3 +11,9 @@ pub const XDG_RUNTIME_DIR: &str = "XDG_RUNTIME_DIR";
 
 /// Explicit override path for the `biomeOS` neural-api socket.
 pub const NEURAL_API_SOCKET: &str = "NEURAL_API_SOCKET";
+
+/// Transport endpoint injection (JSON-serialized `TransportEndpoint`).
+///
+/// Launchers set this to tell primals where to bind/listen. Primals never
+/// self-bind in production — the transport is injected.
+pub const TRANSPORT_ENDPOINT: &str = "TRANSPORT_ENDPOINT";

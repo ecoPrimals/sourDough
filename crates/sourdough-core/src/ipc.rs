@@ -349,8 +349,8 @@ pub struct HealthProbe {
     pub primal: String,
     /// Primal version.
     pub version: String,
-    /// Health status string: "healthy", "degraded", "unhealthy".
-    pub status: String,
+    /// Structured health status.
+    pub status: crate::health::HealthStatus,
     /// Liveness flag.
     pub live: bool,
     /// Readiness flag.
@@ -360,56 +360,8 @@ pub struct HealthProbe {
     pub dependencies: HashMap<String, String>,
 }
 
-// --- Standard Method Names ---
-
-/// Standard method names following `domain.verb` semantic naming.
-pub mod methods {
-    /// Health domain methods.
-    pub mod health {
-        /// Full health check.
-        pub const CHECK: &str = "health.check";
-        /// Liveness probe (is the process alive?).
-        pub const LIVENESS: &str = "health.liveness";
-        /// Readiness probe (can it serve requests?).
-        pub const READINESS: &str = "health.readiness";
-    }
-
-    /// Lifecycle domain methods.
-    pub mod lifecycle {
-        /// Get current state.
-        pub const STATE: &str = "lifecycle.state";
-        /// Trigger reload.
-        pub const RELOAD: &str = "lifecycle.reload";
-    }
-
-    /// Capability domain methods.
-    pub mod capabilities {
-        /// List all capabilities.
-        pub const LIST: &str = "capabilities.list";
-    }
-
-    /// Identity domain methods.
-    pub mod identity {
-        /// Get primal DID.
-        pub const DID: &str = "identity.did";
-    }
-
-    /// System domain methods.
-    pub mod system {
-        /// Ping for liveness.
-        pub const PING: &str = "system.ping";
-        /// Get primal version.
-        pub const VERSION: &str = "system.version";
-    }
-
-    /// IPC domain methods (songbird-mediated).
-    pub mod ipc {
-        /// Resolve a primal's transport endpoint.
-        pub const RESOLVE: &str = "ipc.resolve";
-        /// Register capabilities at startup.
-        pub const REGISTER: &str = "ipc.register";
-    }
-}
+// Re-export from dedicated module for backward compatibility.
+pub use crate::methods;
 
 // --- Transport-aware JSON-RPC Client ---
 
@@ -583,6 +535,32 @@ impl IpcClient {
             IpcError::new(IpcErrorKind::Internal, format!("deserialize endpoint: {e}"))
         })
     }
+
+    /// Announce this primal to the ecosystem via `primal.announce`.
+    ///
+    /// Combines `ipc.register` (capability registration) with a startup
+    /// announcement that other primals can subscribe to. This is the
+    /// canonical "I'm alive and serving" signal.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] on transport or protocol failure.
+    pub async fn announce(
+        &self,
+        primal_name: &str,
+        version: &str,
+        capabilities: &[Capability],
+        endpoint: &crate::transport::TransportEndpoint,
+    ) -> Result<JsonRpcResponse, IpcError> {
+        let params = serde_json::json!({
+            "primal": primal_name,
+            "version": version,
+            "capabilities": capabilities,
+            "endpoint": endpoint,
+        });
+        let req = JsonRpcRequest::new(methods::primal::ANNOUNCE, 1).with_params(params);
+        self.call(&req).await
+    }
 }
 
 impl std::fmt::Debug for IpcClient {
@@ -595,7 +573,7 @@ impl std::fmt::Debug for IpcClient {
 
 #[cfg(test)]
 mod tests {
-    use super::methods::{capabilities, health, identity, ipc, lifecycle, system};
+    use super::methods::{capabilities, health, identity, ipc, lifecycle, primal, system};
     use super::*;
 
     #[test]
@@ -731,6 +709,8 @@ mod tests {
         assert_eq!(system::VERSION, "system.version");
         assert_eq!(ipc::RESOLVE, "ipc.resolve");
         assert_eq!(ipc::REGISTER, "ipc.register");
+        assert_eq!(primal::ANNOUNCE, "primal.announce");
+        assert_eq!(primal::SHUTDOWN, "primal.shutdown");
     }
 
     #[test]
@@ -751,7 +731,7 @@ mod tests {
         let probe = HealthProbe {
             primal: "test".into(),
             version: "0.1.0".into(),
-            status: "healthy".into(),
+            status: crate::health::HealthStatus::Healthy,
             live: true,
             ready: true,
             dependencies: deps,
@@ -759,6 +739,7 @@ mod tests {
         let json = serde_json::to_string(&probe).expect("serialize");
         let back: HealthProbe = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back.primal, "test");
+        assert_eq!(back.status, crate::health::HealthStatus::Healthy);
         assert_eq!(back.dependencies.get("db").map(String::as_str), Some("up"));
     }
 }

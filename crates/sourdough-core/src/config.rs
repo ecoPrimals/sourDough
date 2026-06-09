@@ -3,6 +3,7 @@
 //! Every primal needs configuration. This module provides patterns for
 //! loading configuration from files, environment variables, and runtime.
 
+use crate::env_keys;
 use crate::error::PrimalError;
 use crate::transport::TransportEndpoint;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -52,7 +53,7 @@ impl CommonConfig {
             return ep.clone();
         }
 
-        if let Ok(json) = std::env::var("TRANSPORT_ENDPOINT") {
+        if let Ok(json) = std::env::var(env_keys::TRANSPORT_ENDPOINT) {
             if let Ok(ep) = serde_json::from_str(&json) {
                 return ep;
             }
