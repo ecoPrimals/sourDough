@@ -742,4 +742,37 @@ mod tests {
         assert_eq!(back.status, crate::health::HealthStatus::Healthy);
         assert_eq!(back.dependencies.get("db").map(String::as_str), Some("up"));
     }
+
+    #[tokio::test]
+    async fn ipc_client_call_roundtrip_over_uds() {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+        let dir = tempfile::tempdir().unwrap();
+        let sock_path = dir.path().join("test.sock");
+        let listener = tokio::net::UnixListener::bind(&sock_path).unwrap();
+
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut buf = BufReader::new(stream);
+            let mut line = String::new();
+            buf.read_line(&mut line).await.unwrap();
+
+            let req: JsonRpcRequest = serde_json::from_str(line.trim()).unwrap();
+            let resp = JsonRpcResponse::success(req.id.unwrap(), serde_json::json!({"pong": true}));
+            let resp_json = serde_json::to_string(&resp).unwrap();
+            buf.get_mut()
+                .write_all(format!("{resp_json}\n").as_bytes())
+                .await
+                .unwrap();
+        });
+
+        let ep = crate::transport::TransportEndpoint::uds(sock_path.to_str().unwrap());
+        let client = IpcClient::new(ep);
+        let req = JsonRpcRequest::new("system.ping", 42);
+        let resp = client.call(&req).await.unwrap();
+
+        assert!(resp.error.is_none());
+        assert_eq!(resp.result.unwrap()["pong"], true);
+        server.await.unwrap();
+    }
 }
