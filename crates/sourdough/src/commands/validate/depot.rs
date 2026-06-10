@@ -69,37 +69,41 @@ fn collect_depot_entries(depot_dir: &Path) -> Result<Vec<DepotEntry>> {
         .with_context(|| format!("Cannot read depot: {}", depot_dir.display()))?;
 
     for entry in dir_entries.filter_map(std::result::Result::ok) {
-        let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
+        let Ok(meta) = entry.metadata() else { continue };
 
-        if path.is_dir() && is_triple(&name) {
-            let triple_entries = std::fs::read_dir(&path)
-                .with_context(|| format!("Cannot read triple dir: {}", path.display()))?;
+        if meta.is_dir() && is_triple(&name) {
+            let Ok(triple_entries) = std::fs::read_dir(entry.path()) else {
+                continue;
+            };
 
             for binary in triple_entries.filter_map(std::result::Result::ok) {
+                let bin_name = binary.file_name().to_string_lossy().to_string();
+                if bin_name.starts_with('.') {
+                    continue;
+                }
+                let Ok(bin_meta) = binary.metadata() else {
+                    continue;
+                };
                 let bin_path = binary.path();
-                if bin_path.is_file() && bin_path.extension().is_none() {
-                    if let Ok(meta) = std::fs::metadata(&bin_path) {
-                        entries.push(DepotEntry {
-                            primal: binary.file_name().to_string_lossy().to_string(),
-                            triple: name.clone(),
-                            modified: meta.modified().unwrap_or(SystemTime::UNIX_EPOCH),
-                            size_bytes: meta.len(),
-                            stale: false,
-                        });
-                    }
+                if bin_meta.is_file() && bin_path.extension().is_none() {
+                    entries.push(DepotEntry {
+                        primal: bin_name,
+                        triple: name.clone(),
+                        modified: bin_meta.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                        size_bytes: bin_meta.len(),
+                        stale: false,
+                    });
                 }
             }
-        } else if path.is_file() && path.extension().is_none() {
-            if let Ok(meta) = std::fs::metadata(&path) {
-                entries.push(DepotEntry {
-                    primal: name,
-                    triple: "flat".to_owned(),
-                    modified: meta.modified().unwrap_or(SystemTime::UNIX_EPOCH),
-                    size_bytes: meta.len(),
-                    stale: false,
-                });
-            }
+        } else if meta.is_file() && entry.path().extension().is_none() && !name.starts_with('.') {
+            entries.push(DepotEntry {
+                primal: name,
+                triple: "flat".to_owned(),
+                modified: meta.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                size_bytes: meta.len(),
+                stale: false,
+            });
         }
     }
 
@@ -109,38 +113,38 @@ fn collect_depot_entries(depot_dir: &Path) -> Result<Vec<DepotEntry>> {
 fn source_reference_time(source_dir: Option<&Path>) -> Option<SystemTime> {
     let dir = source_dir?;
     let mut latest = SystemTime::UNIX_EPOCH;
+    let max_depth: usize = 3;
 
-    walk_for_latest(dir, &mut latest, 3);
+    let mut stack: Vec<(std::path::PathBuf, usize)> = vec![(dir.to_path_buf(), 0)];
+
+    while let Some((current, depth)) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&current) else {
+            continue;
+        };
+        for entry in entries.filter_map(std::result::Result::ok) {
+            let Ok(meta) = entry.metadata() else {
+                continue;
+            };
+            if meta.is_dir() && depth < max_depth {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with('.') || name == "target" || name == "node_modules" {
+                    continue;
+                }
+                stack.push((entry.path(), depth + 1));
+            } else if meta.is_file() {
+                if let Ok(modified) = meta.modified() {
+                    if modified > latest {
+                        latest = modified;
+                    }
+                }
+            }
+        }
+    }
 
     if latest == SystemTime::UNIX_EPOCH {
         None
     } else {
         Some(latest)
-    }
-}
-
-fn walk_for_latest(dir: &Path, latest: &mut SystemTime, depth: u8) {
-    if depth == 0 {
-        return;
-    }
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.filter_map(std::result::Result::ok) {
-        let path = entry.path();
-        if path.is_dir() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            if name == "target" || name == ".git" || name == "node_modules" {
-                continue;
-            }
-            walk_for_latest(&path, latest, depth - 1);
-        } else if let Ok(meta) = std::fs::metadata(&path) {
-            if let Ok(modified) = meta.modified() {
-                if modified > *latest {
-                    *latest = modified;
-                }
-            }
-        }
     }
 }
 
