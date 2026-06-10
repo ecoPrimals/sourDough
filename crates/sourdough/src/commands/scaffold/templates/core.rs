@@ -153,6 +153,10 @@ pub const XDG_RUNTIME_DIR: &str = "XDG_RUNTIME_DIR";
 
 /// Explicit override path for the biomeOS neural-api socket.
 pub const NEURAL_API_SOCKET: &str = "NEURAL_API_SOCKET";
+
+/// Bind mode override for platforms with restricted socket access.
+/// Values: "uds" (default), "tcp_only" (Android/SELinux), "both".
+pub const PRIMAL_BIND_MODE: &str = "PRIMAL_BIND_MODE";
 "#;
 
 pub(in crate::commands::scaffold) const ERROR_RS: &str = r#"//! Common error types for this primal.

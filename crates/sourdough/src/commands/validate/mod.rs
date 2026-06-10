@@ -424,6 +424,7 @@ pub(super) const INJECTION_PATTERNS: &[(&str, &str)] = &[
     ("TransportEndpoint", "uses TransportEndpoint enum"),
     ("connect_transport", "uses connect_transport()"),
     ("TRANSPORT_ENDPOINT", "accepts injected endpoint env var"),
+    ("PRIMAL_BIND_MODE", "respects bind mode (Android/SELinux)"),
     ("ipc.resolve", "resolves endpoints via Songbird"),
     ("ipc.register", "registers capabilities with Songbird"),
 ];

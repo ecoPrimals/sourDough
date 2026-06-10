@@ -171,11 +171,13 @@ fn audit_primal(name: &str, path: &Path) -> PrimalAudit {
         let uses_unix_api = content.contains("tokio::net::UnixStream")
             || content.contains("tokio::net::UnixListener")
             || content.contains("std::os::unix");
-        let has_cfg_guard = content.contains("#[cfg(unix)]")
+        let has_platform_guard = content.contains("#[cfg(unix)]")
             || content.contains("#[cfg(target_os")
-            || content.contains("cfg!(unix)");
+            || content.contains("cfg!(unix)")
+            || content.contains("PRIMAL_BIND_MODE")
+            || content.contains("bind_mode");
 
-        if uses_unix_api && !has_cfg_guard && !in_test {
+        if uses_unix_api && !has_platform_guard && !in_test {
             platform_issues += 1;
         }
     }

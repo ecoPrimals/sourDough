@@ -136,7 +136,17 @@ pub enum TransportEndpoint {{
 }}
 
 /// Resolve the default listen endpoint from ecosystem socket conventions.
+///
+/// Respects `PRIMAL_BIND_MODE` for platforms where UDS is unavailable (Android/SELinux).
 fn default_endpoint(primal_name: &str, family_id: Option<&str>) -> TransportEndpoint {{
+    let bind_mode = std::env::var({core_ident}::env_keys::PRIMAL_BIND_MODE).unwrap_or_default();
+    if bind_mode == "tcp_only" {{
+        return TransportEndpoint::Tcp {{
+            host: "127.0.0.1".to_owned(),
+            port: 0,
+        }};
+    }}
+
     let socket_dir = std::env::var({core_ident}::env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {{
         let runtime_dir =
             std::env::var({core_ident}::env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());

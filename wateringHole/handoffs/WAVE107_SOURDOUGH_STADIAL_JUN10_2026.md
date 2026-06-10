@@ -56,8 +56,8 @@
 | Primal | What | Status |
 |--------|------|--------|
 | songBird | `ipc.resolve` returning TransportEndpoint | **RESOLVED** (ff86204c — topology-aware mesh routing) |
-| biomeOS | Auto-register primals with songBird after launch | P2 — pending |
-| — | Nothing else blocks sourDough | — |
+| biomeOS | Auto-register primals with songBird after launch | **RESOLVED** (v4.19, 421433dc) |
+| — | **All blockers cleared** — sourDough has zero upstream dependencies | — |
 
 ### Response to SONGBIRD-IPC-RESOLVE-M1 Resolution
 
@@ -66,6 +66,15 @@ With songBird's `ipc.resolve` now returning `MeshRelay` endpoints, sourDough evo
 - `IpcClient::resolve_and_connect()` — canonical one-call discovery flow
 - `methods::capability::CALL` constant — the mesh relay forwarding method
 - `MESH_RELAY_TIMEOUT` (15s) — accounts for WAN hop latency
+
+### Response to Bind Abstraction (grapheneGate/Pixel 8)
+
+Android SELinux denies UDS `bind()` in non-standard paths. sourDough now provides:
+- `BindMode` enum in `sourdough-core::bind_mode` (Uds / TcpOnly / Both)
+- `PRIMAL_BIND_MODE` env var in `env_keys`
+- Scaffold templates check `PRIMAL_BIND_MODE=tcp_only` before UDS bind
+- `validate transport-report` detects bind-mode awareness as a platform guard
+- **Net effect**: newly scaffolded primals work on grapheneGate from day one
 
 ---
 

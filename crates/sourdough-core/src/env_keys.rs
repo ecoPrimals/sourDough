@@ -17,3 +17,13 @@ pub const NEURAL_API_SOCKET: &str = "NEURAL_API_SOCKET";
 /// Launchers set this to tell primals where to bind/listen. Primals never
 /// self-bind in production — the transport is injected.
 pub const TRANSPORT_ENDPOINT: &str = "TRANSPORT_ENDPOINT";
+
+/// Bind mode override for platforms with restricted socket access.
+///
+/// Values: `"uds"` (default), `"tcp_only"` (skip UDS entirely — Android/SELinux),
+/// `"both"` (bind both UDS and TCP).
+///
+/// When `tcp_only`, primals must not attempt `bind()` on Unix domain sockets.
+/// This is required on Android/GrapheneOS where `SELinux` denies UDS bind in
+/// non-standard paths.
+pub const PRIMAL_BIND_MODE: &str = "PRIMAL_BIND_MODE";

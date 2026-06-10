@@ -518,8 +518,6 @@ mod tests {
     use super::*;
     use tokio::io::AsyncReadExt;
 
-    // --- TransportEndpoint tests ---
-
     #[test]
     fn uds_serializes_tagged() {
         let ep = TransportEndpoint::uds("/run/membrane/beardog.sock");

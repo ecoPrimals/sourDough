@@ -64,6 +64,7 @@
 //! # }
 //! ```
 
+pub mod bind_mode;
 pub mod circuit_breaker;
 pub mod config;
 pub mod discovery;
