@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## v0.4.0 — Transport Ecosystem
+
+### Added (v0.4.0 — June 2026)
+- `sourdough-core::TransportEndpoint` — canonical wire format (serde tagged: uds/tcp/mesh_relay), wire-compatible with songbird_types
+- `sourdough-core::connect_transport()` — transport-agnostic async stream connection
+- `sourdough-core::IpcClient` — transport-aware JSON-RPC 2.0 client (call, call_with_timeout, health_liveness, register_capabilities, resolve_primal, announce)
+- `sourdough-core::TransportStream` — unified async read/write across UDS/TCP (transport_name, set_nodelay)
+- `sourdough-core::CircuitBreaker` — resilience pattern for inter-primal IPC
+- `sourdough-core::methods` module — canonical `domain.verb` method constants (health, lifecycle, capabilities, identity, system, ipc, primal)
+- `sourdough-core::env_keys` module — centralized env var name constants (TRANSPORT_ENDPOINT, BIOMEOS_SOCKET_DIR, XDG_RUNTIME_DIR, NEURAL_API_SOCKET)
+- `TransportEndpoint::from_env_or_default()` — canonical injection entry point
+- `TransportEndpoint::from_primal_name()` — ecosystem socket path conventions
+- `TransportEndpoint::platform_default()` — cross-platform UDS/TCP default
+- `sourdough validate transport <path>` — single primal transport compliance audit
+- `sourdough validate transport-report --json` — ecosystem batch audit for CI/CD
+- `sourdough validate depot --json` — binary freshness detection (--source, --stale-hours)
+- `sourdough scaffold transport-kit <name>` — generates self-contained transport module (no sourdough-core dep)
+- `sourdough migrate transport <path>` — migration tool for existing primals (dry-run + --apply)
+- Scaffold templates emit transport-injected primals (TRANSPORT_ENDPOINT env var + CLI flag)
+- Scaffold emits `ipc.register` call to songbird at startup via `announce::register_with_songbird`
+- Release CI matrix includes `aarch64-linux-android` target
+- IpcClient UDS roundtrip integration test (mock server validates full JSON-RPC exchange)
+- `sourdough-core` re-exports `DEFAULT_IPC_TIMEOUT` (5 seconds)
+- `IpcError` implements `std::fmt::Display` + `std::error::Error`
+- `primal.announce` and `primal.shutdown` method constants
+- `aarch64-linux-android` added to layout TIER1_TRIPLES
+
+### Changed (v0.4.0)
+- `colored` replaced with `owo-colors` (zero-alloc, zero transitive deps)
+- `HealthProbe.status` evolved from `String` to `HealthStatus` enum (type-safe)
+- `Timestamp::Display` now outputs proper ISO 8601 (`2024-06-09T01:46:40.000Z`) via chrono
+- `PrimalRpcClient` documented as binary-protocol path (IpcClient is canonical)
+- `validate depot` uses iterative traversal (fixes musl stack overflow segfault)
+- `migrate transport` guidance updated: no sourdough-core dep, use scaffold transport-kit
+- `config.rs` uses `env_keys::TRANSPORT_ENDPOINT` constant (was raw string)
+- `ipc.rs` refactored: methods extracted to own module (801→745 lines), CircuitBreaker extracted
+- Version bumped to 0.4.0
+
+### Fixed (v0.4.0)
+- `validate depot` segfault on musl (recursive walk → iterative stack-based traversal)
+- Transport-report no longer flags sourDough itself for sourdough-core dependency
+- Template-related false positives excluded from transport self-bind detection
+
+## v0.3.1 — Neural API
+
 ### Added (v0.3.1 — May 23-25, 2026)
 - Scaffold generates `announce.rs` in server crate: Neural API `primal.announce` startup logic (Wave 42/43 standard)
 - Scaffolded primals auto-announce to biomeOS on startup for adaptive routing (fire-and-forget, graceful degradation)

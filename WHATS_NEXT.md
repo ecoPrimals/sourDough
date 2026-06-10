@@ -1,63 +1,53 @@
 # What's Next for sourDough
 
-**Version**: 0.3.1
-**Date**: May 25, 2026
+**Version**: 0.4.0
+**Date**: June 10, 2026
+**Status**: Transport ecosystem complete. Zero P1. Stadial-ready.
 
 ---
 
-## Shipped (v0.3.1 — May 23-25, 2026)
+## Shipped (v0.4.0 — June 2026, Transport Ecosystem)
 
-- [x] Scaffold generates `announce.rs` — Neural API `primal.announce` (Wave 42/43)
-- [x] Scaffolded primals auto-announce to biomeOS on startup (fire-and-forget)
-- [x] `primal.announce` classified Public in MethodGate
-- [x] Announce handler separates capabilities (domains) from methods (Wave 44)
-- [x] `notify-plasmidbin.yml` workflow (Wave 49 post-primordial compliance)
-- [x] Docs use plasmidBin-first patterns, triple-first binary paths
+- [x] `sourdough-core::TransportEndpoint` — canonical wire format (uds/tcp/mesh_relay)
+- [x] `sourdough-core::IpcClient` — transport-aware JSON-RPC 2.0 client
+- [x] `sourdough-core::CircuitBreaker` — resilience pattern for IPC
+- [x] `sourdough-core::methods` — canonical `domain.verb` method constants
+- [x] `TransportEndpoint::from_env_or_default()` — canonical injection entry point
+- [x] `sourdough validate transport` — single primal transport compliance audit
+- [x] `sourdough validate transport-report --json` — ecosystem batch audit
+- [x] `sourdough validate depot --json` — binary freshness detection
+- [x] `sourdough scaffold transport-kit` — self-contained transport module for primals
+- [x] `sourdough migrate transport` — migration tool for existing primals
+- [x] Scaffold templates emit transport-injected primals
+- [x] Release CI: aarch64-linux-android target (Pixel 8 proven)
+- [x] `colored` → `owo-colors` (zero-alloc)
+- [x] `HealthProbe.status` evolved to `HealthStatus` enum
+- [x] Depot segfault fix (iterative traversal for musl compatibility)
+- [x] 321 tests, 3 crates, all files < 800L
 
-## Shipped (v0.3.0 — May 14, 2026)
+## Shipped (v0.3.1 — May 2026, Neural API)
 
-- [x] `sourdough sign` — Ed25519 detached signatures (`.sig` sidecar)
-- [x] `sourdough verify` — signature verification against public key
-- [x] `sourdough validate ecobin <binary>` — static linking, stripped, size budget checks
-- [x] `sourdough scaffold systemd` — hardened `.service` unit generation
-- [x] `sourdough layout` — triple-first binary layout validation
-- [x] `sourdough validate composition` — composition binary presence (tower/node/nest/nucleus/meta/full + niche)
-- [x] `sourdough genomebin sign` — wired to real Ed25519 signing
-- [x] Scaffold README includes deployment section
-- [x] Niche compositions from `ports.env` (hotspring, neuralspring, wetspring, groundspring, healthspring)
+- [x] Scaffold generates `announce.rs` (primal.announce)
+- [x] Scaffolded primals auto-announce to biomeOS
+- [x] `notify-plasmidbin.yml` workflow
 
-## Shipped (v0.2.0 — May 11, 2026)
+## Shipped (v0.3.0 — May 2026, Deployment Internalization)
 
-- [x] Scaffold generates `{name}-server` crate (JSON-RPC 2.0 + capability wire standard)
-- [x] Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml` + `release.yml`
-- [x] Scaffold generates `deny.toml` (ecoBin v3.0 + explicit `ring` ban)
-- [x] Scaffold generates `method_gate.rs` (JH-0/JH-2 pre-dispatch capability gate)
-- [x] Scaffold generates `btsp.negotiate` handler (NULL cipher fallback)
-- [x] `PeekedStream` transport in sourdough-core (ecosystem convergence)
-- [x] Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
-- [x] First-byte peek (JSON-RPC vs BTSP auto-detection)
-- [x] Ed25519 signing module in sourdough-genomebin (SD-03 resolved)
-- [x] musl cross-compilation in release.yml (SD-02 resolved)
+- [x] `sourdough sign` / `sourdough verify` — Ed25519 signatures
+- [x] `sourdough validate ecobin <binary>` — static/stripped/size checks
+- [x] `sourdough scaffold systemd` — hardened service units
+- [x] `sourdough layout` — triple-first layout validation
+- [x] `sourdough validate composition` — composition binary presence
 
 ---
 
-## Next (v0.4.0 — Harvest + Release)
-
-Per deployment internalization contract
-(primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md):
+## Next (v0.5.0 — Harvest + Package)
 
 - [ ] `sourdough harvest --all` — cross-compile all primals per `sources.toml`
 - [ ] `sourdough harvest --release` — checksum, stage, tag, push to GitHub Releases
-- [ ] Asset carry-forward logic (currently in `auto-harvest.yml`) into Rust
-- [ ] `sourdough validate composition` gains Phase 3 live health probes
-
----
-
-## Medium Term (v0.5.0 — Package)
-
 - [ ] `sourdough package` — self-extracting genomeBin archives
 - [ ] Embed manifest, checksums, signature in archive header
-- [ ] Support offline deployment to air-gapped gates
+- [ ] `sourdough validate composition` gains Phase 3 live health probes
 
 ---
 
@@ -66,14 +56,14 @@ Per deployment internalization contract
 ### v0.6.0 — Deploy
 
 - [ ] `sourdough deploy --target membrane` — full deploy+verify cycle
-- [ ] Multi-target support: membrane, gate, nest topologies
+- [ ] Multi-target: membrane, gate, nest topologies
+- [ ] Post-deploy smoke tests
 
-### Ephemeral Primal Scaffolding
+### v1.0.0 — Stable
 
-See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
-
-- [ ] `EphemeralOwner<T>` utility in sourdough-core
-- [ ] Scoped capability namespacing (`session.{id}.*`)
+- [ ] All APIs stable (semantic versioning)
+- [ ] Security audit complete
+- [ ] genomeBin creation < 1 minute
 
 ---
 
@@ -81,30 +71,28 @@ See `specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md` for the full specification.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Test coverage | 95%+ | >90% maintained |
-| Tests passing | 281 | All passing |
-| Clippy | zero warnings | zero warnings |
-| Unsafe code | zero (forbid) | zero |
-| C dependencies | zero | zero |
-| Max file size | 750 lines | <1000 lines |
+| Tests | 321 | All passing |
+| Clippy | zero warnings | zero |
+| Unsafe | zero (forbid) | zero |
+| C deps | zero | zero |
+| Max file | 785 lines | < 800 |
 
 ---
 
 ## How to Contribute
 
-1. Pick an item from this list
-2. Check `specs/` for related specifications
-3. Follow `CONVENTIONS.md` for coding standards
-4. Run the full verification suite before submitting:
+1. Check `specs/` for related specifications
+2. Follow `CONVENTIONS.md` for coding standards
+3. Run the full verification suite before submitting:
    ```bash
    cargo test --workspace
    cargo clippy --workspace --all-targets -- -D warnings
-   cargo fmt --all -- --check
+   cargo fmt --check
    cargo deny check
    cargo doc --workspace --no-deps
    ```
 
 ---
 
-**Date**: May 25, 2026
-**Status**: v0.3.1 Neural API + post-primordial compliance shipped, harvest and release next
+**Date**: June 10, 2026
+**Status**: Zero development debt. Transport ecosystem shipped. Waiting on upstream primals (songBird ipc.resolve, biomeOS auto-register) before next milestone.

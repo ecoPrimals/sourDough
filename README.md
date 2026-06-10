@@ -2,7 +2,7 @@
 
 The nascent primal. The budding primal. The starter culture for ecoPrimals.
 
-**Version**: 0.3.1
+**Version**: 0.4.0
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 **Edition**: Rust 2024
 
@@ -12,15 +12,17 @@ sourDough scaffolds new primals that are **self-contained and independent**. Whe
 creates a new primal, the result has its own inlined core traits, its own workspace, and
 zero runtime dependency on sourDough. Like biological budding, the offspring is complete.
 
-sourDough also serves as a reference implementation demonstrating ecoPrimals standards:
-UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
+sourDough also serves as:
+- **Reference implementation** of ecoPrimals transport and IPC standards
+- **Ecosystem tooling** for validation, compliance auditing, and depot management
+- **Migration tooling** for evolving existing primals toward ecosystem standards
 
 ## Crates
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits library: lifecycle, health, identity, discovery, config, JSON-RPC 2.0 IPC, zero-copy RPC, PeekedStream transport |
-| `sourdough` | UniBin CLI: scaffold, sign, verify, validate, layout, genomebin, doctor |
+| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + CircuitBreaker + PeekedStream |
+| `sourdough` | UniBin CLI: scaffold, validate, sign, verify, layout, migrate, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
 ## Quick Start
@@ -29,11 +31,22 @@ UniBin, ecoBin, genomeBin, JSON-RPC 2.0 IPC, and capability-based discovery.
 # Scaffold a new self-contained primal
 sourdough scaffold new-primal myPrimal "Purpose of my primal" --output ../myPrimal
 
+# Generate a transport module for an existing primal
+sourdough scaffold transport-kit myPrimal
+
 # Validate primal compliance
 sourdough validate primal ../myPrimal
+sourdough validate transport ../myPrimal
+
+# Ecosystem-wide transport audit (JSON output for CI)
+sourdough validate transport-report --primals-dir ../
+sourdough validate transport-report --primals-dir ../ --json
+
+# Depot freshness check
+sourdough validate depot primals/ --stale-hours 48
 
 # System health check
-sourdough doctor
+sourdough doctor --comprehensive
 ```
 
 Production binary comes from plasmidBin. For local development:
@@ -42,34 +55,24 @@ cargo build --release
 ./target/release/sourdough --help
 ```
 
-Scaffolded primals include:
-- **Core crate**: inlined traits (`PrimalLifecycle`, `PrimalHealth`, `PrimalState`, `PrimalError`)
-- **Server crate**: JSON-RPC 2.0 server with capability wire + `btsp.negotiate` + `MethodGate` + `primal.announce`
-- **Neural API**: Auto-announces to biomeOS on startup for adaptive routing (Wave 42 standard)
-- **CI/CD**: GitHub Actions workflows (`ci.yml`, `notify-plasmidbin.yml`, `release.yml` musl cross-compilation)
-- **Supply chain**: `deny.toml` (ecoBin v3.0, explicit `ring` ban, `cc` allowed for blake3)
-
-No dependency on sourDough after creation.
-
 ## Quality
 
 | Metric | Value |
 |--------|-------|
-| Tests | 281 passing (152 unit, 31 CLI integration, 2 e2e, 8 doc, 88 genomebin) |
-| Coverage | 95%+ (llvm-cov, target: 90%) |
+| Tests | 321 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
-| C deps | zero (Pure Rust, blake3 `pure` feature) |
-| LOC | ~10,500 Rust across 37 files |
-| Max file | < 750 lines (target: 1000) |
+| C deps | zero (Pure Rust entire dependency tree) |
+| Max file | < 800 lines (production code) |
 
 ## Standards Compliance
 
 - **UniBin**: single binary, multiple subcommands
-- **ecoBin**: Pure Rust, zero C dependencies, static linking, cross-compilation
+- **ecoBin**: Pure Rust, zero C dependencies, static linking, cross-compilation (4 targets)
 - **genomeBin**: Pure Rust platform detection, metadata, archive operations
 - **JSON-RPC 2.0**: primary IPC with semantic `domain.verb` method naming
-- **Binary RPC**: secondary high-throughput path (`bytes::Bytes` zero-copy, transport-agnostic)
+- **TransportEndpoint**: canonical wire format (serde tagged: uds/tcp/mesh_relay)
+- **Primal sovereignty**: no runtime dependency on sourdough-core; wire format is the contract
 - **scyBorg Provenance Trio**: AGPL-3.0-or-later (software), ORC (research/data), CC-BY-SA-4.0 (docs)
 
 ## Project Layout
@@ -77,15 +80,14 @@ No dependency on sourDough after creation.
 ```
 sourDough/
   Cargo.toml                  Workspace manifest
+  compositions.toml           Named compositions (tower, nucleus, full, niche-*)
   crates/
-    sourdough-core/           Core traits + IPC
-    sourdough/                UniBin CLI (sign, verify, validate, layout, scaffold, genomebin, doctor)
+    sourdough-core/           Core traits + IPC + transport + circuit breaker
+    sourdough/                UniBin CLI
     sourdough-genomebin/      Pure Rust genomeBin library
-  specs/
-    ARCHITECTURE.md           Technical architecture
-    SOURDOUGH_SPECIFICATION.md  Full specification
-    ROADMAP.md                Evolution roadmap
-    EPHEMERAL_PRIMAL_SCAFFOLDING.md  Session-as-primal spec
+  specs/                      Specifications and architecture docs
+  sporeprint/                 Validation summary for ecosystem dashboard
+  wateringHole/handoffs/      Active handoff documents
   archive/                    Fossil record of past sessions
 ```
 
@@ -93,27 +95,26 @@ sourDough/
 
 ```bash
 cargo test --workspace
-cargo clippy --workspace --all-targets -- -W clippy::pedantic -W clippy::nursery -D warnings
-cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
 cargo deny check
 cargo doc --workspace --no-deps
-cargo llvm-cov --workspace
 ```
 
 ## Design Principles
 
 - **Primal sovereignty**: primals know only themselves, discover others at runtime
-- **Zero hardcoding**: OS-assigned ports, capability-based discovery, no primal name coupling
+- **Wire format is the contract**: TransportEndpoint serde format, not library dependency
+- **Zero hardcoding**: capability-based discovery, transport injection, no primal name coupling
 - **Scaffold independence**: generated primals are complete and self-sufficient
 - **Pure Rust**: no C dependencies, no shell scripts, no external tooling
 - **Modern idiomatic Rust**: edition 2024, `#[expect(reason)]`, `#![forbid(unsafe_code)]`
 
 ## Documentation
 
-- [Start Here](START_HERE.md) -- new developer guide
-- [What's Next](WHATS_NEXT.md) -- roadmap and priorities
+- [Start Here](START_HERE.md) — new developer guide
+- [What's Next](WHATS_NEXT.md) — roadmap and priorities
 - [Specification](specs/SOURDOUGH_SPECIFICATION.md)
 - [Architecture](specs/ARCHITECTURE.md)
 - [Roadmap](specs/ROADMAP.md)
-- [Ephemeral Primal Scaffolding](specs/EPHEMERAL_PRIMAL_SCAFFOLDING.md)
 - [Conventions](CONVENTIONS.md)

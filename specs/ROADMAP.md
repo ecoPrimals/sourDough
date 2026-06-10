@@ -1,14 +1,14 @@
 # sourDough Roadmap
 
-**Version**: 0.3.0
-**Date**: May 14, 2026
+**Version**: 0.4.0
+**Date**: June 10, 2026
 **Vision**: The nascent budding primal for ecoPrimals
 
 ---
 
-## Current State (v0.3.0)
+## Current State (v0.4.0)
 
-### Complete (v0.1.0 through v0.3.0)
+### Complete (v0.1.0 through v0.4.0)
 
 - [x] Core traits: PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig
 - [x] sourdough-core library: traits + types + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
@@ -37,6 +37,13 @@
 - [x] `sourdough scaffold systemd` (hardened `.service` units)
 - [x] `sourdough layout` (triple-first layout validation)
 - [x] `sourdough validate composition` (atomic + niche compositions from `ports.env`)
+- [x] `TransportEndpoint` canonical wire format + `connect_transport()` + `IpcClient`
+- [x] `CircuitBreaker` resilience pattern + `methods` module
+- [x] `sourdough validate transport` + `transport-report --json` + `depot --json`
+- [x] `sourdough scaffold transport-kit` (self-contained, no sourdough-core dep)
+- [x] `sourdough migrate transport` (dry-run + apply)
+- [x] Release CI: aarch64-linux-android (Pixel 8 proven)
+- [x] 321 tests, all files < 800 lines
 
 ---
 
@@ -78,22 +85,27 @@ Per contract: `primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md`
 - validate.rs refactored into module with composition submodule
 - 281 tests
 
-### v0.4.0 -- Harvest + Release (NEXT)
+### v0.4.0 -- Transport Ecosystem (COMPLETE)
+
+**Delivered** (June 2026):
+
+- TransportEndpoint canonical wire format + connect_transport + IpcClient
+- CircuitBreaker, methods module, env_keys
+- validate transport, transport-report --json, depot --json
+- scaffold transport-kit (self-contained transport for other primals)
+- migrate transport (dry-run + apply)
+- aarch64-linux-android release CI (Pixel 8 proven)
+- 321 tests
+
+### v0.5.0 -- Harvest + Package (NEXT)
 
 **Goals**: Cross-compile and release primals via CLI
 
 - [ ] `sourdough harvest --all` — cross-compile all primals per `sources.toml`
 - [ ] `sourdough harvest --release` — checksum, stage, tag, push to GitHub Releases
-- [ ] Asset carry-forward from `auto-harvest.yml` into Rust
-- [ ] `sourdough validate composition` gains Phase 3 live health probes
-
-### v0.5.0 -- Package (genomeBin)
-
-**Goals**: Self-extracting genomeBin archives
-
-- [ ] `sourdough package` — creates self-extracting archives
+- [ ] `sourdough package` — self-extracting genomeBin archives
 - [ ] Embed manifest, checksums, signature in archive header
-- [ ] Offline deployment to air-gapped gates
+- [ ] `sourdough validate composition` Phase 3 live health probes
 
 ### v0.6.0 -- Deploy
 
@@ -117,25 +129,24 @@ Per contract: `primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md`
 
 | Metric | Current | Target (v1.0) |
 |--------|---------|---------------|
-| Test coverage | 95%+ | >90% maintained |
-| Tests passing | 281 | All passing |
+| Tests passing | 321 | All passing |
 | Clippy | zero warnings (workspace lints) | zero warnings |
 | Unsafe code | zero | zero |
-| C dependencies | zero | zero |
-| Max file size | 750 lines | <1000 lines |
+| C dependencies | zero (entire tree) | zero |
+| Max file size | 785 lines | < 800 |
 | Build time | <15s incremental | <30s clean |
 
 ---
 
 ## Related Documents
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) -- how sourDough is built
-- [SOURDOUGH_SPECIFICATION.md](SOURDOUGH_SPECIFICATION.md) -- what sourDough is
-- [EPHEMERAL_PRIMAL_SCAFFOLDING.md](EPHEMERAL_PRIMAL_SCAFFOLDING.md) -- ephemeral primal spec
-- [CONVENTIONS.md](../CONVENTIONS.md) -- coding conventions
+- [ARCHITECTURE.md](ARCHITECTURE.md) — how sourDough is built
+- [SOURDOUGH_SPECIFICATION.md](SOURDOUGH_SPECIFICATION.md) — what sourDough is
+- [EPHEMERAL_PRIMAL_SCAFFOLDING.md](EPHEMERAL_PRIMAL_SCAFFOLDING.md) — ephemeral primal spec
+- [CONVENTIONS.md](../CONVENTIONS.md) — coding conventions
 
 ---
 
-**Version**: 0.3.0
-**Date**: May 14, 2026
-**Status**: Deployment internalization complete, harvest and release next
+**Version**: 0.4.0
+**Date**: June 10, 2026
+**Status**: Transport ecosystem complete. Zero development debt. Stadial-ready.

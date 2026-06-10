@@ -1,13 +1,13 @@
 # sourDough Status
 
-**Version**: 0.3.1
+**Version**: 0.4.0
 **Edition**: Rust 2024
 **License**: AGPL-3.0-or-later (scyBorg Provenance Trio)
 
 ## Current State
 
-- `sourdough-core`: Core traits library (PrimalLifecycle, PrimalHealth, PrimalIdentity, PrimalDiscovery, PrimalConfig) + JSON-RPC 2.0 IPC + zero-copy RPC + PeekedStream transport
-- `sourdough`: CLI binary (scaffold, validate, genomebin, sign, verify, layout, doctor)
+- `sourdough-core`: Core traits library + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + CircuitBreaker + PeekedStream + zero-copy RPC
+- `sourdough`: CLI binary (scaffold, validate, sign, verify, layout, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
 ## Compliance
@@ -17,133 +17,62 @@
 - [x] All `#[allow()]` replaced with `#[expect(reason)]`
 - [x] `cargo fmt` clean
 - [x] `cargo doc` zero warnings, all doctests compile (0 ignored)
-- [x] Zero C application dependencies (Pure Rust, blake3 `pure` feature)
-- [x] `cargo deny check` passing (ecoBin v3.0 C-sys ban list, supply chain audit)
-- [x] Zero hardcoded primal names in crate code (Discovery grade A)
+- [x] Zero C application dependencies (Pure Rust entire dependency tree)
+- [x] `cargo deny check` passing (ecoBin C-sys ban, explicit `ring` ban, supply chain audit)
+- [x] Zero hardcoded primal names in production code (Discovery grade A)
 - [x] JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 95%+ test coverage via `cargo llvm-cov` (281 tests, target: 90%)
+- [x] 321 tests, zero ignored
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
-- [x] Release profile: LTO, codegen-units=1, strip
-- [x] scaffold.rs refactored into module (mod + generators + templates)
-- [x] doctor genomeBin tools: real implementation with platform detection
-- [x] Parallel genomeBin processing implemented
-- [x] E2E tests: scaffold -> build -> test -> validate lifecycle
-- [x] WHATS_NEXT.md and START_HERE.md documentation
-- [x] `deny.toml` supply chain auditing (SD-01 resolved)
-- [x] `tar` crate updated to 0.4.45 (RUSTSEC-2026-0067, RUSTSEC-2026-0068 resolved)
-- [x] **v0.2.0**: Scaffold generates `{name}-server` crate with JSON-RPC server + capability wire handlers
-- [x] **v0.2.0**: Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml`
-- [x] **v0.2.0**: Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
-- [x] **v0.2.0**: `PeekedStream` transport utility in sourdough-core (ecosystem convergence)
-- [x] **v0.2.0**: Socket path resolution (`$XDG_RUNTIME_DIR/biomeos/{name}-{family_id}.sock`)
-- [x] **v0.2.0**: First-byte peek in generated server (JSON-RPC vs BTSP auto-detection)
-- [x] **v0.2.0**: Capability wire standard (health.liveness, health.readiness, health.check, capabilities.list)
-- [x] **v0.2.0**: CONVENTIONS.md drift fixed (JSON-RPC 2.0 primary, binary RPC secondary)
-- [x] **v0.2.0**: Scaffold core crate now inherits `[lints] workspace = true`
-- [x] **v0.2.0**: Scaffold `ci.yml` now includes `cargo deny check` step
-- [x] **v0.2.0**: Scaffold `deny.toml` allows `cc` wrapper for blake3 (ecosystem standard)
-- [x] **v0.2.0**: `tarpc` removed (unused, 40 deps eliminated); `PrimalRpc` is transport-agnostic
-- [x] **v0.2.0**: `PrimalRpcClient::connect` returns `std::io::Result` (was `Box<dyn Error>`)
-- [x] **v0.2.0**: `bytes` patched 1.11.1 (RUSTSEC-2026-0007); deny.toml advisory ignores cleared
-- [x] **v0.2.0**: Total dependencies: 171 (down from 211)
-- [x] **v0.2.0**: Scaffold generates `btsp.negotiate` handler (NULL cipher fallback, BTSP Phase 3 ready)
-- [x] **v0.2.0**: Scaffold generates `release.yml` (musl cross-compilation matrix: x86_64, aarch64, armv7) — SD-02 resolved
-- [x] **v0.2.0**: genomeBin Ed25519 signing module (`ed25519-dalek`, pure Rust, zero C deps) — SD-03 resolved
-- [x] **v0.2.0**: Scaffold generates `method_gate.rs` (JH-0/JH-2 pre-dispatch gate, ecosystem stadial requirement)
-- [x] **v0.2.0**: MethodGate wired into dispatch (classify_method, CallerContext, ResourceEnvelope, Permissive default)
-- [x] **v0.3.0**: `sourdough sign` top-level CLI command (Ed25519 detached signatures, wired from genomebin signing module)
-- [x] **v0.3.0**: `sourdough verify` top-level CLI command (signature verification)
-- [x] **v0.3.0**: `sourdough validate ecobin` evolved to validate compiled binaries (static, stripped, size budget, ldd checks)
-- [x] **v0.3.0**: `sourdough genomebin sign` now uses real Ed25519 signing (was error stub)
-- [x] **v0.3.0**: `sourdough scaffold systemd` generates hardened `.service` units (ecosystem membrane pattern)
-- [x] **v0.3.0**: `sourdough layout` validates triple-first binary layout (`primals/{triple}/{name}`)
-- [x] **v0.3.0**: `sourdough validate composition` validates composition binary presence (tower/node/nest/nucleus/full)
-- [x] **v0.3.0**: Niche compositions (per-spring: hotspring, neuralspring, wetspring, groundspring, healthspring)
-- [x] **v0.3.0**: `validate.rs` refactored into module: `mod.rs` (383L) + `composition.rs` (280L)
-- [x] **v0.3.0**: Scaffold README template includes deployment section (sign, validate, systemd)
-- [x] **v0.3.0**: Deployment internalization contract fully aligned with primalSpring
-- [x] **v0.3.1**: Scaffold generates `announce.rs` (Neural API `primal.announce` Wave 42 standard)
-- [x] **v0.3.1**: Scaffolded primals auto-announce to biomeOS on startup (fire-and-forget)
-- [x] **v0.3.1**: `primal.announce` classified Public in MethodGate
-- [x] **v0.3.1**: Announce handler separates capabilities (domains) from methods (Wave 44 fix)
-- [x] **v0.3.1**: `notify-plasmidbin.yml` workflow added (Wave 49 post-primordial compliance)
-- [x] **v0.3.1**: Docs use plasmidBin-first patterns, no stale `target/release/` deployment paths
+- [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
+- [x] All production files under 800 lines
+- [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android
+- [x] Cross-arch proven (Pixel 8 / GrapheneOS deployment validated)
 
 ## Crate Health
 
-| Crate | Tests | Coverage | Max Lines |
-|-------|-------|----------|-----------|
-| sourdough-core | 135 | ~95% | all < 650 |
-| sourdough (CLI) | 33+ (integration + e2e) | ~90% | all < 750 |
-| sourdough-genomebin | 87 | ~96% | all < 560 |
+| Crate | Tests | Max Lines |
+|-------|-------|-----------|
+| sourdough-core | 161 | 781 (ipc.rs) |
+| sourdough (CLI) | 60 (26 unit + 34 integration) | 785 (templates/server.rs) |
+| sourdough-genomebin | 87 | 553 (validator.rs) |
+| doctests | 11 | — |
 
-## Recent Changes (May 14, 2026 — v0.3.0 deployment internalization)
+## v0.4.0 (June 2026 — Transport Ecosystem)
 
-- `sourdough sign <binary>` wired as top-level CLI command (Ed25519 detached `.sig` sidecar)
-- `sourdough sign --generate-key` generates Ed25519 keypair (signing.key + signing.pub)
-- `sourdough verify <binary>` verifies Ed25519 signatures against public key
-- `sourdough genomebin sign` now delegates to real signing (was sequoia-openpgp error stub)
-- `sourdough validate ecobin <binary>` validates compiled binaries: static linking, stripped, size budget, ldd
-- `sourdough validate ecobin <dir>` continues to validate project source (C deps, fmt, clippy)
-- `sourdough scaffold systemd <primal> --role <role>` generates hardened `.service` units
-- `sourdough layout <dir>` validates triple-first binary layout
-- `sourdough validate composition <name>` validates composition binary presence (predefined: tower, node, nest, nucleus, meta, full)
-- Per deployment internalization contract (primalSpring/docs/SOURDOUGH_DEPLOYMENT_INTERNALIZATION.md)
-- 281 tests passing (15 unit tests for composition/layout + 8 integration tests)
+- `sourdough-core::TransportEndpoint` — wire-compatible with songbird_types (serde tagged: uds/tcp/mesh_relay)
+- `sourdough-core::connect_transport()` — transport-agnostic stream connection
+- `sourdough-core::IpcClient` — transport-aware JSON-RPC 2.0 client with timeout + liveness + resolve + announce
+- `sourdough-core::TransportStream` — unified async read/write across UDS/TCP
+- `sourdough-core::CircuitBreaker` — resilience pattern for IPC
+- `sourdough-core::methods` module — canonical `domain.verb` method constants
+- `sourdough-core::env_keys` — centralized env var name constants
+- `TransportEndpoint::from_env_or_default()` — canonical entry point for transport injection
+- `sourdough validate transport` — single primal transport compliance audit
+- `sourdough validate transport-report` — ecosystem batch audit (--json for CI)
+- `sourdough validate depot` — binary freshness detection (--json, --source, --stale-hours)
+- `sourdough scaffold transport-kit` — self-contained transport module for other primals
+- `sourdough migrate transport` — migration tool for existing primals
+- Scaffold templates emit transport-injected primals (TRANSPORT_ENDPOINT env + CLI)
+- Scaffold emits `ipc.register` call to songbird at startup
+- Release CI includes `aarch64-linux-android` target
+- `colored` dep → `owo-colors` (zero-alloc, zero transitive deps)
+- `HealthProbe.status` evolved from String to `HealthStatus` enum
+- `Timestamp::Display` proper ISO 8601 via chrono
+- 321 tests (up from 281)
 
-## Prior Changes (May 11, 2026 — MethodGate scaffold + deny.toml alignment)
+## v0.3.1 (May 2026 — Neural API)
 
-- Scaffold generates `method_gate.rs` in server crate (JH-0/JH-2 ecosystem standard)
-- MethodGate wired into dispatch: `gate.check(method)` runs before method routing
-- Generated gate: MethodVisibility, GateMode, CallerContext, ResourceEnvelope, classify_method()
-- Ships in Permissive mode (zero behavioral change, JH-2 ready)
-- 11 tests in generated method_gate.rs (permissive/enforcing, allowlist, classify, serde)
-- `deny.toml`: explicit `ring` ban added (ecosystem parity with 12/13 primals)
-- Scaffold `deny.toml` template also includes `ring` ban
-- E2e tests: 7 new assertions for method_gate (visibility, mode, classify, envelope, dispatch wiring)
-- 256 tests passing
+- Scaffold generates `announce.rs` (primal.announce Wave 42 standard)
+- Scaffolded primals auto-announce to biomeOS on startup
+- `notify-plasmidbin.yml` workflow
 
-## Prior Changes (May 7, 2026 — SD-02/SD-03 resolution)
+## v0.3.0 (May 2026 — Deployment Internalization)
 
-- Scaffold generates `.github/workflows/release.yml` (Tier 1 musl cross-compilation matrix: x86_64, aarch64, armv7)
-- `sourdough-genomebin` signing module: Ed25519 detached signatures (BLAKE3 hash → sign → `.sig` sidecar)
-- Pure Rust `ed25519-dalek` + `rand_core` — zero C dependencies, ecoBin-compliant
-- Signing API: `generate_keypair`, `sign_file`, `verify_file`, `write_signature`, `read_signature`, `write_verifying_key`, `read_verifying_key`
-- 8 new signing tests (keypair gen, sign/verify roundtrip, tamper detection, key persistence)
-- E2e tests: 5 new assertions for release.yml (musl targets, BLAKE3 checksums, GitHub Releases)
-- SD-02 (musl cross-compilation) and SD-03 (genomeBin signing) both resolved
-
-## Prior Changes (May 2, 2026 — v0.2.0 scaffold evolution)
-
-- Scaffold now generates `{name}-core` + `{name}-server` crates (JSON-RPC server with capability wire standard)
-- Scaffold generates `.github/workflows/ci.yml` + `notify-plasmidbin.yml` (CI + genomeBin distribution)
-- Scaffold generates `deny.toml` (ecoBin v3.0 supply chain auditing)
-- `PeekedStream` + `peek_protocol` added to sourdough-core (first-byte protocol auto-detection)
-- `resolve_socket_path` + `socket_path_in` added to sourdough-core (ecosystem socket naming)
-- CONVENTIONS.md corrected: JSON-RPC 2.0 as primary IPC, binary RPC as secondary
-- tarpc dependency removed (40 transitive deps eliminated); PrimalRpc is now transport-agnostic
-- `bytes` patched to 1.11.1 (RUSTSEC-2026-0007 resolved)
-- deny.toml advisory ignores cleared (all were tarpc-transitive)
-- Generated core crate now inherits `[lints] workspace = true`
-- 247 tests passing (up from 239), enhanced e2e assertions for v0.2.0 artifacts
-- Generated server includes: dispatch with 5 capability handlers (+ `btsp.negotiate`), first-byte peek, socket naming, tracing
-- Scaffold `ci.yml` now enforces `cargo deny check`
-- Scaffold `deny.toml` allows `cc` wrapper for blake3 (ecosystem standard)
-
-## Prior Changes (April 3, 2026)
-
-- Workspace-level lint configuration (`[workspace.lints]`) replaces per-crate `#![warn]`
-- Release profile optimizations (LTO, codegen-units=1, strip)
-- scaffold.rs refactored: mod.rs (command dispatch) + generators.rs (file writing) + templates.rs (primal DNA)
-- All 3 ignored doctests fixed to compile (native async trait syntax, no async_trait dependency)
-- Parallel genomeBin processing implemented (concurrent ecoBin pre-reading)
-- doctor genomeBin tools: real implementation (platform detection, library validation)
-- 5 new CLI integration tests (genomebin test/sign paths, doctor comprehensive output)
-- 2 new e2e tests (scaffold -> build -> test -> validate lifecycle)
-- WHATS_NEXT.md and START_HERE.md created per CONVENTIONS.md requirements
-- server --port N/A documented (sourDough is meta-primal, not a daemon)
-- sourdough-genomebin Cargo.toml migrated to workspace metadata
-- Generated scaffold code updated to use workspace lints
+- `sourdough sign` / `sourdough verify` — Ed25519 detached signatures
+- `sourdough validate ecobin <binary>` — static/stripped/size validation
+- `sourdough scaffold systemd` — hardened .service units
+- `sourdough layout` — triple-first binary layout validation
+- `sourdough validate composition` — composition binary presence checking

@@ -9,15 +9,15 @@ New to sourDough? This guide gets you oriented.
 sourDough is the **nascent primal** for ecoPrimals. It has three jobs:
 
 1. **Scaffold new primals** that are self-contained and independent
-2. **Serve as reference implementation** of ecoPrimals standards
-3. **Provide ecosystem tooling** for validation and genomeBin operations
+2. **Define the transport standard** (TransportEndpoint wire format, IPC patterns)
+3. **Provide ecosystem tooling** for validation, migration, and depot management
 
 ---
 
 ## Prerequisites
 
 - Rust 2024 edition (rustc 1.87+)
-- `cargo-llvm-cov` for coverage (optional but recommended)
+- `cargo-deny` for supply chain auditing
 
 ---
 
@@ -35,26 +35,31 @@ cargo build --release  # for local development; production binary from plasmidBi
 ```
 sourDough/
 ├── Cargo.toml                     Workspace manifest (lints, deps, release profile)
+├── compositions.toml              Named compositions (tower, nucleus, full, niche-*)
 ├── crates/
-│   ├── sourdough/                 CLI binary (scaffold, sign, verify, validate, layout, genomebin, doctor)
+│   ├── sourdough/                 CLI binary
 │   │   ├── src/commands/
 │   │   │   ├── scaffold/          Primal scaffolding (mod + generators + templates)
-│   │   │   ├── validate/          Compliance validation (primal, unibin, ecobin, composition)
+│   │   │   ├── validate/          Compliance: transport, depot, composition, ecobin
+│   │   │   ├── migrate.rs         Transport migration tool
 │   │   │   ├── sign.rs            Ed25519 binary signing
 │   │   │   ├── layout.rs          Triple-first layout validation
 │   │   │   ├── genomebin.rs       genomeBin CLI commands
 │   │   │   └── doctor.rs          Health diagnostics
 │   │   └── tests/                 Integration + e2e tests
-│   ├── sourdough-core/            Core traits library
+│   ├── sourdough-core/            Core traits + transport + IPC
 │   │   └── src/
-│   │       ├── lifecycle.rs       PrimalLifecycle trait + PrimalState
-│   │       ├── health.rs          PrimalHealth trait + HealthReport
-│   │       ├── identity.rs        PrimalIdentity trait + DID types
-│   │       ├── discovery.rs       PrimalDiscovery trait
-│   │       ├── config.rs          PrimalConfig trait + CommonConfig
-│   │       ├── ipc.rs             JSON-RPC 2.0 IPC (primary)
-│   │       ├── rpc.rs             Binary RPC (secondary, high-throughput)
-│   │       ├── transport.rs       PeekedStream, socket path resolution
+│   │       ├── transport.rs       TransportEndpoint, connect_transport, TransportStream, PeekedStream
+│   │       ├── ipc.rs             JSON-RPC 2.0: IpcClient, JsonRpcRequest/Response, IpcError
+│   │       ├── methods.rs         Canonical domain.verb method constants
+│   │       ├── circuit_breaker.rs CircuitBreaker resilience pattern
+│   │       ├── env_keys.rs        Centralized env var name constants
+│   │       ├── config.rs          CommonConfig, ConfigLoader, ConfigWatcher
+│   │       ├── health.rs          HealthStatus, PrimalHealth, HealthReport
+│   │       ├── lifecycle.rs       PrimalLifecycle + PrimalState
+│   │       ├── identity.rs        PrimalIdentity + DID types
+│   │       ├── discovery.rs       PrimalDiscovery
+│   │       ├── rpc.rs             Binary RPC (high-throughput path)
 │   │       ├── error.rs           PrimalError types
 │   │       └── types.rs           ContentHash, Timestamp
 │   └── sourdough-genomebin/       Pure Rust genomeBin operations
@@ -67,10 +72,9 @@ sourDough/
 │           ├── archive.rs         tar/gzip operations
 │           └── error.rs           Error types
 ├── specs/                         Specifications and architecture docs
-├── CONVENTIONS.md                 Coding standards
-├── STATUS.md                      Current compliance status
-├── WHATS_NEXT.md                  Roadmap and next steps
-└── CHANGELOG.md                   Version history
+├── sporeprint/                    Validation summary for ecosystem dashboard
+├── wateringHole/handoffs/         Active handoff documents
+└── archive/                       Fossil record of past sessions
 ```
 
 ---
@@ -83,16 +87,23 @@ When sourDough scaffolds a new primal, the offspring is **self-contained**:
 all core traits are inlined into the generated code. No compile-time or
 runtime dependency on sourDough.
 
-### IPC Architecture
+### Transport Standard
 
-- **JSON-RPC 2.0** (primary): semantic `domain.verb` method naming, newline-delimited
-- **Binary RPC** (secondary): type-safe binary IPC for high-throughput paths
-- `bytes::Bytes` for zero-copy wire format
+The canonical transport wire format is `TransportEndpoint` — a serde-tagged enum:
+```json
+{"transport": "uds", "path": "/run/user/1000/biomeos/myprimal.sock"}
+{"transport": "tcp", "host": "127.0.0.1", "port": 7800}
+{"transport": "mesh_relay", "peer_id": "strandgate", "capability": "security"}
+```
+
+Primals implement this locally (the wire format is the contract, not the library).
+Use `sourdough scaffold transport-kit <name>` to generate a self-contained module.
 
 ### Primal Sovereignty
 
 Primals know only themselves. They discover other primals at runtime via
 capability-based addressing. No hardcoded service names, ports, or endpoints.
+The launcher injects transport via `TRANSPORT_ENDPOINT` env var.
 
 ---
 
@@ -105,29 +116,36 @@ sourdough scaffold new-primal myPrimal "Description" --output ../myPrimal
 cd ../myPrimal && cargo build && cargo test
 ```
 
+### Generate transport module for existing primal
+
+```bash
+sourdough scaffold transport-kit myPrimal
+# Produces a self-contained transport.rs to drop into your crate
+```
+
 ### Validate compliance
 
 ```bash
 sourdough validate primal ../myPrimal
-sourdough validate unibin ../myPrimal
-sourdough validate ecobin ../myPrimal
-sourdough validate ecobin primals/x86_64-unknown-linux-musl/myprimal  # binary checks
-sourdough validate composition tower --primals-dir primals/
+sourdough validate transport ../myPrimal
+sourdough validate transport-report --primals-dir ../ --json
+sourdough validate depot primals/ --stale-hours 24
+sourdough validate composition nucleus --primals-dir primals/ --triple-first
 ```
 
-### Sign binaries
+### Migrate existing primal to transport injection
 
 ```bash
-sourdough sign primals/x86_64-unknown-linux-musl/myprimal --generate-key
+sourdough migrate transport ../myPrimal          # dry-run report
+sourdough migrate transport ../myPrimal --apply  # apply changes
+```
+
+### Sign and verify binaries
+
+```bash
+sourdough sign --generate-key
 sourdough sign primals/x86_64-unknown-linux-musl/myprimal
 sourdough verify primals/x86_64-unknown-linux-musl/myprimal
-```
-
-### Deployment tooling
-
-```bash
-sourdough scaffold systemd myPrimal --role gate
-sourdough layout primals/  # validate triple-first layout
 ```
 
 ### Run diagnostics
@@ -140,8 +158,8 @@ sourdough doctor --comprehensive
 
 ## Where to Go Next
 
-- **[Specification](specs/SOURDOUGH_SPECIFICATION.md)** -- what sourDough is
-- **[Architecture](specs/ARCHITECTURE.md)** -- how it's built
-- **[Roadmap](specs/ROADMAP.md)** -- where it's going
-- **[Conventions](CONVENTIONS.md)** -- coding standards
-- **[What's Next](WHATS_NEXT.md)** -- immediate priorities
+- **[Specification](specs/SOURDOUGH_SPECIFICATION.md)** — what sourDough is
+- **[Architecture](specs/ARCHITECTURE.md)** — how it's built
+- **[Roadmap](specs/ROADMAP.md)** — where it's going
+- **[Conventions](CONVENTIONS.md)** — coding standards
+- **[What's Next](WHATS_NEXT.md)** — immediate priorities
