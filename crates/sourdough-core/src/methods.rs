@@ -50,6 +50,15 @@ pub mod ipc {
     pub const REGISTER: &str = "ipc.register";
 }
 
+/// Capability domain methods (mesh relay).
+pub mod capability {
+    /// Forward a JSON-RPC call through the mesh to a remote peer.
+    ///
+    /// Envelope: `{ "peer_id": "...", "capability": "...", "request": { ... } }`
+    /// songBird routes the inner request to the peer's capability handler.
+    pub const CALL: &str = "capability.call";
+}
+
 /// Primal domain methods (self-management).
 pub mod primal {
     /// Announce to the ecosystem (Neural API registration).

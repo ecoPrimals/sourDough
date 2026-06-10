@@ -14,7 +14,6 @@
 
 use crate::error::PrimalError;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 // --- JSON-RPC 2.0 Protocol Types ---
 
@@ -26,6 +25,12 @@ pub const JSONRPC_VERSION: &str = "2.0";
 /// Sufficient for local UDS and TCP on the same host. Override for
 /// cross-gate mesh relay calls that traverse the network.
 pub const DEFAULT_IPC_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Default timeout for mesh relay calls (15 seconds).
+///
+/// Mesh relay traverses: caller → local songBird → WAN → remote songBird → target.
+/// The additional network hops warrant a longer timeout than local IPC.
+pub const MESH_RELAY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
 /// JSON-RPC 2.0 request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,8 +128,6 @@ pub struct JsonRpcError {
     pub data: Option<serde_json::Value>,
 }
 
-// --- Standard JSON-RPC 2.0 Error Codes ---
-
 /// Parse error (-32700).
 pub const PARSE_ERROR: i32 = -32700;
 /// Invalid request (-32600).
@@ -135,8 +138,6 @@ pub const METHOD_NOT_FOUND: i32 = -32601;
 pub const INVALID_PARAMS: i32 = -32602;
 /// Internal error (-32603).
 pub const INTERNAL_ERROR: i32 = -32603;
-
-// --- ecoPrimals IPC Error Codes (application-defined, -32000 to -32099) ---
 
 /// Service unavailable.
 pub const SERVICE_UNAVAILABLE: i32 = -32000;
@@ -230,11 +231,7 @@ impl From<PrimalError> for JsonRpcError {
     }
 }
 
-// --- Typed IPC Error ---
-
 /// Structured IPC error for inter-primal communication.
-///
-/// This provides richer error semantics than raw JSON-RPC error codes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IpcError {
     /// Error category.
@@ -342,28 +339,8 @@ impl Capability {
     }
 }
 
-/// Standard health probe response for `health.check`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HealthProbe {
-    /// Primal name.
-    pub primal: String,
-    /// Primal version.
-    pub version: String,
-    /// Structured health status.
-    pub status: crate::health::HealthStatus,
-    /// Liveness flag.
-    pub live: bool,
-    /// Readiness flag.
-    pub ready: bool,
-    /// Dependency statuses.
-    #[serde(skip_serializing_if = "HashMap::is_empty")]
-    pub dependencies: HashMap<String, String>,
-}
-
-// Re-export from dedicated module for backward compatibility.
+pub use crate::health::HealthProbe;
 pub use crate::methods;
-
-// --- Transport-aware JSON-RPC Client ---
 
 /// A transport-aware JSON-RPC 2.0 client that connects via [`TransportEndpoint`].
 ///
@@ -398,14 +375,28 @@ impl IpcClient {
 
     /// Send a JSON-RPC request and return the response.
     ///
-    /// Opens a connection, writes the request as a newline-delimited JSON line,
-    /// reads the response line, and closes. This is the standard ecoPrimals
-    /// one-shot RPC pattern.
+    /// For UDS/TCP endpoints: opens a connection, writes the request as a
+    /// newline-delimited JSON line, reads the response, and closes.
+    ///
+    /// For `MeshRelay` endpoints: transparently routes through the local `songBird`
+    /// instance via `capability.call`, which forwards to the remote peer.
     ///
     /// # Errors
     ///
     /// Returns `IpcError` on transport or protocol failure.
     pub async fn call(&self, request: &JsonRpcRequest) -> Result<JsonRpcResponse, IpcError> {
+        if let crate::transport::TransportEndpoint::MeshRelay {
+            peer_id,
+            capability,
+        } = &self.endpoint
+        {
+            return self.call_via_mesh_relay(request, peer_id, capability).await;
+        }
+        self.call_direct(request).await
+    }
+
+    /// Direct connection call (UDS/TCP).
+    async fn call_direct(&self, request: &JsonRpcRequest) -> Result<JsonRpcResponse, IpcError> {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
         let stream = crate::transport::connect_transport(&self.endpoint)
@@ -442,6 +433,30 @@ impl IpcClient {
         serde_json::from_str(response_line.trim()).map_err(|e| {
             IpcError::new(IpcErrorKind::Internal, format!("deserialize response: {e}"))
         })
+    }
+
+    /// Route through local `songBird` mesh relay (uses `call_direct` to avoid recursion).
+    async fn call_via_mesh_relay(
+        &self,
+        request: &JsonRpcRequest,
+        peer_id: &str,
+        capability: &str,
+    ) -> Result<JsonRpcResponse, IpcError> {
+        let songbird = Self::from_primal("songbird", None);
+        let envelope =
+            JsonRpcRequest::new(methods::capability::CALL, 1).with_params(serde_json::json!({
+                "peer_id": peer_id,
+                "capability": capability,
+                "request": request,
+            }));
+        tokio::time::timeout(MESH_RELAY_TIMEOUT, songbird.call_direct(&envelope))
+            .await
+            .map_err(|_| {
+                IpcError::new(
+                    IpcErrorKind::Timeout,
+                    format!("mesh relay to {peer_id}/{capability} timed out"),
+                )
+            })?
     }
 
     /// Send a JSON-RPC request with a timeout.
@@ -536,6 +551,21 @@ impl IpcClient {
         })
     }
 
+    /// Resolve a primal via songBird and return a new client targeting it.
+    ///
+    /// This is the canonical discovery flow now that `songBird` has
+    /// topology-aware routing (`ipc.resolve` → `TransportEndpoint`).
+    /// The returned client may hold a UDS, TCP, or `MeshRelay` endpoint.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IpcError`] if songBird cannot resolve the target primal.
+    pub async fn resolve_and_connect(primal_name: &str) -> Result<Self, IpcError> {
+        let songbird = Self::from_primal("songbird", None);
+        let endpoint = songbird.resolve_primal(primal_name).await?;
+        Ok(Self::new(endpoint))
+    }
+
     /// Announce this primal to the ecosystem via `primal.announce`.
     ///
     /// Combines `ipc.register` (capability registration) with a startup
@@ -573,7 +603,9 @@ impl std::fmt::Debug for IpcClient {
 
 #[cfg(test)]
 mod tests {
-    use super::methods::{capabilities, health, identity, ipc, lifecycle, primal, system};
+    use super::methods::{
+        capabilities, capability, health, identity, ipc, lifecycle, primal, system,
+    };
     use super::*;
 
     #[test]
@@ -697,6 +729,12 @@ mod tests {
     }
 
     #[test]
+    fn mesh_relay_timeout_is_longer_than_default() {
+        assert!(MESH_RELAY_TIMEOUT > DEFAULT_IPC_TIMEOUT);
+        assert_eq!(MESH_RELAY_TIMEOUT, std::time::Duration::from_secs(15));
+    }
+
+    #[test]
     fn method_name_constants() {
         assert_eq!(health::CHECK, "health.check");
         assert_eq!(health::LIVENESS, "health.liveness");
@@ -711,6 +749,7 @@ mod tests {
         assert_eq!(ipc::REGISTER, "ipc.register");
         assert_eq!(primal::ANNOUNCE, "primal.announce");
         assert_eq!(primal::SHUTDOWN, "primal.shutdown");
+        assert_eq!(capability::CALL, "capability.call");
     }
 
     #[test]
@@ -722,25 +761,6 @@ mod tests {
             crate::transport::TransportEndpoint::Uds { .. }
         ));
         assert!(ep.uds_path().unwrap().contains("songbird"));
-    }
-
-    #[test]
-    fn health_probe_roundtrip() {
-        let mut deps = HashMap::new();
-        deps.insert("db".to_string(), "up".to_string());
-        let probe = HealthProbe {
-            primal: "test".into(),
-            version: "0.1.0".into(),
-            status: crate::health::HealthStatus::Healthy,
-            live: true,
-            ready: true,
-            dependencies: deps,
-        };
-        let json = serde_json::to_string(&probe).expect("serialize");
-        let back: HealthProbe = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(back.primal, "test");
-        assert_eq!(back.status, crate::health::HealthStatus::Healthy);
-        assert_eq!(back.dependencies.get("db").map(String::as_str), Some("up"));
     }
 
     #[tokio::test]

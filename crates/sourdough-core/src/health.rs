@@ -165,6 +165,26 @@ impl HealthReport {
     }
 }
 
+/// Standard health probe response for `health.check` JSON-RPC method.
+///
+/// This is the wire format returned by primals when queried via IPC.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct HealthProbe {
+    /// Primal name.
+    pub primal: String,
+    /// Primal version.
+    pub version: String,
+    /// Structured health status.
+    pub status: HealthStatus,
+    /// Liveness flag.
+    pub live: bool,
+    /// Readiness flag.
+    pub ready: bool,
+    /// Dependency statuses (name → status string).
+    #[serde(skip_serializing_if = "std::collections::HashMap::is_empty")]
+    pub dependencies: std::collections::HashMap<String, String>,
+}
+
 /// Health check trait for primals.
 ///
 /// Implement this trait to provide health information about your primal.
@@ -367,5 +387,24 @@ mod tests {
         let primal = MockHealthyPrimal;
         let deps = primal.dependency_health().await.unwrap();
         assert!(deps.is_empty()); // Default implementation returns empty
+    }
+
+    #[test]
+    fn health_probe_roundtrip() {
+        let mut deps = std::collections::HashMap::new();
+        deps.insert("db".to_string(), "up".to_string());
+        let probe = HealthProbe {
+            primal: "test".into(),
+            version: "0.1.0".into(),
+            status: HealthStatus::Healthy,
+            live: true,
+            ready: true,
+            dependencies: deps,
+        };
+        let json = serde_json::to_string(&probe).expect("serialize");
+        let back: HealthProbe = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(back.primal, "test");
+        assert_eq!(back.status, HealthStatus::Healthy);
+        assert_eq!(back.dependencies.get("db").map(String::as_str), Some("up"));
     }
 }

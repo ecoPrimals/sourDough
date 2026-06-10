@@ -346,8 +346,9 @@ pub async fn connect_transport(endpoint: &TransportEndpoint) -> std::io::Result<
         } => Err(std::io::Error::new(
             std::io::ErrorKind::Unsupported,
             format!(
-                "mesh relay ({peer_id}/{capability}) requires Songbird routing — \
-                 use capability.call via Songbird instead of direct connect"
+                "mesh relay ({peer_id}/{capability}) cannot be directly connected — \
+                 use IpcClient::new(endpoint).call() which auto-routes through songBird, \
+                 or IpcClient::resolve_and_connect(\"{peer_id}\") for dynamic discovery"
             ),
         )),
     }

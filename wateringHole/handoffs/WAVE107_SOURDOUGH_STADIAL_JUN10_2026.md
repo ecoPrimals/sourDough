@@ -30,7 +30,7 @@
 
 ### Quality
 
-- 321 tests, zero ignored
+- 322 tests, zero ignored
 - All production files < 800 lines
 - Zero unsafe, zero C deps, pure Rust entire tree
 - clippy pedantic + nursery clean
@@ -55,9 +55,17 @@
 
 | Primal | What | Status |
 |--------|------|--------|
-| songBird | `ipc.resolve` returning TransportEndpoint | P2 — blocked |
-| biomeOS | Auto-register primals with songBird after launch | P2 — blocked |
+| songBird | `ipc.resolve` returning TransportEndpoint | **RESOLVED** (ff86204c — topology-aware mesh routing) |
+| biomeOS | Auto-register primals with songBird after launch | P2 — pending |
 | — | Nothing else blocks sourDough | — |
+
+### Response to SONGBIRD-IPC-RESOLVE-M1 Resolution
+
+With songBird's `ipc.resolve` now returning `MeshRelay` endpoints, sourDough evolved:
+- `IpcClient::call()` now transparently routes MeshRelay through local songBird via `capability.call`
+- `IpcClient::resolve_and_connect()` — canonical one-call discovery flow
+- `methods::capability::CALL` constant — the mesh relay forwarding method
+- `MESH_RELAY_TIMEOUT` (15s) — accounts for WAN hop latency
 
 ---
 
