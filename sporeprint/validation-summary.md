@@ -1,7 +1,7 @@
 +++
 title = "sourDough Validation Summary"
-description = "Ecosystem scaffolding meta-primal — transport standard, primal generation, binary signing, compliance tooling. 321 tests, zero development debt."
-date = 2026-06-10
+description = "Ecosystem scaffolding meta-primal — transport standard, riboCipher reference, primal generation, binary signing, compliance tooling. 437 tests, zero development debt."
+date = 2026-06-13
 
 [taxonomies]
 primals = ["sourdough"]
@@ -13,12 +13,14 @@ springs = []
 - **Gate**: CLEAR (meta-primal — scaffolding/tooling, not a runtime daemon)
 - **Phase**: N/A (CLI tool, no runtime IPC server)
 - **Edition**: 2024
-- **Tests**: 321 passing (161 core, 60 CLI, 87 genomebin, 11 doc, 2 e2e)
+- **Tests**: 437 passing (239 core, 36 CLI, 63+87 genomebin, 12 doc)
 - **Coverage**: target 90%+
-- **Source**: all production files < 800 lines
+- **Source**: all production files < 700 lines
 - **Clippy**: 0 warnings (`pedantic` + `nursery`, `-D warnings`)
 - **Unsafe**: zero (`forbid(unsafe_code)` workspace-level)
+- **unwrap/expect**: zero in library production code
 - **deny.toml**: ring, openssl, native-tls, aws-lc-sys banned; entire dep tree Pure Rust
+- **riboCipher**: FULL self-compliance (Wave 111)
 
 ## Capabilities
 
@@ -28,6 +30,7 @@ springs = []
 | `scaffold transport-kit` | Generate self-contained transport module for existing primals |
 | `sign` / `verify` | Ed25519 detached binary signatures |
 | `validate transport` | Single primal transport compliance audit |
+| `validate ribocipher` | riboCipher signal standard compliance (Wave 111) |
 | `validate transport-report` | Ecosystem batch audit (--json for CI) |
 | `validate depot` | Binary freshness detection (--json, --source) |
 | `validate composition` | Composition binary presence (tower/nucleus/full/niche) |
@@ -41,11 +44,11 @@ springs = []
 
 | Module | Purpose |
 |--------|---------|
-| `transport` | TransportEndpoint, connect_transport(), TransportStream, PeekedStream |
+| `transport` | TransportEndpoint, connect_transport(), PeekedStream, riboCipher, RiboCipherAcceptLoop |
 | `ipc` | JSON-RPC 2.0 types, IpcClient, IpcError, Capability, HealthProbe |
 | `methods` | Canonical domain.verb method constants (health, lifecycle, ipc, primal, system) |
 | `circuit_breaker` | CircuitBreaker resilience pattern |
-| `env_keys` | Centralized environment variable name constants |
+| `env_keys` | Centralized environment variable + discovery constants |
 | `rpc` | Binary RPC (secondary, high-throughput) |
 | `config` | CommonConfig, ConfigLoader, ConfigWatcher |
 | `health` | HealthStatus, PrimalHealth, HealthReport |

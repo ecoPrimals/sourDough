@@ -9,7 +9,7 @@ authors.workspace = true
 
 [dependencies]
 # Async runtime
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["io-util", "fs", "rt", "rt-multi-thread"] }
 
 # Serialization
 serde = { workspace = true }
@@ -33,13 +33,9 @@ bytes = { workspace = true }
 
 # Error handling
 thiserror = { workspace = true }
-anyhow = { workspace = true }
 
 # Logging
 tracing = { workspace = true }
-
-# Path operations
-camino = { workspace = true }
 
 # Temp directories
 tempfile = { workspace = true }
@@ -51,6 +47,7 @@ chrono = { workspace = true }
 workspace = true
 
 [dev-dependencies]
+anyhow = { workspace = true }
 tempfile = { workspace = true }
 tokio-test = "0.4"
 proptest = { workspace = true }

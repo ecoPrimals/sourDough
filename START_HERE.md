@@ -49,11 +49,11 @@ sourDough/
 │   │   └── tests/                 Integration + e2e tests
 │   ├── sourdough-core/            Core traits + transport + IPC
 │   │   └── src/
-│   │       ├── transport.rs       TransportEndpoint, connect_transport, TransportStream, PeekedStream
-│   │       ├── ipc.rs             JSON-RPC 2.0: IpcClient, JsonRpcRequest/Response, IpcError
+│   │       ├── transport/         TransportEndpoint, PeekedStream, riboCipher, socket
+│   │       ├── ipc/              JSON-RPC 2.0: IpcClient, JsonRpcRequest/Response, IpcError
 │   │       ├── methods.rs         Canonical domain.verb method constants
 │   │       ├── circuit_breaker.rs CircuitBreaker resilience pattern
-│   │       ├── env_keys.rs        Centralized env var name constants
+│   │       ├── env_keys.rs        Centralized env var + discovery constants
 │   │       ├── config.rs          CommonConfig, ConfigLoader, ConfigWatcher
 │   │       ├── health.rs          HealthStatus, PrimalHealth, HealthReport
 │   │       ├── lifecycle.rs       PrimalLifecycle + PrimalState
@@ -128,6 +128,7 @@ sourdough scaffold transport-kit myPrimal
 ```bash
 sourdough validate primal ../myPrimal
 sourdough validate transport ../myPrimal
+sourdough validate ribocipher ../myPrimal       # Wave 111 signal standard
 sourdough validate transport-report --primals-dir ../ --json
 sourdough validate depot primals/ --stale-hours 24
 sourdough validate composition nucleus --primals-dir primals/ --triple-first

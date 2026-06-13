@@ -1,29 +1,31 @@
 # What's Next for sourDough
 
 **Version**: 0.4.0
-**Date**: June 10, 2026
-**Status**: Transport ecosystem complete. Zero P1. Stadial-ready.
+**Date**: June 13, 2026
+**Status**: riboCipher reference implementation complete. Deep debt resolved. Zero P1.
 
 ---
 
-## Shipped (v0.4.0 — June 2026, Transport Ecosystem)
+## Shipped (v0.4.0 — June 2026, Transport Ecosystem + riboCipher)
 
+### Wave 111 (June 13 — riboCipher + Deep Debt)
+- [x] riboCipher reference implementation (detect_signal, RiboCipherAcceptLoop)
+- [x] `sourdough validate ribocipher` — compliance audit subcommand
+- [x] Scaffold templates emit riboCipher-compliant servers
+- [x] Hardcoded names → env-driven constants (MESH_RELAY_HUB, TCP_FALLBACK_PORT)
+- [x] Tokio features trimmed per-crate (minimal compile footprint)
+- [x] Dead deps removed (camino, prod anyhow from genomebin)
+- [x] server.rs decomposed (878L → 3 focused modules)
+- [x] 437 tests, all production files < 700L
+
+### Wave 107 (June 10 — Transport Ecosystem)
 - [x] `sourdough-core::TransportEndpoint` — canonical wire format (uds/tcp/mesh_relay)
 - [x] `sourdough-core::IpcClient` — transport-aware JSON-RPC 2.0 client
 - [x] `sourdough-core::CircuitBreaker` — resilience pattern for IPC
-- [x] `sourdough-core::methods` — canonical `domain.verb` method constants
-- [x] `TransportEndpoint::from_env_or_default()` — canonical injection entry point
-- [x] `sourdough validate transport` — single primal transport compliance audit
-- [x] `sourdough validate transport-report --json` — ecosystem batch audit
-- [x] `sourdough validate depot --json` — binary freshness detection
-- [x] `sourdough scaffold transport-kit` — self-contained transport module for primals
-- [x] `sourdough migrate transport` — migration tool for existing primals
+- [x] `sourdough validate transport` / `transport-report` / `depot` — ecosystem auditing
+- [x] `sourdough scaffold transport-kit` — self-contained transport module
 - [x] Scaffold templates emit transport-injected primals
-- [x] Release CI: aarch64-linux-android target (Pixel 8 proven)
-- [x] `colored` → `owo-colors` (zero-alloc)
-- [x] `HealthProbe.status` evolved to `HealthStatus` enum
-- [x] Depot segfault fix (iterative traversal for musl compatibility)
-- [x] 321 tests, 3 crates, all files < 800L
+- [x] Release CI: aarch64-linux-android (Pixel 8 proven)
 
 ## Shipped (v0.3.1 — May 2026, Neural API)
 
@@ -71,11 +73,13 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 321 | All passing |
+| Tests | 437 | All passing |
 | Clippy | zero warnings | zero |
 | Unsafe | zero (forbid) | zero |
 | C deps | zero | zero |
-| Max file | 785 lines | < 800 |
+| Max file | 669 lines | < 800 |
+| unwrap/expect | zero (prod lib) | zero |
+| Mocks in prod | zero | zero |
 
 ---
 
@@ -94,5 +98,5 @@
 
 ---
 
-**Date**: June 10, 2026
-**Status**: Zero development debt. Transport ecosystem shipped. Waiting on upstream primals (songBird ipc.resolve, biomeOS auto-register) before next milestone.
+**Date**: June 13, 2026
+**Status**: Zero development debt. riboCipher reference implementation shipped. Upstream primals converging on transport standard.

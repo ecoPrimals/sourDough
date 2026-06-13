@@ -15,8 +15,6 @@ const DEFAULT_NAME: &str = "primal";
 const DEFAULT_LOG_LEVEL: &str = "info";
 /// Default data directory.
 const DEFAULT_DATA_DIR: &str = "./data";
-/// Default listen address (all interfaces).
-const DEFAULT_LISTEN_ADDR: &str = "0.0.0.0";
 
 /// Common configuration that all primals share.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -70,7 +68,7 @@ impl Default for CommonConfig {
             instance_id: new_instance_id(),
             log_level: DEFAULT_LOG_LEVEL.to_owned(),
             data_dir: DEFAULT_DATA_DIR.to_owned(),
-            listen_addr: DEFAULT_LISTEN_ADDR.to_owned(),
+            listen_addr: env_keys::DEFAULT_BIND_ADDR.to_owned(),
             listen_port: 0,
             transport_endpoint: None,
             identity_service_endpoint: None,

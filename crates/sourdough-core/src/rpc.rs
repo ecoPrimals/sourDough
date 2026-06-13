@@ -313,7 +313,7 @@ pub mod server {
 
     use crate::transport::TransportEndpoint;
 
-    const DEFAULT_BIND_ADDR: &str = "0.0.0.0";
+    use crate::env_keys;
 
     /// RPC server configuration.
     #[derive(Clone, Debug)]
@@ -327,7 +327,7 @@ pub mod server {
     impl Default for ServerConfig {
         fn default() -> Self {
             Self {
-                bind_addr: DEFAULT_BIND_ADDR.to_owned(),
+                bind_addr: env_keys::DEFAULT_BIND_ADDR.to_owned(),
                 port: 0,
             }
         }
@@ -461,5 +461,42 @@ mod client_server_tests {
         let result = client::PrimalRpcClient::connect("").await;
 
         assert!(result.is_err());
+    }
+
+    mod proptests {
+        use crate::rpc::{RpcRequest, RpcResponse};
+        use bytes::Bytes;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn rpc_request_serde_roundtrip(
+                id in "[a-z0-9]{1,20}",
+                method in "[a-z]{2,10}\\.[a-z]{2,10}",
+                params in proptest::collection::vec(any::<u8>(), 0..256)
+            ) {
+                let req = RpcRequest::new(&id, &method, Bytes::from(params));
+                let json = serde_json::to_string(&req).unwrap();
+                let back: RpcRequest = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(&req.id, &back.id);
+                prop_assert_eq!(&req.method, &back.method);
+                prop_assert_eq!(req.params.as_ref(), back.params.as_ref());
+            }
+
+            #[test]
+            fn rpc_response_serde_roundtrip(
+                id in "[a-z0-9]{1,20}",
+                result_bytes in proptest::collection::vec(any::<u8>(), 0..256)
+            ) {
+                let resp = RpcResponse::success(&id, Bytes::from(result_bytes));
+                let json = serde_json::to_string(&resp).unwrap();
+                let back: RpcResponse = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(&resp.id, &back.id);
+                prop_assert_eq!(
+                    resp.result.as_deref(),
+                    back.result.as_deref()
+                );
+            }
+        }
     }
 }

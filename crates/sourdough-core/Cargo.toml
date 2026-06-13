@@ -9,7 +9,7 @@ authors.workspace = true
 
 [dependencies]
 # Async
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["io-util", "net", "time", "rt"] }
 
 # Serialization
 serde = { workspace = true }
@@ -34,7 +34,7 @@ blake3 = { workspace = true }
 workspace = true
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["test-util", "macros"] }
+tokio = { workspace = true, features = ["io-util", "net", "time", "rt", "rt-multi-thread", "macros", "test-util"] }
 tempfile = { workspace = true }
 proptest = { workspace = true }
 

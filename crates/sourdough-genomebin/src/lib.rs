@@ -24,7 +24,7 @@
 //! ```rust,no_run
 //! use sourdough_genomebin::{GenomeBinBuilder, Platform};
 //!
-//! # async fn example() -> anyhow::Result<()> {
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Detect current platform at runtime (no hardcoding!)
 //! let platform = Platform::detect()?;
 //! println!("Running on: {}", platform);

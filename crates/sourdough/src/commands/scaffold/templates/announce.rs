@@ -158,28 +158,32 @@ fn discover_songbird_socket() -> Option<PathBuf> {{
 ///
 /// Update this list as you add capabilities to your primal.
 /// These are domain names (e.g. "crypto", "storage"), not method names.
+/// See: wateringHole/CAPABILITY_WIRE_STANDARD.md
 pub fn capabilities() -> &'static [&'static str] {{
-    // TODO: Replace with your primal's actual capability domains.
     &[]
 }}
 
 /// Composition tiers this primal participates in.
 ///
 /// Valid values: "tower", "node", "nest", "meta".
+/// See: wateringHole/COMPOSITION_HEALTH_STANDARD.md
 pub fn signal_tiers() -> &'static [&'static str] {{
-    // TODO: Replace with your primal's actual tier membership.
     &[]
 }}
 
 /// Cost hints per capability domain (arbitrary units, lower = cheaper).
+///
+/// Populate with `{{"domain": cost}}` entries for Neural API routing.
+/// See: wateringHole/CAPABILITY_BASED_DISCOVERY_STANDARD.md
 fn cost_hints() -> serde_json::Value {{
-    // TODO: Replace with your primal's actual cost estimates.
     serde_json::json!({{}})
 }}
 
 /// Latency estimates per capability domain (milliseconds).
+///
+/// Populate with `{{"domain": ms}}` entries for Neural API routing.
+/// See: wateringHole/CAPABILITY_BASED_DISCOVERY_STANDARD.md
 fn latency_estimates() -> serde_json::Value {{
-    // TODO: Replace with your primal's actual latency estimates.
     serde_json::json!({{}})
 }}
 "#,

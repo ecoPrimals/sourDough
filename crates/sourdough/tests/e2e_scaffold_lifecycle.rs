@@ -179,8 +179,8 @@ fn verify_v020_artifacts(primal_path: &std::path::Path, core_cargo: &str) {
     let server =
         std::fs::read_to_string(primal_path.join("crates/e2eprimal-server/src/server.rs")).unwrap();
     assert!(
-        server.contains("fill_buf"),
-        "server must implement first-byte peek"
+        server.contains("SIGNAL_CLEAR"),
+        "server must implement riboCipher signal detection"
     );
     assert!(
         server.contains("biomeos"),

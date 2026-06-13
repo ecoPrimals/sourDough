@@ -139,9 +139,9 @@ fn check_biomeos_socket_dir() {
     crate::info("Checking biomeOS socket directory...");
 
     let socket_dir = std::env::var(env_keys::BIOMEOS_SOCKET_DIR).unwrap_or_else(|_| {
-        let runtime_dir =
-            std::env::var(env_keys::XDG_RUNTIME_DIR).unwrap_or_else(|_| "/tmp".to_owned());
-        format!("{runtime_dir}/biomeos")
+        let runtime_dir = std::env::var(env_keys::XDG_RUNTIME_DIR)
+            .unwrap_or_else(|_| env_keys::FALLBACK_RUNTIME_DIR.to_owned());
+        format!("{runtime_dir}/{}", env_keys::SOCKET_DIR_NAME)
     });
 
     let path = std::path::Path::new(&socket_dir);

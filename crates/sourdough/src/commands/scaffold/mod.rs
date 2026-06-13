@@ -218,7 +218,9 @@ fn create_transport_kit(name: &str, output: Option<PathBuf>) -> Result<()> {
         "  {{\"transport\":\"uds\",\"path\":\"/run/user/1000/biomeos/{}.sock\"}}",
         name.to_lowercase()
     );
-    println!("  {{\"transport\":\"tcp\",\"host\":\"127.0.0.1\",\"port\":9100}}");
+    println!(
+        "  {{\"transport\":\"tcp\",\"host\":\"127.0.0.1\",\"port\":0}}  (port 0 = OS-assigned)"
+    );
     println!("  {{\"transport\":\"mesh_relay\",\"peer_id\":\"gate\",\"capability\":\"cap\"}}");
 
     Ok(())

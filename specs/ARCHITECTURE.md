@@ -1,7 +1,7 @@
 # sourDough Architecture
 
-**Version**: 0.3.0
-**Date**: May 14, 2026
+**Version**: 0.4.0
+**Date**: June 13, 2026
 **Type**: Reference Implementation (Nascent Budding Primal)
 
 ---
@@ -72,7 +72,7 @@ sourDough/
   archive/                              Fossil record
 ```
 
-Total: ~9,600 lines of Rust across 31 files. Largest file: `ipc.rs` (637 lines).
+Total: ~12,000 lines of Rust across 52 files. Largest production file: < 700 lines.
 
 ---
 
@@ -156,12 +156,22 @@ pub trait PrimalConfig {
 
 ### JSON-RPC 2.0 (Primary)
 
-`sourdough-core/src/ipc.rs` implements the primary IPC protocol:
+`sourdough-core/src/ipc/` implements the primary IPC protocol:
 
 - Newline-delimited JSON-RPC 2.0 over raw streams (Unix sockets, TCP)
 - Semantic method naming: `domain.verb` (e.g., `lifecycle.start`, `health.check`)
 - Request/response/notification/batch support
 - Circuit breaker pattern for resilience
+- Mesh relay routing via configurable hub (env `MESH_RELAY_HUB`)
+
+### Transport Layer
+
+`sourdough-core/src/transport/` provides protocol detection and routing:
+
+- **riboCipher** (Wave 111): signal-first detection (`0xEC` clear, `0xED` mito, `0xEE` nuclear)
+- **PeekedStream**: single-byte peek with replay for legacy JSON connections
+- **RiboCipherAcceptLoop**: reference server implementation with `UnsignalledPolicy`
+- Legacy `{` detection deprecated — emits tracing warnings
 
 ### Binary RPC (Secondary)
 
@@ -197,6 +207,7 @@ sourdough
     primal <dir>
     unibin <dir>
     ecobin <dir|binary>
+    ribocipher <dir> [--json]
     composition <name> [--primals-dir <dir>] [--triple-first]
   layout <dir>
   genomebin
@@ -231,10 +242,10 @@ All dependencies are Pure Rust (ecoBin compliant):
 
 ```toml
 [workspace.dependencies]
-tokio = { version = "1.40", features = ["full"] }
+tokio = { version = "1.40", default-features = false }  # per-crate feature selection
 serde = { version = "1.0", features = ["derive"] }
 bytes = { version = "1.11", features = ["serde"] }
-blake3 = "1.5"
+blake3 = { version = "1.5", default-features = false, features = ["pure"] }
 thiserror = "2.0"
 ```
 
@@ -293,6 +304,17 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 - `sourdough validate composition` (atomic + niche compositions)
 - `sourdough validate ecobin <binary>` (binary-level checks)
 
+### Phase 5.5: riboCipher + Deep Debt -- COMPLETE
+
+- riboCipher reference implementation (`transport/ribocipher.rs`, `ribocipher_server.rs`)
+- `sourdough validate ribocipher` subcommand — compliance auditing
+- Scaffold templates emit riboCipher-compliant server code
+- Hardcoded ecosystem names → env-driven capability constants
+- Tokio features trimmed per-crate for compile time
+- Dead dependencies removed (`camino`, prod `anyhow` from genomebin)
+- `server.rs` template decomposed (878L → 372/185/322)
+- 437 tests, zero warnings, zero unsafe
+
 ### Phase 6: Harvest + Release -- PLANNED
 
 - `sourdough harvest` — cross-compile and release to GitHub
@@ -301,6 +323,6 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 
 ---
 
-**Date**: May 14, 2026
-**Version**: 0.3.0
+**Date**: June 13, 2026
+**Version**: 0.4.0
 **Status**: Reference Implementation

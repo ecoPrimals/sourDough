@@ -20,7 +20,7 @@ use tracing::{debug, info};
 /// ```rust,no_run
 /// use sourdough_genomebin::GenomeBinBuilder;
 ///
-/// # async fn example() -> anyhow::Result<()> {
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let builder = GenomeBinBuilder::new("myprimal", "1.0.0")
 ///     .ecobins_dir("./ecobins")
 ///     .output("myprimal-1.0.0.genome")

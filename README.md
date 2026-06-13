@@ -21,8 +21,8 @@ sourDough also serves as:
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + CircuitBreaker + PeekedStream |
-| `sourdough` | UniBin CLI: scaffold, validate, sign, verify, layout, migrate, doctor |
+| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker |
+| `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, depot, composition), sign, migrate, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
 ## Quick Start
@@ -37,6 +37,7 @@ sourdough scaffold transport-kit myPrimal
 # Validate primal compliance
 sourdough validate primal ../myPrimal
 sourdough validate transport ../myPrimal
+sourdough validate ribocipher ../myPrimal
 
 # Ecosystem-wide transport audit (JSON output for CI)
 sourdough validate transport-report --primals-dir ../
@@ -59,11 +60,13 @@ cargo build --release
 
 | Metric | Value |
 |--------|-------|
-| Tests | 321 passing (zero ignored) |
+| Tests | 437 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
 | C deps | zero (Pure Rust entire dependency tree) |
-| Max file | < 800 lines (production code) |
+| Max file | < 700 lines (production code) |
+| unwrap/expect | zero in library production code |
+| Mocks | zero in production (test-only) |
 
 ## Standards Compliance
 
@@ -71,8 +74,11 @@ cargo build --release
 - **ecoBin**: Pure Rust, zero C dependencies, static linking, cross-compilation (4 targets)
 - **genomeBin**: Pure Rust platform detection, metadata, archive operations
 - **JSON-RPC 2.0**: primary IPC with semantic `domain.verb` method naming
+- **riboCipher**: transport signal standard (Wave 111) — signal-first detection, legacy deprecation
 - **TransportEndpoint**: canonical wire format (serde tagged: uds/tcp/mesh_relay)
+- **MethodGate (JH-0)**: pre-dispatch capability gate on all scaffolded primals
 - **Primal sovereignty**: no runtime dependency on sourdough-core; wire format is the contract
+- **Capability-based discovery**: env-driven constants, no hardcoded primal names
 - **scyBorg Provenance Trio**: AGPL-3.0-or-later (software), ORC (research/data), CC-BY-SA-4.0 (docs)
 
 ## Project Layout

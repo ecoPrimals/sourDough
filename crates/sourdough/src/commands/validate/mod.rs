@@ -2,6 +2,7 @@
 
 mod composition;
 mod depot;
+pub(crate) mod ribocipher;
 mod transport_report;
 
 use anyhow::{Context, Result};
@@ -76,6 +77,17 @@ pub(crate) enum ValidateCommand {
         json: bool,
     },
 
+    /// Validate riboCipher transport signal compliance (Wave 111)
+    #[command(name = "ribocipher")]
+    RiboCipher {
+        /// Path to the primal directory to audit
+        path: PathBuf,
+
+        /// Output as JSON (machine-readable)
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Run transport compliance audit across all primals in a directory
     #[command(name = "transport-report")]
     TransportReport {
@@ -118,6 +130,7 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             manifest.as_deref(),
         ),
         ValidateCommand::Transport { path } => validate_transport(&path),
+        ValidateCommand::RiboCipher { path, json } => ribocipher::run(&path, json),
         ValidateCommand::Depot {
             depot_dir,
             source,

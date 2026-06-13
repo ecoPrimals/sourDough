@@ -1,7 +1,7 @@
 # sourDough Specification
 
-**Version**: 0.3.0
-**Date**: May 14, 2026
+**Version**: 0.4.0
+**Date**: June 13, 2026
 **Status**: Reference Implementation
 **Role**: Nascent Primal (Budding Primal) + Standardization Framework
 
@@ -29,8 +29,10 @@ sourDough itself is a primal demonstrating ecoPrimals standards:
 - UniBin architecture (single binary, multiple subcommands)
 - ecoBin compliance (Pure Rust, zero C dependencies, cross-compilation)
 - JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
+- riboCipher transport signal standard (Wave 111) — reference implementation
 - Binary RPC secondary high-throughput IPC (transport-agnostic)
-- Capability-based discovery, zero hardcoding
+- MethodGate (JH-0) pre-dispatch capability gate
+- Capability-based discovery, zero hardcoding, env-driven constants
 - `#![forbid(unsafe_code)]` on all crates
 
 ### 3. Standardization Framework

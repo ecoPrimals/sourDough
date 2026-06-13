@@ -20,7 +20,7 @@ clap = { version = "4.5", features = ["derive", "cargo", "wrap_help"] }
 owo-colors = "4"
 
 # Async runtime
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "fs"] }
 
 # Serialization
 serde = { workspace = true }

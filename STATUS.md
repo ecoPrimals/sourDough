@@ -6,8 +6,8 @@
 
 ## Current State
 
-- `sourdough-core`: Core traits library + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + CircuitBreaker + PeekedStream + zero-copy RPC
-- `sourdough`: CLI binary (scaffold, validate, sign, verify, layout, migrate, doctor)
+- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 
 ## Compliance
@@ -19,15 +19,19 @@
 - [x] `cargo doc` zero warnings, all doctests compile (0 ignored)
 - [x] Zero C application dependencies (Pure Rust entire dependency tree)
 - [x] `cargo deny check` passing (ecoBin C-sys ban, explicit `ring` ban, supply chain audit)
-- [x] Zero hardcoded primal names in production code (Discovery grade A)
+- [x] Zero hardcoded primal names in production code — env-driven discovery constants
 - [x] JSON-RPC 2.0 primary IPC with semantic `domain.verb` method naming
+- [x] riboCipher transport signal standard (Wave 111) — reference implementation
+- [x] MethodGate (JH-0) pre-dispatch capability gate on scaffolded primals
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 321 tests, zero ignored
+- [x] 437 tests, zero ignored
+- [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
-- [x] All production files under 800 lines
+- [x] All production files under 700 lines
+- [x] Per-crate tokio feature selection (minimal compile footprint)
 - [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android
 - [x] Cross-arch proven (Pixel 8 / GrapheneOS deployment validated)
 
@@ -35,33 +39,34 @@
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 161 | 781 (ipc.rs) |
-| sourdough (CLI) | 60 (26 unit + 34 integration) | 785 (templates/server.rs) |
-| sourdough-genomebin | 87 | 553 (validator.rs) |
-| doctests | 11 | — |
+| sourdough-core | 239 | 502 (rpc.rs) |
+| sourdough (CLI) | 36 (2 e2e + 34 integration) | 669 (validate/mod.rs) |
+| sourdough-genomebin | 63 + 87 | 553 (validator.rs) |
+| doctests | 12 | — |
 
-## v0.4.0 (June 2026 — Transport Ecosystem)
+## v0.4.0 (June 2026 — Transport Ecosystem + riboCipher)
 
-- `sourdough-core::TransportEndpoint` — wire-compatible with songbird_types (serde tagged: uds/tcp/mesh_relay)
-- `sourdough-core::connect_transport()` — transport-agnostic stream connection
-- `sourdough-core::IpcClient` — transport-aware JSON-RPC 2.0 client with timeout + liveness + resolve + announce
-- `sourdough-core::TransportStream` — unified async read/write across UDS/TCP
+### Wave 111 (June 13, 2026 — riboCipher + Deep Debt)
+- riboCipher reference implementation (detect_signal, send_clear_signal, RiboCipherAcceptLoop)
+- `sourdough validate ribocipher` — compliance audit subcommand
+- Scaffold templates emit riboCipher-compliant servers
+- Hardcoded names → env-driven constants (MESH_RELAY_HUB, TCP_FALLBACK_PORT, SOCKET_DIR_NAME)
+- Tokio features trimmed per-crate (no more `features = ["full"]`)
+- Dead deps removed (camino, prod anyhow from genomebin)
+- server.rs template decomposed (878L → 372/185/322)
+- Comprehensive tests for peek.rs, endpoint.rs, ipc/client.rs
+- 437 tests (up from 322 at Wave 107)
+
+### Wave 107 (June 10, 2026 — Transport Ecosystem)
+- `sourdough-core::TransportEndpoint` — wire-compatible with songbird_types
+- `sourdough-core::IpcClient` — JSON-RPC 2.0 client with timeout + liveness + resolve + announce
 - `sourdough-core::CircuitBreaker` — resilience pattern for IPC
-- `sourdough-core::methods` module — canonical `domain.verb` method constants
-- `sourdough-core::env_keys` — centralized env var name constants
-- `TransportEndpoint::from_env_or_default()` — canonical entry point for transport injection
-- `sourdough validate transport` — single primal transport compliance audit
-- `sourdough validate transport-report` — ecosystem batch audit (--json for CI)
-- `sourdough validate depot` — binary freshness detection (--json, --source, --stale-hours)
-- `sourdough scaffold transport-kit` — self-contained transport module for other primals
-- `sourdough migrate transport` — migration tool for existing primals
-- Scaffold templates emit transport-injected primals (TRANSPORT_ENDPOINT env + CLI)
-- Scaffold emits `ipc.register` call to songbird at startup
-- Release CI includes `aarch64-linux-android` target
-- `colored` dep → `owo-colors` (zero-alloc, zero transitive deps)
-- `HealthProbe.status` evolved from String to `HealthStatus` enum
-- `Timestamp::Display` proper ISO 8601 via chrono
-- 321 tests (up from 281)
+- `sourdough-core::env_keys` — centralized env var + discovery constants
+- `sourdough validate transport` / `transport-report` / `depot` — ecosystem auditing
+- `sourdough scaffold transport-kit` — self-contained transport module
+- `sourdough migrate transport` — migration tool
+- Scaffold emits transport-injected, announcing primals
+- Release CI includes `aarch64-linux-android`
 
 ## v0.3.1 (May 2026 — Neural API)
 

@@ -87,19 +87,26 @@ pub struct Timestamp {
 impl Timestamp {
     /// Create a timestamp for the current moment.
     ///
-    /// # Panics
-    ///
-    /// Panics if system time is before Unix epoch (1970-01-01). This should never
-    /// happen on any modern system.
+    /// Falls back to epoch (0) if the system clock is before Unix epoch,
+    /// which indicates a catastrophically misconfigured clock. This avoids
+    /// panicking in production while still providing a usable (if wrong) value.
     #[must_use]
     pub fn now() -> Self {
+        Self::try_now().unwrap_or(Self { secs: 0, nanos: 0 })
+    }
+
+    /// Try to create a timestamp for the current moment.
+    ///
+    /// Returns `None` if the system clock reports a time before Unix epoch.
+    #[must_use]
+    pub fn try_now() -> Option<Self> {
         let duration = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("time went backwards");
-        Self {
+            .ok()?;
+        Some(Self {
             secs: duration.as_secs(),
             nanos: duration.subsec_nanos(),
-        }
+        })
     }
 
     /// Create a timestamp from seconds since epoch.

@@ -297,4 +297,99 @@ mod tests {
     fn source_reference_time_none_for_missing_dir() {
         assert!(source_reference_time(Some(Path::new("/nonexistent"))).is_none());
     }
+
+    #[test]
+    fn source_reference_time_finds_latest_file() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.rs"), "content").unwrap();
+        std::thread::sleep(Duration::from_millis(10));
+        std::fs::write(dir.path().join("b.rs"), "newer").unwrap();
+        let t = source_reference_time(Some(dir.path()));
+        assert!(t.is_some());
+    }
+
+    #[test]
+    fn source_reference_time_none_for_empty_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(source_reference_time(Some(dir.path())).is_none());
+    }
+
+    #[test]
+    fn run_nonexistent_depot_fails() {
+        let result = run(Path::new("/nonexistent/depot"), None, 48, false);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn run_empty_depot_succeeds() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = run(dir.path(), None, 48, false);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn run_json_output_succeeds() {
+        let dir = tempfile::tempdir().unwrap();
+        let triple = dir.path().join("x86_64-unknown-linux-musl");
+        std::fs::create_dir_all(&triple).unwrap();
+        std::fs::write(triple.join("beardog"), "binary").unwrap();
+        let result = run(dir.path(), None, 48, true);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn run_with_source_dir() {
+        let depot = tempfile::tempdir().unwrap();
+        let source = tempfile::tempdir().unwrap();
+        let triple = depot.path().join("x86_64-unknown-linux-musl");
+        std::fs::create_dir_all(&triple).unwrap();
+        std::fs::write(triple.join("beardog"), "binary").unwrap();
+        std::fs::write(source.path().join("main.rs"), "fn main() {}").unwrap();
+        let result = run(depot.path(), Some(source.path()), 48, false);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn flat_layout_detected() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("beardog"), "binary").unwrap();
+        let entries = collect_depot_entries(dir.path()).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].triple, "flat");
+    }
+
+    #[test]
+    fn hidden_files_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let triple = dir.path().join("x86_64-unknown-linux-musl");
+        std::fs::create_dir_all(&triple).unwrap();
+        std::fs::write(triple.join(".hidden"), "binary").unwrap();
+        std::fs::write(triple.join("visible"), "binary").unwrap();
+        let entries = collect_depot_entries(dir.path()).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].primal, "visible");
+    }
+
+    #[test]
+    fn files_with_extensions_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let triple = dir.path().join("x86_64-unknown-linux-musl");
+        std::fs::create_dir_all(&triple).unwrap();
+        std::fs::write(triple.join("beardog.txt"), "not a binary").unwrap();
+        std::fs::write(triple.join("beardog"), "binary").unwrap();
+        let entries = collect_depot_entries(dir.path()).unwrap();
+        assert_eq!(entries.len(), 1);
+    }
+
+    #[test]
+    fn print_json_produces_valid_output() {
+        let entries = vec![DepotEntry {
+            primal: "test".to_owned(),
+            triple: "x86_64-unknown-linux-musl".to_owned(),
+            modified: SystemTime::now(),
+            size_bytes: 1024,
+            stale: false,
+        }];
+        print_json(&entries);
+    }
 }

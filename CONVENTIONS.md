@@ -84,7 +84,8 @@ info!(user = %user_id, action = "login", "user logged in");
 
 - Newline-delimited JSON-RPC 2.0 over Unix domain sockets
 - Semantic `domain.verb` method naming (e.g., `health.check`, `capabilities.list`)
-- First-byte peek on socket accept: `{` → JSON-RPC, else BTSP binary framing
+- **riboCipher signal detection** (Wave 111): `0xEC` clear, `0xED` mito, `0xEE` nuclear
+- Legacy `{` first-byte peek deprecated — unsignalled connections emit warnings
 - Socket path: `$XDG_RUNTIME_DIR/biomeos/{primal}-{family_id}.sock`
 
 ### Capability Wire Standard (L2+ required)
@@ -263,7 +264,7 @@ Define in workspace `Cargo.toml`:
 
 ```toml
 [workspace.dependencies]
-tokio = { version = "1.40", features = ["full"] }
+tokio = { version = "1.40", default-features = false }  # per-crate feature selection
 serde = { version = "1.0", features = ["derive"] }
 # ...
 ```

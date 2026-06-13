@@ -319,3 +319,285 @@ fn format_report(audits: &[PrimalAudit]) -> String {
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn setup_primal_dir(dir: &Path, name: &str, src_content: &str) -> std::path::PathBuf {
+        let primal = dir.join(name);
+        let src = primal
+            .join("crates")
+            .join(format!("{name}-core"))
+            .join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(primal.join("Cargo.toml"), "[package]\nname = \"test\"\n").unwrap();
+        fs::write(src.join("lib.rs"), src_content).unwrap();
+        primal
+    }
+
+    #[test]
+    fn empty_primals_dir_produces_empty_report() {
+        let dir = TempDir::new().unwrap();
+        let result = run(dir.path(), None, false, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn non_existent_dir_returns_error() {
+        let result = run(Path::new("/nonexistent/path/xyz"), None, false, &[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn skips_directories_without_cargo_toml() {
+        let dir = TempDir::new().unwrap();
+        let sub = dir.path().join("not-a-primal");
+        fs::create_dir_all(&sub).unwrap();
+        fs::write(sub.join("random.txt"), "not a primal").unwrap();
+        let result = run(dir.path(), None, false, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn exempt_primal_is_skipped() {
+        let dir = TempDir::new().unwrap();
+        setup_primal_dir(dir.path(), "myprimal", "fn main() {}");
+        let exempt = vec!["myprimal".to_string()];
+        let result = run(dir.path(), None, true, &exempt);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn compliant_primal_detected() {
+        let dir = TempDir::new().unwrap();
+        let content = r#"
+            use crate::transport::TransportEndpoint;
+            fn connect() { connect_transport(&endpoint); }
+            const EP: &str = "TRANSPORT_ENDPOINT";
+        "#;
+        setup_primal_dir(dir.path(), "goodprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn noncompliant_primal_detected_self_bind() {
+        let dir = TempDir::new().unwrap();
+        let content = r#"
+            use tokio::net::TcpListener;
+            async fn serve() {
+                let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
+            }
+        "#;
+        setup_primal_dir(dir.path(), "badprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn json_output_is_valid_json() {
+        let dir = TempDir::new().unwrap();
+        let content = "fn main() { let _ = TransportEndpoint::default(); }";
+        setup_primal_dir(dir.path(), "jsonprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn report_written_to_file() {
+        let dir = TempDir::new().unwrap();
+        let content = "fn main() {}";
+        setup_primal_dir(dir.path(), "reportprimal", content);
+        let output_path = dir.path().join("report.md");
+        let result = run(dir.path(), Some(&output_path), false, &[]);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+        let report = fs::read_to_string(&output_path).unwrap();
+        assert!(report.contains("Transport Compliance Report"));
+    }
+
+    #[test]
+    fn json_report_written_to_file() {
+        let dir = TempDir::new().unwrap();
+        let content = "fn main() {}";
+        setup_primal_dir(dir.path(), "jsonfile", content);
+        let output_path = dir.path().join("report.json");
+        let result = run(dir.path(), Some(&output_path), true, &[]);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+        let json_str = fs::read_to_string(&output_path).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+        assert!(parsed.is_array());
+    }
+
+    #[test]
+    fn sourdough_dep_detected() {
+        let dir = TempDir::new().unwrap();
+        let primal = dir.path().join("depprimal");
+        let src = primal.join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(
+            primal.join("Cargo.toml"),
+            "[package]\nname = \"depprimal\"\n\n[dependencies]\nsourdough-core = \"0.4\"\n",
+        )
+        .unwrap();
+        fs::write(src.join("lib.rs"), "fn main() {}").unwrap();
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn platform_issue_detected_for_unguarded_unix() {
+        let dir = TempDir::new().unwrap();
+        let content = r#"
+            use tokio::net::UnixStream;
+            async fn connect() {
+                UnixStream::connect("/tmp/test.sock").await.unwrap();
+            }
+        "#;
+        setup_primal_dir(dir.path(), "unixprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn guarded_unix_no_platform_issue() {
+        let dir = TempDir::new().unwrap();
+        let content = "
+            #[cfg(unix)]
+            use tokio::net::UnixStream;
+            async fn connect() { }
+        ";
+        setup_primal_dir(dir.path(), "guardedprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_code_not_flagged_for_self_bind() {
+        let dir = TempDir::new().unwrap();
+        let content = r#"
+            use tokio::net::TcpListener;
+            #[cfg(test)]
+            mod tests {
+                async fn test_serve() {
+                    TcpListener::bind("127.0.0.1:0").await.unwrap();
+                }
+            }
+        "#;
+        setup_primal_dir(dir.path(), "testprimal", content);
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn multiple_primals_sorted_alphabetically() {
+        let dir = TempDir::new().unwrap();
+        setup_primal_dir(dir.path(), "zulu", "fn main() {}");
+        setup_primal_dir(dir.path(), "alpha", "fn main() {}");
+        setup_primal_dir(dir.path(), "mike", "fn main() {}");
+        let result = run(dir.path(), None, true, &[]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn audit_status_display() {
+        assert_eq!(format!("{}", AuditStatus::Compliant), "✓ Compliant");
+        assert_eq!(format!("{}", AuditStatus::Warnings), "⚠ Warnings");
+        assert_eq!(format!("{}", AuditStatus::NonCompliant), "✗ Non-compliant");
+        assert_eq!(format!("{}", AuditStatus::Skipped), "— Skipped");
+    }
+
+    #[test]
+    fn format_json_produces_valid_array() {
+        let audits = vec![
+            PrimalAudit {
+                name: "test".to_owned(),
+                self_bind_count: 2,
+                injection_count: 1,
+                platform_issues: 0,
+                has_sourdough_dep: false,
+                status: AuditStatus::NonCompliant,
+            },
+            PrimalAudit {
+                name: "good".to_owned(),
+                self_bind_count: 0,
+                injection_count: 3,
+                platform_issues: 0,
+                has_sourdough_dep: false,
+                status: AuditStatus::Compliant,
+            },
+        ];
+        let json_str = format_json(&audits);
+        let parsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(parsed.as_array().unwrap().len(), 2);
+        assert_eq!(parsed[0]["primal"], "test");
+        assert_eq!(parsed[0]["status"], "non_compliant");
+        assert_eq!(parsed[1]["status"], "compliant");
+    }
+
+    #[test]
+    fn format_report_includes_summary() {
+        let audits = vec![
+            PrimalAudit {
+                name: "alpha".to_owned(),
+                self_bind_count: 0,
+                injection_count: 2,
+                platform_issues: 0,
+                has_sourdough_dep: false,
+                status: AuditStatus::Compliant,
+            },
+            PrimalAudit {
+                name: "beta".to_owned(),
+                self_bind_count: 1,
+                injection_count: 0,
+                platform_issues: 1,
+                has_sourdough_dep: true,
+                status: AuditStatus::NonCompliant,
+            },
+        ];
+        let report = format_report(&audits);
+        assert!(report.contains("Transport Compliance Report"));
+        assert!(report.contains("alpha"));
+        assert!(report.contains("beta"));
+        assert!(report.contains("1 compliant"));
+        assert!(report.contains("1 non-compliant"));
+        assert!(report.contains("sourdough-core dependency violation"));
+        assert!(report.contains("beta"));
+    }
+
+    #[test]
+    fn detect_sourdough_dep_in_workspace_crate() {
+        let dir = TempDir::new().unwrap();
+        let primal = dir.path().join("deptest");
+        let crate_dir = primal.join("crates").join("deptest-core");
+        fs::create_dir_all(&crate_dir).unwrap();
+        fs::write(
+            primal.join("Cargo.toml"),
+            "[workspace]\nmembers = [\"crates/deptest-core\"]\n",
+        )
+        .unwrap();
+        fs::write(
+            crate_dir.join("Cargo.toml"),
+            "[dependencies]\nsourdough-core = { path = \"../../sourdough-core\" }\n",
+        )
+        .unwrap();
+        assert!(detect_sourdough_dep(&primal));
+    }
+
+    #[test]
+    fn detect_no_sourdough_dep() {
+        let dir = TempDir::new().unwrap();
+        let primal = dir.path().join("clean");
+        fs::create_dir_all(&primal).unwrap();
+        fs::write(
+            primal.join("Cargo.toml"),
+            "[package]\nname = \"clean\"\n\n[dependencies]\ntokio = \"1\"\n",
+        )
+        .unwrap();
+        assert!(!detect_sourdough_dep(&primal));
+    }
+}
