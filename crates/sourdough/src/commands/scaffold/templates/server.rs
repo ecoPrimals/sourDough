@@ -118,7 +118,7 @@ pub(in crate::commands::scaffold) fn server_rs(name: &str) -> String {
 use anyhow::Result;
 use serde::{{Deserialize, Serialize}};
 use tokio::io::{{AsyncBufReadExt, AsyncWriteExt, BufReader}};
-use tracing::{{info, warn}};
+use tracing::{{error, info, warn}};
 
 /// Structured transport endpoint — wire-compatible with songbird_types.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -293,12 +293,12 @@ async fn handle_connection<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unp
             handle_jsonrpc(BufReader::new(stream), primal, gate).await;
         }}
         b'{{' => {{
-            // DEPRECATED: unsignalled legacy JSON-RPC (Wave 111-112 deprecation period)
-            warn!("DEPRECATED: unsignalled connection — prepend [0xEC, 0x01] for riboCipher");
+            // DEPRECATED: unsignalled legacy JSON-RPC (Wave 112 — ERROR level, Wave 113 rejects)
+            error!("DEPRECATED: unsignalled connection — prepend [0xEC, 0x01] for riboCipher");
             handle_jsonrpc_legacy(stream, primal, gate, b'{{').await;
         }}
         other => {{
-            warn!("DEPRECATED: unsignalled connection (first byte 0x{{other:02X}}) — not yet handled");
+            error!("DEPRECATED: unsignalled connection (first byte 0x{{other:02X}}) — not yet handled");
         }}
     }}
 }}

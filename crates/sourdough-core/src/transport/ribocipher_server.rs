@@ -50,14 +50,14 @@ use tokio::io::AsyncRead;
 /// Instantiate one per listener, call `detect()` for each connection.
 pub struct RiboCipherAcceptLoop {
     primal_name: &'static str,
-    /// Wave 111-112: warn on legacy. Wave 113+: reject.
+    /// Wave 112: error on legacy. Wave 113+: reject.
     unsignalled_policy: UnsignalledPolicy,
 }
 
 /// Policy for handling connections without a riboCipher signal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum UnsignalledPolicy {
-    /// Log at WARN and fall through to legacy routing (Wave 111-112).
+    /// Log at ERROR and fall through to legacy routing (Wave 112).
     Warn,
     /// Return an error, reject the connection (Wave 113+).
     Reject,

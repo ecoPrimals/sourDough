@@ -52,14 +52,19 @@ const LEGACY_PEEK_PATTERNS: &[(&str, &str)] = &[
     ("Protocol::JsonRpc", "legacy JSON-RPC peek"),
 ];
 
-/// Patterns that indicate proper deprecation warnings on legacy paths.
+/// Patterns that indicate proper deprecation logging on legacy paths.
+///
+/// Wave 112 escalates from WARN to ERROR. Both levels are compliant.
 const DEPRECATION_WARN_PATTERNS: &[(&str, &str)] = &[
     ("DEPRECATED", "deprecation label"),
     ("unsignalled", "unsignalled connection warning"),
     ("legacy", "legacy path identification"),
     ("warn!", "tracing warn macro"),
     ("tracing::warn", "explicit tracing warn"),
+    ("error!", "tracing error macro (Wave 112+)"),
+    ("tracing::error", "explicit tracing error (Wave 112+)"),
     ("log::warn", "log crate warn"),
+    ("log::error", "log crate error"),
 ];
 
 /// Compliance level for a primal's riboCipher implementation.
@@ -201,10 +206,12 @@ fn audit_primal(path: &Path, primal_name: &str) -> Result<AuditResult> {
                 .any(|(p, _)| content.contains(p));
             if has_warn {
                 legacy_warns = true;
-                notes.push(format!("{rel_path}: legacy fallback with WARN (compliant)"));
+                notes.push(format!(
+                    "{rel_path}: legacy fallback with deprecation log (compliant)"
+                ));
             } else {
                 issues.push(format!(
-                    "{rel_path}: legacy peek pattern WITHOUT deprecation warning"
+                    "{rel_path}: legacy peek pattern WITHOUT deprecation log (WARN or ERROR required)"
                 ));
             }
         }
@@ -442,11 +449,11 @@ async fn handle_connection(mut stream: TcpStream) {
         0xED => { /* mito signal */ }
         0xEE => { /* nuclear signal */ }
         b'{' => {
-            // DEPRECATED: unsignalled legacy JSON-RPC
-            tracing::warn!("unsignalled connection - legacy peek");
+            // DEPRECATED: unsignalled legacy JSON-RPC (Wave 112 — ERROR)
+            tracing::error!("unsignalled connection - legacy peek");
         }
         _ => {
-            tracing::warn!("DEPRECATED: unsignalled binary");
+            tracing::error!("DEPRECATED: unsignalled binary");
         }
     }
 }
@@ -561,7 +568,7 @@ async fn connect(s: &mut S) {
             result
                 .issues
                 .iter()
-                .any(|i| i.contains("WITHOUT deprecation warning"))
+                .any(|i| i.contains("WITHOUT deprecation log"))
         );
     }
 
