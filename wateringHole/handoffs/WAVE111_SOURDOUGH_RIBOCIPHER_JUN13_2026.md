@@ -114,4 +114,4 @@ sourDough now implements the full RIBOCIPHER_TRANSPORT_SIGNAL_STANDARD:
 
 - v0.5.0 — Harvest + Package (pending upstream primal transport convergence)
 - Phase 6: `sourdough harvest`, `sourdough package`, live composition probes
-- Forgejo parity: `git.primals.eco` 500 error on push (infrastructure, not code)
+- ~~Forgejo parity: `git.primals.eco` 500 error on push~~ — RESOLVED Jun 14 (repo-sync on VPS)
