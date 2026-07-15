@@ -84,8 +84,8 @@ info!(user = %user_id, action = "login", "user logged in");
 
 - Newline-delimited JSON-RPC 2.0 over Unix domain sockets
 - Semantic `domain.verb` method naming (e.g., `health.check`, `capabilities.list`)
-- **riboCipher signal detection** (Wave 111): `0xEC` clear, `0xED` mito, `0xEE` nuclear
-- Legacy `{` first-byte peek deprecated — unsignalled connections emit warnings
+- **riboCipher signal detection** (Wave 111+): `0xEC` clear, `0xED` mito, `0xEE` nuclear
+- Legacy `{` first-byte peek deprecated — unsignalled connections emit ERROR (Wave 112+)
 - Socket path: `$XDG_RUNTIME_DIR/biomeos/{primal}-{family_id}.sock`
 
 ### Capability Wire Standard (L2+ required)
@@ -304,9 +304,10 @@ All primals should use:
 
 ### Unsafe Code
 
-- `#![forbid(unsafe_code)]` enforced via `[workspace.lints]`
+- `#![forbid(unsafe_code)]` on all crate roots (compiler-enforced)
 - No `unsafe` blocks permitted in any crate
-- Platform-specific behavior via runtime detection (no `#[cfg]` gates)
+- Platform-specific behavior via `#[cfg(unix)]` / `#[cfg(not(unix))]` guards
+- Cross-architecture parity: `cargo check --target x86_64-pc-windows-gnu` must pass
 
 ---
 

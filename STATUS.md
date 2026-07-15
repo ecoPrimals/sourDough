@@ -26,25 +26,41 @@
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 437 tests, zero ignored
+- [x] 487 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
-- [x] All production files under 700 lines
+- [x] All production files under 608 lines
+- [x] `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced)
 - [x] Per-crate tokio feature selection (minimal compile footprint)
 - [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android
 - [x] Cross-arch proven (Pixel 8 / GrapheneOS deployment validated)
+- [x] Windows cross-check passing (`cargo check --target x86_64-pc-windows-gnu`)
 
 ## Crate Health
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 239 | 502 (rpc.rs) |
-| sourdough (CLI) | 36 (2 e2e + 34 integration) | 669 (validate/mod.rs) |
-| sourdough-genomebin | 63 + 87 | 553 (validator.rs) |
+| sourdough-core | 277 | 502 (rpc.rs) |
+| sourdough (CLI) | 36 (2 e2e + 34 integration) | 608 (ribocipher.rs) |
+| sourdough-genomebin | 75 + 87 | 553 (validator.rs) |
 | doctests | 12 | — |
 
-## v0.4.0 (June 2026 — Transport Ecosystem + riboCipher)
+## v0.4.0 (June–July 2026 — Transport Ecosystem + riboCipher + Cross-Arch)
+
+### Wave 141a (July 15, 2026 — Cross-Architecture Parity + Deep Debt)
+- `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced safety)
+- Windows cross-check passing (`cargo check --target x86_64-pc-windows-gnu`)
+- `is_likely_binary` + `is_triple` platform-guarded for non-Unix targets
+- Smart refactoring: validate/mod.rs (669L → 400L) → ecobin.rs + transport_compliance.rs
+- Comprehensive test coverage for ipc/protocol.rs, transport/stream.rs, ipc/error.rs, ipc/capability.rs
+- 487 tests (up from 437 at Wave 111)
+- All production files under 608 lines
+
+### Wave 112 (June 14, 2026 — riboCipher Deprecation Escalation)
+- riboCipher WARN→ERROR escalation (Wave 112 policy)
+- Updated validate ribocipher to accept ERROR-level deprecation logs
+- Forgejo parity restored
 
 ### Wave 111 (June 13, 2026 — riboCipher + Deep Debt)
 - riboCipher reference implementation (detect_signal, send_clear_signal, RiboCipherAcceptLoop)

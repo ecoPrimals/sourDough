@@ -1,7 +1,7 @@
 # sourDough Roadmap
 
 **Version**: 0.4.0
-**Date**: June 10, 2026
+**Date**: July 15, 2026
 **Vision**: The nascent budding primal for ecoPrimals
 
 ---
@@ -17,7 +17,9 @@
 - [x] sourdough-genomebin Pure Rust library: platform detection, metadata, archive, validation, Ed25519 signing
 - [x] Validation tools: primal, unibin, ecobin (project + binary), composition
 - [x] Pure Rust: zero C dependencies (blake3 `pure` feature)
-- [x] 281 tests, 95%+ coverage (llvm-cov)
+- [x] 487 tests, zero development debt
+- [x] `#![forbid(unsafe_code)]` on all crate roots
+- [x] Windows cross-architecture parity (Wave 141a)
 - [x] `#![forbid(unsafe_code)]` on all crates
 - [x] clippy pedantic + nursery clean (-D warnings)
 - [x] Rust edition 2024

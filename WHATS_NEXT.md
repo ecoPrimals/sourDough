@@ -1,12 +1,25 @@
 # What's Next for sourDough
 
 **Version**: 0.4.0
-**Date**: June 13, 2026
-**Status**: riboCipher reference implementation complete. Deep debt resolved. Zero P1.
+**Date**: July 15, 2026
+**Status**: Cross-arch parity complete. Deep debt zero. `#![forbid(unsafe_code)]` enforced. Zero P1.
 
 ---
 
-## Shipped (v0.4.0 — June 2026, Transport Ecosystem + riboCipher)
+## Shipped (v0.4.0 — June–July 2026, Transport + riboCipher + Cross-Arch)
+
+### Wave 141a (July 15 — Cross-Architecture Parity + Deep Debt)
+- [x] `#![forbid(unsafe_code)]` on all crate roots (compiler-enforced)
+- [x] Windows cross-check passing (`cargo check --target x86_64-pc-windows-gnu`)
+- [x] Platform-guarded file permission checks (Unix vs non-Unix)
+- [x] Smart refactoring: validate/mod.rs decomposed into domain modules
+- [x] Comprehensive test coverage for ipc/protocol.rs, stream.rs, error.rs, capability.rs
+- [x] 487 tests, all production files < 608L
+
+### Wave 112 (June 14 — riboCipher Deprecation Escalation)
+- [x] WARN→ERROR for unsignalled connections (Wave 112 policy)
+- [x] validate ribocipher accepts ERROR-level deprecation logs
+- [x] Forgejo parity restored
 
 ### Wave 111 (June 13 — riboCipher + Deep Debt)
 - [x] riboCipher reference implementation (detect_signal, RiboCipherAcceptLoop)
@@ -73,13 +86,14 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 437 | All passing |
+| Tests | 487 | All passing |
 | Clippy | zero warnings | zero |
-| Unsafe | zero (forbid) | zero |
+| Unsafe | zero (forbid on all roots) | zero |
 | C deps | zero | zero |
-| Max file | 669 lines | < 800 |
+| Max file | 608 lines | < 800 |
 | unwrap/expect | zero (prod lib) | zero |
 | Mocks in prod | zero | zero |
+| Cross-arch | Windows + Linux | All tier-1 |
 
 ---
 
@@ -98,5 +112,5 @@
 
 ---
 
-**Date**: June 13, 2026
-**Status**: Zero development debt. riboCipher reference implementation shipped. Upstream primals converging on transport standard.
+**Date**: July 15, 2026
+**Status**: Zero development debt. Cross-arch parity complete. `#![forbid(unsafe_code)]` enforced. Upstream primals adopting cross-platform transport (Wave 141a handoffs issued).

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Wave 141a — July 15, 2026)
+- `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced safety guarantee)
+- Windows cross-architecture parity (`cargo check --target x86_64-pc-windows-gnu`)
+- Platform-guarded `is_likely_binary()` with `#[cfg(unix)]` / `#[cfg(not(unix))]`
+- `is_triple()` recognizes Windows targets
+- `#[derive(Debug)]` on `TransportStream`
+- Unit tests for `ipc/protocol.rs`, `transport/stream.rs`, `ipc/error.rs`, `ipc/capability.rs`
+- Cross-platform tests for `layout.rs`
+- Unit tests for `validate/` shared utilities
+
+### Changed (Wave 141a — July 15, 2026)
+- Smart refactor: `validate/mod.rs` (669L → 400L) with `ecobin.rs` and `transport_compliance.rs`
+- Test count: 473 → 487 (+14)
+- Max production file: 669L → 608L
+
 ## v0.4.0 — Transport Ecosystem
 
 ### Added (v0.4.0 — June 2026)

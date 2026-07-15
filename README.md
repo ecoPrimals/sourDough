@@ -60,13 +60,14 @@ cargo build --release
 
 | Metric | Value |
 |--------|-------|
-| Tests | 437 passing (zero ignored) |
+| Tests | 487 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
-| Unsafe | zero (`forbid(unsafe_code)` via workspace lints) |
+| Unsafe | zero (`#![forbid(unsafe_code)]` on all crate roots) |
 | C deps | zero (Pure Rust entire dependency tree) |
-| Max file | < 700 lines (production code) |
+| Max file | 608 lines (production code) |
 | unwrap/expect | zero in library production code |
 | Mocks | zero in production (test-only) |
+| Cross-arch | `cargo check --target x86_64-pc-windows-gnu` passing |
 
 ## Standards Compliance
 
@@ -115,6 +116,7 @@ cargo doc --workspace --no-deps
 - **Scaffold independence**: generated primals are complete and self-sufficient
 - **Pure Rust**: no C dependencies, no shell scripts, no external tooling
 - **Modern idiomatic Rust**: edition 2024, `#[expect(reason)]`, `#![forbid(unsafe_code)]`
+- **Cross-architecture**: Windows target parity via `#[cfg(unix)]` guards (Wave 141a)
 
 ## Documentation
 
