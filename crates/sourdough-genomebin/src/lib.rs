@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! # sourdough-genomebin
 //!
 //! Pure Rust genomeBin infrastructure for universal deployment.

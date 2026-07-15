@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! # `SourDough` Core
 //!
 //! The essential traits and patterns that all ecoPrimals share.

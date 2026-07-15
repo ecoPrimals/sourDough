@@ -155,14 +155,14 @@ fn audit_primal(name: &str, path: &Path) -> PrimalAudit {
             || rel_str.contains("migrate");
 
         if !in_test && !is_template {
-            for &(pattern, _) in super::SELF_BIND_PATTERNS {
+            for &(pattern, _) in super::transport_compliance::SELF_BIND_PATTERNS {
                 if content.contains(pattern) {
                     self_bind_count += 1;
                 }
             }
         }
 
-        for &(pattern, _) in super::INJECTION_PATTERNS {
+        for &(pattern, _) in super::transport_compliance::INJECTION_PATTERNS {
             if content.contains(pattern) {
                 injection_count += 1;
             }

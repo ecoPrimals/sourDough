@@ -139,6 +139,13 @@ mod tests {
     }
 
     #[test]
+    fn is_triple_recognizes_windows_targets() {
+        assert!(is_triple("x86_64-pc-windows-gnu"));
+        assert!(is_triple("x86_64-pc-windows-msvc"));
+        assert!(is_triple("aarch64-pc-windows-msvc"));
+    }
+
+    #[test]
     fn is_triple_rejects_primal_names() {
         assert!(!is_triple("beardog"));
         assert!(!is_triple("songbird"));
@@ -156,5 +163,54 @@ mod tests {
         for triple in TIER1_TRIPLES {
             assert!(is_triple(triple), "Tier 1 triple '{triple}' not recognized");
         }
+    }
+
+    #[test]
+    fn is_likely_binary_rejects_files_with_extension() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("foo.txt");
+        std::fs::write(&path, "data").unwrap();
+        assert!(!is_likely_binary(&path));
+    }
+
+    #[test]
+    fn is_likely_binary_rejects_nonexistent() {
+        let path = std::path::Path::new("/tmp/nonexistent_sourdough_test_binary");
+        assert!(!is_likely_binary(path));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn is_likely_binary_detects_executable() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("beardog");
+        std::fs::write(&path, "ELF").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(is_likely_binary(&path));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn is_likely_binary_rejects_non_executable() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("datafile");
+        std::fs::write(&path, "data").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(!is_likely_binary(&path));
+    }
+
+    #[test]
+    fn is_likely_binary_exists_without_extension() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("songbird");
+        std::fs::write(&path, "binary content").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        assert!(is_likely_binary(&path));
     }
 }

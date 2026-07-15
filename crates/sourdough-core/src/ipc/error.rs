@@ -77,3 +77,73 @@ impl std::fmt::Display for IpcError {
 }
 
 impl std::error::Error for IpcError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retryable_kinds() {
+        let retryable = [
+            IpcErrorKind::Transport,
+            IpcErrorKind::Timeout,
+            IpcErrorKind::DependencyUnavailable,
+            IpcErrorKind::RateLimited,
+            IpcErrorKind::NotReady,
+        ];
+        for kind in retryable {
+            let err = IpcError::new(kind, "test");
+            assert!(err.retryable, "{kind:?} should be retryable");
+        }
+    }
+
+    #[test]
+    fn non_retryable_kinds() {
+        let non_retryable = [
+            IpcErrorKind::CircuitBreakerOpen,
+            IpcErrorKind::MethodNotFound,
+            IpcErrorKind::InvalidParams,
+            IpcErrorKind::Internal,
+        ];
+        for kind in non_retryable {
+            let err = IpcError::new(kind, "test");
+            assert!(!err.retryable, "{kind:?} should not be retryable");
+        }
+    }
+
+    #[test]
+    fn from_primal_sets_source() {
+        let err = IpcError::new(IpcErrorKind::Timeout, "slow").from_primal("songbird");
+        assert_eq!(err.source_primal.as_deref(), Some("songbird"));
+    }
+
+    #[test]
+    fn display_with_primal() {
+        let err = IpcError::new(IpcErrorKind::Transport, "conn refused").from_primal("beardog");
+        let s = err.to_string();
+        assert!(s.contains("beardog"));
+        assert!(s.contains("Transport"));
+        assert!(s.contains("conn refused"));
+    }
+
+    #[test]
+    fn display_without_primal() {
+        let err = IpcError::new(IpcErrorKind::Internal, "oops");
+        let s = err.to_string();
+        assert!(!s.contains('['));
+        assert!(s.contains("Internal"));
+        assert!(s.contains("oops"));
+    }
+
+    #[test]
+    fn serde_roundtrip() {
+        let err =
+            IpcError::new(IpcErrorKind::MethodNotFound, "bad.method").from_primal("test-primal");
+        let json = serde_json::to_string(&err).unwrap();
+        let back: IpcError = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.kind, IpcErrorKind::MethodNotFound);
+        assert_eq!(back.message, "bad.method");
+        assert_eq!(back.source_primal.as_deref(), Some("test-primal"));
+        assert!(!back.retryable);
+    }
+}

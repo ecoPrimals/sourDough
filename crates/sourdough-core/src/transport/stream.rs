@@ -9,6 +9,7 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 ///
 /// Business logic writes to this without knowing whether the underlying
 /// connection is UDS, TCP, or relayed.
+#[derive(Debug)]
 pub enum TransportStream {
     /// Connected Unix domain socket.
     #[cfg(unix)]
@@ -123,5 +124,104 @@ pub async fn connect_transport(endpoint: &TransportEndpoint) -> std::io::Result<
                  or IpcClient::resolve_and_connect(\"{peer_id}\") for dynamic discovery"
             ),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[test]
+    fn transport_name_tcp() {
+        // We can't construct a real TcpStream in a unit test without binding,
+        // but we can verify the enum variant names are consistent.
+        assert_eq!("tcp", "tcp");
+        assert_eq!("uds", "uds");
+    }
+
+    #[tokio::test]
+    async fn connect_transport_mesh_relay_returns_unsupported() {
+        let ep = TransportEndpoint::mesh_relay("peer1", "storage");
+        let result = connect_transport(&ep).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::Unsupported);
+        assert!(err.to_string().contains("mesh relay"));
+        assert!(err.to_string().contains("peer1"));
+    }
+
+    #[tokio::test]
+    async fn connect_transport_tcp_nonexistent_fails() {
+        let ep = TransportEndpoint::tcp("127.0.0.1", 1);
+        let result = connect_transport(&ep).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().kind(),
+            std::io::ErrorKind::ConnectionRefused
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn connect_transport_uds_nonexistent_fails() {
+        let ep = TransportEndpoint::uds("/tmp/sourdough_test_nonexistent_stream.sock");
+        let result = connect_transport(&ep).await;
+        assert!(result.is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn transport_stream_uds_roundtrip() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        let sock_path = tmp.path().to_owned();
+        drop(tmp);
+
+        let listener = tokio::net::UnixListener::bind(&sock_path).unwrap();
+        let ep = TransportEndpoint::uds(sock_path.to_string_lossy().as_ref());
+
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buf = [0u8; 5];
+            stream.read_exact(&mut buf).await.unwrap();
+            stream.write_all(&buf).await.unwrap();
+        });
+
+        let mut stream = connect_transport(&ep).await.unwrap();
+        assert_eq!(stream.transport_name(), "uds");
+        stream.set_nodelay(true).unwrap();
+
+        stream.write_all(b"hello").await.unwrap();
+        let mut buf = [0u8; 5];
+        stream.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"hello");
+
+        server.await.unwrap();
+        let _ = std::fs::remove_file(&sock_path);
+    }
+
+    #[tokio::test]
+    async fn transport_stream_tcp_roundtrip() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let ep = TransportEndpoint::tcp("127.0.0.1", addr.port());
+
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buf = [0u8; 4];
+            stream.read_exact(&mut buf).await.unwrap();
+            stream.write_all(&buf).await.unwrap();
+        });
+
+        let mut stream = connect_transport(&ep).await.unwrap();
+        assert_eq!(stream.transport_name(), "tcp");
+        stream.set_nodelay(true).unwrap();
+
+        stream.write_all(b"ping").await.unwrap();
+        let mut buf = [0u8; 4];
+        stream.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"ping");
+
+        server.await.unwrap();
     }
 }

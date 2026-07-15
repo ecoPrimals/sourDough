@@ -31,3 +31,27 @@ impl Capability {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capability_builder() {
+        let cap = Capability::new("storage", "1.0")
+            .with_method("storage.get")
+            .with_method("storage.put");
+        assert_eq!(cap.domain, "storage");
+        assert_eq!(cap.version, "1.0");
+        assert_eq!(cap.methods, vec!["storage.get", "storage.put"]);
+    }
+
+    #[test]
+    fn capability_serde_roundtrip() {
+        let cap = Capability::new("health", "0.1").with_method("health.check");
+        let json = serde_json::to_string(&cap).unwrap();
+        let back: Capability = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.domain, "health");
+        assert_eq!(back.methods, vec!["health.check"]);
+    }
+}

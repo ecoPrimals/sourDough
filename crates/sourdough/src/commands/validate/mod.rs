@@ -2,10 +2,12 @@
 
 mod composition;
 mod depot;
+mod ecobin;
 pub(crate) mod ribocipher;
+mod transport_compliance;
 mod transport_report;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use std::path::{Path, PathBuf};
 
@@ -117,7 +119,7 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
     match cmd {
         ValidateCommand::Primal { path } => validate_primal(&path),
         ValidateCommand::UniBin { path } => validate_unibin(&path),
-        ValidateCommand::EcoBin { path } => validate_ecobin(&path),
+        ValidateCommand::EcoBin { path } => ecobin::validate(&path),
         ValidateCommand::Composition {
             composition,
             primals_dir,
@@ -129,7 +131,7 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             triple_first,
             manifest.as_deref(),
         ),
-        ValidateCommand::Transport { path } => validate_transport(&path),
+        ValidateCommand::Transport { path } => transport_compliance::validate(&path),
         ValidateCommand::RiboCipher { path, json } => ribocipher::run(&path, json),
         ValidateCommand::Depot {
             depot_dir,
@@ -145,6 +147,8 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
         } => transport_report::run(&primals_dir, output.as_deref(), json, &exempt),
     }
 }
+
+// --- Shared validation functions ---
 
 fn validate_primal(path: &Path) -> Result<()> {
     crate::info(&format!("Validating primal at: {}", path.display()));
@@ -233,334 +237,7 @@ fn validate_unibin(path: &Path) -> Result<()> {
     report_results(&errors, &warnings)
 }
 
-fn validate_ecobin(path: &Path) -> Result<()> {
-    if path.is_file() {
-        return validate_ecobin_binary(path);
-    }
-    validate_ecobin_project(path)
-}
-
-fn validate_ecobin_binary(path: &Path) -> Result<()> {
-    crate::info(&format!("Validating ecoBin binary: {}", path.display()));
-    println!();
-
-    let mut errors: Vec<String> = Vec::new();
-    let mut warnings: Vec<String> = Vec::new();
-
-    let metadata = std::fs::metadata(path).context("Cannot read file metadata")?;
-    let size_bytes = metadata.len();
-    let size_kb = size_bytes / 1024;
-    let budget_mb: u64 = 50;
-
-    crate::info(&format!("Size: {size_kb} KB"));
-    if size_bytes > budget_mb * 1024 * 1024 {
-        errors.push(format!(
-            "Binary too large: {size_kb} KB (budget: {budget_mb} MB)"
-        ));
-    } else {
-        crate::success(&format!(
-            "Size within budget ({size_kb} KB < {budget_mb} MB)"
-        ));
-    }
-
-    match std::process::Command::new("file").arg(path).output() {
-        Ok(out) if out.status.success() => {
-            let desc = String::from_utf8_lossy(&out.stdout);
-            if desc.contains("statically linked") {
-                crate::success("Statically linked");
-            } else if desc.contains("dynamically linked") {
-                errors.push("Dynamically linked (ecoBin requires static)".into());
-            } else {
-                warnings.push("Could not determine linking type from `file` output".into());
-            }
-
-            if desc.contains("stripped") {
-                crate::success("Stripped");
-            } else if desc.contains("not stripped") {
-                warnings.push("Binary is not stripped (release builds should strip)".into());
-            }
-
-            if desc.contains("ELF") {
-                crate::success("ELF binary detected");
-            }
-        }
-        Ok(_) => warnings.push("`file` command failed".into()),
-        Err(_) => warnings.push("`file` command not available".into()),
-    }
-
-    match std::process::Command::new("ldd").arg(path).output() {
-        Ok(out) => {
-            let stdout = String::from_utf8_lossy(&out.stdout);
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            if stdout.contains("not a dynamic executable")
-                || stderr.contains("not a dynamic executable")
-                || stdout.contains("statically linked")
-            {
-                crate::success("ldd confirms static binary (no dynamic deps)");
-            } else if out.status.success() {
-                let deps: Vec<&str> = stdout.lines().collect();
-                let n = deps.len();
-                errors.push(format!(
-                    "ldd found {n} dynamic dependencies (ecoBin must be static)"
-                ));
-                for dep in deps.iter().take(5) {
-                    println!("    {dep}");
-                }
-            }
-        }
-        Err(_) => warnings.push("`ldd` not available (cannot verify static linking)".into()),
-    }
-
-    println!();
-    report_results(&errors, &warnings)
-}
-
-fn validate_ecobin_project(path: &Path) -> Result<()> {
-    crate::info(&format!("Validating ecoBin project: {}", path.display()));
-    println!();
-
-    validate_unibin(path)?;
-
-    println!();
-    crate::info("Checking ecoBin compliance (Pure Rust)...");
-
-    let mut errors: Vec<String> = Vec::new();
-
-    crate::info("Checking dependency tree for C dependencies...");
-
-    let output = std::process::Command::new("cargo")
-        .args(["tree"])
-        .current_dir(path)
-        .output()
-        .context("Failed to run cargo tree")?;
-
-    if output.status.success() {
-        let tree = String::from_utf8_lossy(&output.stdout);
-
-        let c_deps = ["ring", "openssl", "libsqlite"];
-        let mut found_c_deps = Vec::new();
-
-        for dep in c_deps {
-            if tree.contains(dep) {
-                found_c_deps.push(dep);
-            }
-        }
-
-        if found_c_deps.is_empty() {
-            crate::success("No known C dependencies found");
-        } else {
-            for dep in found_c_deps {
-                errors.push(format!("Found C dependency: {dep}"));
-            }
-        }
-    }
-
-    crate::info("Checking cargo-deny configuration...");
-    let deny_path = path.join("deny.toml");
-    if deny_path.exists() {
-        let deny_content = std::fs::read_to_string(&deny_path).unwrap_or_default();
-        if deny_content.contains("ring") {
-            crate::success("deny.toml present with ring ban");
-        } else {
-            errors.push("deny.toml exists but does not ban `ring`".to_string());
-        }
-        if deny_content.contains("openssl-sys") || deny_content.contains("openssl") {
-            crate::success("deny.toml bans OpenSSL");
-        } else {
-            errors.push("deny.toml does not ban OpenSSL".to_string());
-        }
-    } else {
-        errors.push("Missing deny.toml (required for ecoBin compliance)".to_string());
-    }
-
-    crate::info("Checking cross-compilation readiness...");
-    println!("  (Full check requires building for all targets)");
-
-    println!();
-    crate::info("Checking code formatting...");
-    match std::process::Command::new("cargo")
-        .args(["fmt", "--", "--check"])
-        .current_dir(path)
-        .output()
-    {
-        Ok(out) if out.status.success() => crate::success("Code is properly formatted"),
-        Ok(_) => errors.push("Code formatting issues found (run cargo fmt)".to_string()),
-        Err(e) => println!("  ⚠ Could not check formatting: {e}"),
-    }
-
-    println!();
-    crate::info("Checking clippy lints...");
-    match std::process::Command::new("cargo")
-        .args(["clippy", "--", "-D", "warnings"])
-        .current_dir(path)
-        .output()
-    {
-        Ok(out) if !out.status.success() => {
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            let issues: Vec<String> = stderr
-                .lines()
-                .filter(|line| line.contains("warning:") || line.contains("error:"))
-                .map(std::string::ToString::to_string)
-                .collect();
-            let n = issues.len();
-            errors.push(format!("Found {n} clippy issue(s)"));
-            for issue in issues.iter().take(5) {
-                println!("  {issue}");
-            }
-            if issues.len() > 5 {
-                let more = issues.len() - 5;
-                println!("  ... and {more} more");
-            }
-        }
-        Ok(_) => crate::success("No clippy warnings"),
-        Err(e) => println!("  ⚠ Could not run clippy: {e}"),
-    }
-
-    println!();
-    report_results(&errors, &[])
-}
-
-// --- Transport compliance checks ---
-
-/// Anti-patterns that indicate self-binding transport (primals should not do this).
-pub(super) const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
-    ("TcpListener::bind", "hardcoded TCP self-binding"),
-    ("UnixListener::bind", "hardcoded UDS self-binding"),
-    (".bind(\"0.0.0.0", "hardcoded bind-all address"),
-    (".bind(\"127.0.0.1", "hardcoded localhost bind"),
-    ("--port", "CLI port flag (transport should be injected)"),
-    ("--socket", "CLI socket flag (transport should be injected)"),
-];
-
-/// Positive patterns that indicate transport injection compliance.
-pub(super) const INJECTION_PATTERNS: &[(&str, &str)] = &[
-    ("TransportEndpoint", "uses TransportEndpoint enum"),
-    ("connect_transport", "uses connect_transport()"),
-    ("TRANSPORT_ENDPOINT", "accepts injected endpoint env var"),
-    ("PRIMAL_BIND_MODE", "respects bind mode (Android/SELinux)"),
-    ("ipc.resolve", "resolves endpoints via Songbird"),
-    ("ipc.register", "registers capabilities with Songbird"),
-];
-
-fn validate_transport(path: &Path) -> Result<()> {
-    crate::info(&format!(
-        "Validating transport abstraction compliance: {}",
-        path.display()
-    ));
-    println!();
-
-    let mut errors: Vec<String> = Vec::new();
-    let mut warnings: Vec<String> = Vec::new();
-    let mut compliant: Vec<String> = Vec::new();
-
-    let src_dir = find_source_dir(path);
-    let Some(src_dir) = src_dir else {
-        anyhow::bail!(
-            "No source directory found at {} — expected crates/*/src/ or src/",
-            path.display()
-        );
-    };
-
-    crate::info("Scanning for self-binding anti-patterns...");
-    let rs_files = collect_rs_files(&src_dir);
-
-    if rs_files.is_empty() {
-        warnings.push("No .rs source files found".to_string());
-    }
-
-    let mut self_bind_violations = Vec::new();
-    let mut injection_found = Vec::new();
-
-    for file in &rs_files {
-        let content = std::fs::read_to_string(file).unwrap_or_default();
-        let rel = file.strip_prefix(path).unwrap_or(file);
-
-        let rel_str = rel.to_string_lossy();
-        let in_test = rel_str.contains("/tests/")
-            || rel_str.starts_with("tests/")
-            || rel_str.ends_with("_test.rs")
-            || content.contains("#[cfg(test)]");
-
-        for &(pattern, description) in SELF_BIND_PATTERNS {
-            if content.contains(pattern) && !in_test {
-                self_bind_violations
-                    .push(format!("  {}: {description} (`{pattern}`)", rel.display()));
-            }
-        }
-
-        for &(pattern, description) in INJECTION_PATTERNS {
-            if content.contains(pattern) {
-                injection_found.push(format!("  {}: {description}", rel.display()));
-            }
-        }
-    }
-
-    if self_bind_violations.is_empty() {
-        compliant.push("No self-binding anti-patterns found in business logic".to_string());
-    } else {
-        crate::warning("Self-binding patterns found (should use transport injection):");
-        for v in &self_bind_violations {
-            println!("{v}");
-        }
-        let n = self_bind_violations.len();
-        warnings.push(format!("{n} self-binding pattern(s) found"));
-    }
-
-    println!();
-    if injection_found.is_empty() {
-        errors.push(
-            "No transport injection patterns found (TransportEndpoint, connect_transport, etc.)"
-                .to_string(),
-        );
-    } else {
-        crate::info("Transport injection patterns detected:");
-        for p in &injection_found {
-            println!("{p}");
-        }
-        let n = injection_found.len();
-        compliant.push(format!("{n} transport injection pattern(s) found"));
-    }
-
-    println!();
-    crate::info("Checking platform-specific socket API usage...");
-    let mut platform_issues = Vec::new();
-    for file in &rs_files {
-        let content = std::fs::read_to_string(file).unwrap_or_default();
-        let rel = file.strip_prefix(path).unwrap_or(file);
-
-        let has_cfg_guard = content.contains("#[cfg(unix)]")
-            || content.contains("#[cfg(target_os")
-            || content.contains("cfg!(unix)");
-        let uses_unix_api = content.contains("tokio::net::UnixStream")
-            || content.contains("tokio::net::UnixListener")
-            || content.contains("std::os::unix");
-
-        if uses_unix_api && !has_cfg_guard {
-            platform_issues.push(format!(
-                "  {}: Unix-only APIs without #[cfg(unix)] guard",
-                rel.display()
-            ));
-        }
-    }
-
-    if platform_issues.is_empty() {
-        compliant.push("Platform-specific APIs properly gated or not used".to_string());
-    } else {
-        for p in &platform_issues {
-            println!("{p}");
-        }
-        let n = platform_issues.len();
-        warnings.push(format!("{n} file(s) use Unix APIs without platform guards"));
-    }
-
-    println!();
-    for c in &compliant {
-        crate::success(c);
-    }
-
-    println!();
-    report_results(&errors, &warnings)
-}
+// --- Shared utilities (used by sub-modules) ---
 
 pub(super) fn find_source_dir(path: &Path) -> Option<PathBuf> {
     let crates_dir = path.join("crates");
@@ -665,5 +342,59 @@ fn report_results(errors: &[String], warnings: &[String]) -> Result<()> {
     } else {
         let n = errors.len();
         anyhow::bail!("Validation failed with {n} error(s)");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn find_source_dir_with_crates() {
+        let tmp = tempfile::tempdir().unwrap();
+        let crate_src = tmp.path().join("crates/foo/src");
+        std::fs::create_dir_all(&crate_src).unwrap();
+        let result = find_source_dir(tmp.path());
+        assert!(result.is_some());
+        assert!(result.unwrap().ends_with("crates"));
+    }
+
+    #[test]
+    fn find_source_dir_with_src() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join("src")).unwrap();
+        let result = find_source_dir(tmp.path());
+        assert!(result.is_some());
+        assert!(result.unwrap().ends_with("src"));
+    }
+
+    #[test]
+    fn find_source_dir_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(find_source_dir(tmp.path()).is_none());
+    }
+
+    #[test]
+    fn collect_rs_files_finds_nested() {
+        let tmp = tempfile::tempdir().unwrap();
+        let nested = tmp.path().join("sub/deep");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(tmp.path().join("a.rs"), "fn a(){}").unwrap();
+        std::fs::write(nested.join("b.rs"), "fn b(){}").unwrap();
+        std::fs::write(tmp.path().join("not_rs.txt"), "text").unwrap();
+        let files = collect_rs_files(tmp.path());
+        assert_eq!(files.len(), 2);
+        assert!(files.iter().all(|f| f.extension().unwrap() == "rs"));
+    }
+
+    #[test]
+    fn report_results_ok_with_no_errors() {
+        assert!(report_results(&[], &[]).is_ok());
+    }
+
+    #[test]
+    fn report_results_fails_with_errors() {
+        let result = report_results(&["oops".to_string()], &[]);
+        assert!(result.is_err());
     }
 }

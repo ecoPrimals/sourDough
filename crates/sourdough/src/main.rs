@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! # `SourDough` `UniBin` CLI
 //!
 //! The reference `UniBin` implementation for ecoPrimals.
