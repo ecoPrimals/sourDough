@@ -89,19 +89,27 @@ pub(crate) fn validate(dir: &Path) -> Result<()> {
 
 fn is_triple(name: &str) -> bool {
     let parts: Vec<&str> = name.split('-').collect();
-    parts.len() >= 3 && parts.iter().any(|p| *p == "linux" || *p == "unknown")
+    parts.len() >= 3
+        && parts
+            .iter()
+            .any(|p| *p == "linux" || *p == "windows" || *p == "unknown")
 }
 
 fn is_likely_binary(path: &Path) -> bool {
     if path.extension().is_some() {
         return false;
     }
-    std::fs::metadata(path)
-        .map(|m| {
-            use std::os::unix::fs::PermissionsExt;
-            m.permissions().mode() & 0o111 != 0
-        })
-        .unwrap_or(false)
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::metadata(path)
+            .map(|m| m.permissions().mode() & 0o111 != 0)
+            .unwrap_or(false)
+    }
+    #[cfg(not(unix))]
+    {
+        std::fs::metadata(path).is_ok()
+    }
 }
 
 fn check_triple_dir(path: &Path, triple: &str, errors: &mut Vec<String>) {
