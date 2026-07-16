@@ -60,7 +60,7 @@ cargo build --release
 
 | Metric | Value |
 |--------|-------|
-| Tests | 487 passing (zero ignored) |
+| Tests | 502 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`#![forbid(unsafe_code)]` on all crate roots) |
 | C deps | zero (Pure Rust entire dependency tree) |

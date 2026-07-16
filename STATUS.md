@@ -26,7 +26,7 @@
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
-- [x] 487 tests, zero ignored
+- [x] 502 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -41,12 +41,21 @@
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 277 | 502 (rpc.rs) |
+| sourdough-core | 287 | 502 (rpc.rs) |
 | sourdough (CLI) | 36 (2 e2e + 34 integration) | 608 (ribocipher.rs) |
-| sourdough-genomebin | 75 + 87 | 553 (validator.rs) |
+| sourdough-genomebin | 75 + 92 | 599 (platform.rs) |
 | doctests | 12 | — |
 
 ## v0.4.0 (June–July 2026 — Transport Ecosystem + riboCipher + Cross-Arch)
+
+### Wave 142b (July 16, 2026 — Type-System Evolution + Android Parity)
+- `Did::try_new()` — validated DID construction (rejects malformed input)
+- `Did::method()` + `Did::method_specific_id()` — zero-alloc extractors
+- `Os::Android` + `LibC::Bionic` — proper platform detection for Android targets
+- `Platform::is_android()` + `Platform::is_windows()` — API completeness
+- Proptest coverage for Did (serde, validation) and CommonConfig (JSON/TOML roundtrip)
+- `cargo check --target aarch64-linux-android` passes cleanly
+- 502 tests (up from 487 at Wave 141a)
 
 ### Wave 141a (July 15, 2026 — Cross-Architecture Parity + Deep Debt)
 - `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced safety)

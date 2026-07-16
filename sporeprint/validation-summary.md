@@ -1,7 +1,7 @@
 +++
 title = "sourDough Validation Summary"
-description = "Ecosystem scaffolding meta-primal — transport standard, riboCipher reference, primal generation, binary signing, compliance tooling. 487 tests, zero development debt, cross-arch parity."
-date = 2026-07-15
+description = "Ecosystem scaffolding meta-primal — transport standard, riboCipher reference, primal generation, binary signing, compliance tooling. 502 tests, zero development debt, 4-arch parity."
+date = 2026-07-16
 
 [taxonomies]
 primals = ["sourdough"]
@@ -13,7 +13,7 @@ springs = []
 - **Gate**: CLEAR (meta-primal — scaffolding/tooling, not a runtime daemon)
 - **Phase**: N/A (CLI tool, no runtime IPC server)
 - **Edition**: 2024
-- **Tests**: 487 passing (277 core, 36 CLI, 75+87 genomebin, 12 doc)
+- **Tests**: 502 passing (287 core, 36 CLI, 75+92 genomebin, 12 doc)
 - **Coverage**: target 90%+
 - **Source**: all production files < 608 lines
 - **Clippy**: 0 warnings (`pedantic` + `nursery`, `-D warnings`)

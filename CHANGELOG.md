@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Wave 142b — July 16, 2026)
+- `Did::try_new()` — validated DID construction (rejects malformed input at boundary)
+- `Did::method()` + `Did::method_specific_id()` — zero-alloc component extraction
+- `Os::Android` + `LibC::Bionic` — proper platform detection for Android targets
+- `Platform::is_android()` + `Platform::is_windows()` — API completeness
+- Android cross-check passing (`cargo check --target aarch64-linux-android`)
+- Proptest coverage for `Did` (serde roundtrip, validation, prefix rejection)
+- Proptest coverage for `CommonConfig` (JSON/TOML roundtrip, instance_id invariant)
+
 ### Added (Wave 141a — July 15, 2026)
 - `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced safety guarantee)
 - Windows cross-architecture parity (`cargo check --target x86_64-pc-windows-gnu`)
@@ -17,9 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform tests for `layout.rs`
 - Unit tests for `validate/` shared utilities
 
-### Changed (Wave 141a — July 15, 2026)
+### Changed (Wave 141a–142b — July 15–16, 2026)
 - Smart refactor: `validate/mod.rs` (669L → 400L) with `ecobin.rs` and `transport_compliance.rs`
-- Test count: 473 → 487 (+14)
+- Test count: 473 → 502 (+29)
 - Max production file: 669L → 608L
 
 ## v0.4.0 — Transport Ecosystem

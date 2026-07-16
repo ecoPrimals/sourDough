@@ -1,12 +1,21 @@
 # What's Next for sourDough
 
 **Version**: 0.4.0
-**Date**: July 15, 2026
-**Status**: Cross-arch parity complete. Deep debt zero. `#![forbid(unsafe_code)]` enforced. Zero P1.
+**Date**: July 16, 2026
+**Status**: Type-system evolution complete. Android parity achieved. 502 tests. Deep debt zero. Zero P1.
 
 ---
 
 ## Shipped (v0.4.0 — June–July 2026, Transport + riboCipher + Cross-Arch)
+
+### Wave 142b (July 16 — Type-System Evolution + Android Parity)
+- [x] `Did::try_new()` validated DID construction (rejects malformed input)
+- [x] `Did::method()` + `Did::method_specific_id()` zero-alloc extractors
+- [x] `Os::Android` + `LibC::Bionic` platform detection
+- [x] `Platform::is_android()` + `Platform::is_windows()` API helpers
+- [x] Android cross-check passing (`cargo check --target aarch64-linux-android`)
+- [x] Proptest for Did + CommonConfig (property-based serde roundtrips)
+- [x] 502 tests, all production files < 608L
 
 ### Wave 141a (July 15 — Cross-Architecture Parity + Deep Debt)
 - [x] `#![forbid(unsafe_code)]` on all crate roots (compiler-enforced)
@@ -86,7 +95,7 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 487 | All passing |
+| Tests | 502 | All passing |
 | Clippy | zero warnings | zero |
 | Unsafe | zero (forbid on all roots) | zero |
 | C deps | zero | zero |
@@ -112,5 +121,5 @@
 
 ---
 
-**Date**: July 15, 2026
-**Status**: Zero development debt. Cross-arch parity complete. `#![forbid(unsafe_code)]` enforced. Upstream primals adopting cross-platform transport (Wave 141a handoffs issued).
+**Date**: July 16, 2026
+**Status**: Zero development debt. All 4 depot architectures green. Type-system evolved (Did validation, Platform helpers). Phase 2 abstraction N/A (CLI tool, no transport to abstract).
