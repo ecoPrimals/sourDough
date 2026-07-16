@@ -34,6 +34,8 @@ use std::fmt;
 pub enum Os {
     /// Linux
     Linux,
+    /// Android (Linux kernel, Bionic libc)
+    Android,
     /// macOS (Darwin)
     MacOs,
     /// Windows
@@ -56,6 +58,9 @@ impl Os {
     pub const fn detect() -> Self {
         #[cfg(target_os = "linux")]
         return Self::Linux;
+
+        #[cfg(target_os = "android")]
+        return Self::Android;
 
         #[cfg(target_os = "macos")]
         return Self::MacOs;
@@ -81,6 +86,7 @@ impl fmt::Display for Os {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Linux => write!(f, "linux"),
+            Self::Android => write!(f, "android"),
             Self::MacOs => write!(f, "macos"),
             Self::Windows => write!(f, "windows"),
             Self::FreeBsd => write!(f, "freebsd"),
@@ -154,6 +160,8 @@ pub enum LibC {
     Gnu,
     /// musl libc
     Musl,
+    /// Android Bionic libc
+    Bionic,
     /// macOS system libraries
     Darwin,
     /// Windows MSVC
@@ -184,6 +192,9 @@ impl LibC {
         #[cfg(target_env = "msvc")]
         return Self::Msvc;
 
+        #[cfg(target_os = "android")]
+        return Self::Bionic;
+
         #[cfg(target_os = "macos")]
         return Self::Darwin;
 
@@ -196,6 +207,7 @@ impl fmt::Display for LibC {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Musl => write!(f, "musl"),
+            Self::Bionic => write!(f, "bionic"),
             Self::Darwin => write!(f, "darwin"),
             Self::Msvc => write!(f, "msvc"),
             Self::Gnu | Self::GnuWindows => write!(f, "gnu"),
@@ -268,6 +280,7 @@ impl Platform {
         let vendor = "unknown";
         match self.os {
             Os::Linux => format!("{}-{vendor}-linux-{}", self.arch, self.libc),
+            Os::Android => format!("{}-linux-android", self.arch),
             Os::MacOs => format!("{}-apple-{}", self.arch, self.libc),
             Os::Windows => format!("{}-pc-windows-{}", self.arch, self.libc),
             Os::FreeBsd => format!("{}-{vendor}-freebsd", self.arch),
@@ -284,6 +297,7 @@ impl Platform {
     pub fn simple_target(&self) -> String {
         match self.os {
             Os::Linux | Os::MacOs => format!("{}-{}", self.arch, self.libc),
+            Os::Android => format!("{}-android", self.arch),
             Os::Windows => format!("{}-windows", self.arch),
             _ => format!("{}-{}", self.arch, self.os),
         }
@@ -391,6 +405,7 @@ mod tests {
     #[test]
     fn libc_display() {
         assert_eq!(LibC::Musl.to_string(), "musl");
+        assert_eq!(LibC::Bionic.to_string(), "bionic");
         assert_eq!(LibC::Gnu.to_string(), "gnu");
         assert_eq!(LibC::Darwin.to_string(), "darwin");
         assert_eq!(LibC::Msvc.to_string(), "msvc");
@@ -401,6 +416,7 @@ mod tests {
     #[test]
     fn os_display_all_variants() {
         assert_eq!(Os::Linux.to_string(), "linux");
+        assert_eq!(Os::Android.to_string(), "android");
         assert_eq!(Os::MacOs.to_string(), "macos");
         assert_eq!(Os::Windows.to_string(), "windows");
         assert_eq!(Os::FreeBsd.to_string(), "freebsd");
@@ -423,6 +439,23 @@ mod tests {
     fn target_triple_linux() {
         let p = Platform::new(Os::Linux, Arch::Aarch64, LibC::Gnu);
         assert_eq!(p.target_triple(), "aarch64-unknown-linux-gnu");
+    }
+
+    #[test]
+    fn target_triple_android() {
+        let p = Platform::new(Os::Android, Arch::Aarch64, LibC::Bionic);
+        assert_eq!(p.target_triple(), "aarch64-linux-android");
+    }
+
+    #[test]
+    fn simple_target_android() {
+        let p = Platform::new(Os::Android, Arch::Aarch64, LibC::Bionic);
+        assert_eq!(p.simple_target(), "aarch64-android");
+    }
+
+    #[test]
+    fn libc_bionic_display() {
+        assert_eq!(LibC::Bionic.to_string(), "bionic");
     }
 
     #[test]
