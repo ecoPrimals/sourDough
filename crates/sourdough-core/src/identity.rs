@@ -25,16 +25,59 @@ use serde::{Deserialize, Serialize};
 pub struct Did(String);
 
 impl Did {
-    /// Create a new DID from a string.
+    /// Create a new DID from a string (unchecked).
+    ///
+    /// Prefer [`Did::try_new`] when accepting external input.
     #[must_use]
     pub fn new(s: impl Into<String>) -> Self {
         Self(s.into())
+    }
+
+    /// Create a new DID with format validation.
+    ///
+    /// Validates that the string follows the `did:method:specific-id` pattern.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PrimalError::InvalidInput`] if the format is invalid.
+    pub fn try_new(s: impl Into<String>) -> Result<Self, PrimalError> {
+        let value = s.into();
+        if !value.starts_with("did:") {
+            return Err(PrimalError::InvalidInput(format!(
+                "DID must start with 'did:': {value}"
+            )));
+        }
+        let parts: Vec<&str> = value.splitn(3, ':').collect();
+        if parts.len() < 3 || parts[1].is_empty() || parts[2].is_empty() {
+            return Err(PrimalError::InvalidInput(format!(
+                "DID must have format 'did:method:specific-id': {value}"
+            )));
+        }
+        Ok(Self(value))
     }
 
     /// Get the DID as a string slice.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    /// Extract the method component (e.g., `"key"` from `"did:key:z6Mk..."`).
+    #[must_use]
+    pub fn method(&self) -> &str {
+        self.0
+            .strip_prefix("did:")
+            .and_then(|rest| rest.split(':').next())
+            .unwrap_or("")
+    }
+
+    /// Extract the method-specific identifier.
+    #[must_use]
+    pub fn method_specific_id(&self) -> &str {
+        self.0
+            .strip_prefix("did:")
+            .and_then(|rest| rest.split_once(':'))
+            .map_or("", |(_, id)| id)
     }
 
     /// Check if this is a key-based DID (did:key:...).
@@ -246,6 +289,70 @@ mod tests {
         let did1 = Did::new("did:key:test");
         let did2 = did1.clone();
         assert_eq!(did1, did2);
+    }
+
+    #[test]
+    fn did_try_new_valid() {
+        assert!(Did::try_new("did:key:z6MkTest").is_ok());
+        assert!(Did::try_new("did:web:example.com").is_ok());
+        assert!(Did::try_new("did:ethr:0xabcdef").is_ok());
+    }
+
+    #[test]
+    fn did_try_new_rejects_invalid() {
+        assert!(Did::try_new("not-a-did").is_err());
+        assert!(Did::try_new("did:").is_err());
+        assert!(Did::try_new("did:key:").is_err());
+        assert!(Did::try_new("did::value").is_err());
+        assert!(Did::try_new("").is_err());
+    }
+
+    #[test]
+    fn did_method_extraction() {
+        assert_eq!(Did::new("did:key:z6Mk").method(), "key");
+        assert_eq!(Did::new("did:web:example.com").method(), "web");
+        assert_eq!(Did::new("did:ethr:0xabc").method(), "ethr");
+    }
+
+    #[test]
+    fn did_method_specific_id() {
+        assert_eq!(Did::new("did:key:z6MkABC").method_specific_id(), "z6MkABC");
+        assert_eq!(
+            Did::new("did:web:example.com:path").method_specific_id(),
+            "example.com:path"
+        );
+    }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn did_serde_roundtrip(method in "[a-z]{2,8}", id in "[a-zA-Z0-9]{4,32}") {
+                let did_str = format!("did:{method}:{id}");
+                let did = Did::new(&did_str);
+                let json = serde_json::to_string(&did).unwrap();
+                let back: Did = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(did, back);
+            }
+
+            #[test]
+            fn did_try_new_accepts_valid(method in "[a-z]{2,8}", id in "[a-zA-Z0-9]{4,32}") {
+                let did_str = format!("did:{method}:{id}");
+                let result = Did::try_new(&did_str);
+                prop_assert!(result.is_ok());
+                let did = result.unwrap();
+                prop_assert_eq!(did.method(), method.as_str());
+                prop_assert_eq!(did.method_specific_id(), id.as_str());
+            }
+
+            #[test]
+            fn did_try_new_rejects_no_prefix(s in "[^d].*") {
+                let result = Did::try_new(&s);
+                prop_assert!(result.is_err());
+            }
+        }
     }
 
     #[test]

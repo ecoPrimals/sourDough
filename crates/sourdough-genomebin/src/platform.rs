@@ -309,10 +309,22 @@ impl Platform {
         matches!(self.os, Os::Linux)
     }
 
+    /// Check if this platform is Android.
+    #[must_use]
+    pub const fn is_android(&self) -> bool {
+        matches!(self.os, Os::Android)
+    }
+
     /// Check if this platform is macOS.
     #[must_use]
     pub const fn is_macos(&self) -> bool {
         matches!(self.os, Os::MacOs)
+    }
+
+    /// Check if this platform is Windows.
+    #[must_use]
+    pub const fn is_windows(&self) -> bool {
+        matches!(self.os, Os::Windows)
     }
 
     /// Check if this platform uses musl.
@@ -517,6 +529,16 @@ mod tests {
         let p = Platform::new(Os::Linux, Arch::X86_64, LibC::Gnu);
         assert!(p.is_linux());
         assert!(!p.is_macos());
+        assert!(!p.is_android());
+        assert!(!p.is_windows());
+    }
+
+    #[test]
+    fn is_android_true() {
+        let p = Platform::new(Os::Android, Arch::Aarch64, LibC::Bionic);
+        assert!(p.is_android());
+        assert!(!p.is_linux());
+        assert!(!p.is_windows());
     }
 
     #[test]
@@ -524,6 +546,15 @@ mod tests {
         let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
         assert!(p.is_macos());
         assert!(!p.is_linux());
+        assert!(!p.is_android());
+    }
+
+    #[test]
+    fn is_windows_true() {
+        let p = Platform::new(Os::Windows, Arch::X86_64, LibC::Msvc);
+        assert!(p.is_windows());
+        assert!(!p.is_linux());
+        assert!(!p.is_android());
     }
 
     #[test]

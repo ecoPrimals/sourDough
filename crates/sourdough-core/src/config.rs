@@ -357,4 +357,54 @@ mod tests {
             Some(TransportEndpoint::tcp("10.0.0.1", 7700))
         );
     }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn common_config_json_roundtrip(
+                name in "[a-z][a-z0-9-]{2,20}",
+                port in 0u16..=65535u16,
+                log_level in prop_oneof!["trace", "debug", "info", "warn", "error"],
+            ) {
+                let config = CommonConfig {
+                    name,
+                    log_level,
+                    listen_port: port,
+                    ..CommonConfig::default()
+                };
+                let json = serde_json::to_string(&config).unwrap();
+                let back: CommonConfig = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(&config.name, &back.name);
+                prop_assert_eq!(config.listen_port, back.listen_port);
+                prop_assert_eq!(&config.log_level, &back.log_level);
+            }
+
+            #[test]
+            fn common_config_toml_roundtrip(
+                name in "[a-z][a-z0-9-]{2,20}",
+                port in 0u16..=65535u16,
+            ) {
+                let config = CommonConfig {
+                    name,
+                    listen_port: port,
+                    ..CommonConfig::default()
+                };
+                let toml_str = toml::to_string(&config).unwrap();
+                let back: CommonConfig = toml::from_str(&toml_str).unwrap();
+                prop_assert_eq!(&config.name, &back.name);
+                prop_assert_eq!(config.listen_port, back.listen_port);
+            }
+
+            #[test]
+            fn instance_id_always_nonempty(count in 1usize..10) {
+                for _ in 0..count {
+                    let config = CommonConfig::default();
+                    prop_assert!(!config.instance_id.is_empty());
+                }
+            }
+        }
+    }
 }
