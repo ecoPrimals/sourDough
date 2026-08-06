@@ -138,6 +138,18 @@ impl TransportEndpoint {
         }
     }
 
+    /// Derive the tarpc UDS endpoint from a JSON-RPC UDS endpoint.
+    ///
+    /// Convention: `{name}.sock` → `{name}.tarpc.sock`
+    /// Returns `None` for non-UDS endpoints or paths not ending in `.sock`.
+    #[must_use]
+    pub fn tarpc_endpoint(&self) -> Option<Self> {
+        self.uds_path().and_then(|p| {
+            p.strip_suffix(".sock")
+                .map(|base| Self::uds(format!("{base}.tarpc.sock")))
+        })
+    }
+
     /// Returns `(peer_id, capability)` if this is a mesh relay endpoint.
     #[must_use]
     pub fn mesh_peer(&self) -> Option<(&str, &str)> {
@@ -346,6 +358,25 @@ mod tests {
         assert_eq!(uds.transport_name(), "uds");
         assert_eq!(tcp.transport_name(), "tcp");
         assert_eq!(relay.transport_name(), "mesh_relay");
+    }
+
+    #[test]
+    fn tarpc_endpoint_from_uds() {
+        let ep = TransportEndpoint::uds("/run/biomeos/beardog.sock");
+        let tarpc = ep.tarpc_endpoint().unwrap();
+        assert_eq!(tarpc.uds_path(), Some("/run/biomeos/beardog.tarpc.sock"));
+    }
+
+    #[test]
+    fn tarpc_endpoint_returns_none_for_tcp() {
+        let ep = TransportEndpoint::tcp("10.0.0.1", 8080);
+        assert!(ep.tarpc_endpoint().is_none());
+    }
+
+    #[test]
+    fn tarpc_endpoint_returns_none_for_non_sock_uds() {
+        let ep = TransportEndpoint::uds("/tmp/something");
+        assert!(ep.tarpc_endpoint().is_none());
     }
 
     #[test]

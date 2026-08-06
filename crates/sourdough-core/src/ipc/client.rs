@@ -41,10 +41,9 @@ impl IpcClient {
     /// Returns `None` for TCP or `MeshRelay` endpoints (tarpc over TCP not yet supported).
     #[must_use]
     pub fn tarpc_path(&self) -> Option<String> {
-        self.endpoint.uds_path().and_then(|p| {
-            p.strip_suffix(".sock")
-                .map(|base| format!("{base}.tarpc.sock"))
-        })
+        self.endpoint
+            .tarpc_endpoint()
+            .and_then(|ep| ep.uds_path().map(String::from))
     }
 
     /// Send a JSON-RPC request and return the response.
