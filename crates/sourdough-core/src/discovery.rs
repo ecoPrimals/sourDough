@@ -37,6 +37,19 @@ impl std::fmt::Display for ProtocolSupport {
     }
 }
 
+impl std::str::FromStr for ProtocolSupport {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "jsonrpc" | "json-rpc" | "json_rpc" => Ok(Self::JsonRpcOnly),
+            "tarpc" | "binary" => Ok(Self::TarpcOnly),
+            "dual" | "dual-protocol" | "dual_protocol" => Ok(Self::DualProtocol),
+            other => Err(format!("unknown protocol: {other}")),
+        }
+    }
+}
+
 /// Service registration for discovery services.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServiceRegistration {
@@ -399,6 +412,40 @@ mod tests {
         assert_eq!(ProtocolSupport::JsonRpcOnly.to_string(), "jsonrpc");
         assert_eq!(ProtocolSupport::TarpcOnly.to_string(), "tarpc");
         assert_eq!(ProtocolSupport::DualProtocol.to_string(), "dual");
+    }
+
+    #[test]
+    fn protocol_support_from_str_roundtrip() {
+        for variant in [
+            ProtocolSupport::JsonRpcOnly,
+            ProtocolSupport::TarpcOnly,
+            ProtocolSupport::DualProtocol,
+        ] {
+            let s = variant.to_string();
+            let parsed: ProtocolSupport = s.parse().unwrap();
+            assert_eq!(variant, parsed);
+        }
+    }
+
+    #[test]
+    fn protocol_support_from_str_aliases() {
+        assert_eq!(
+            "json-rpc".parse::<ProtocolSupport>().unwrap(),
+            ProtocolSupport::JsonRpcOnly
+        );
+        assert_eq!(
+            "binary".parse::<ProtocolSupport>().unwrap(),
+            ProtocolSupport::TarpcOnly
+        );
+        assert_eq!(
+            "dual-protocol".parse::<ProtocolSupport>().unwrap(),
+            ProtocolSupport::DualProtocol
+        );
+    }
+
+    #[test]
+    fn protocol_support_from_str_error() {
+        assert!("unknown".parse::<ProtocolSupport>().is_err());
     }
 
     #[test]
