@@ -3,10 +3,29 @@
 //! Every primal needs to be discoverable. This module provides traits for
 //! registering with discovery services via the universal adapter and broadcasting
 //! presence to the network.
+//!
+//! ## Dual-Protocol Discovery (G64 Cephalization)
+//!
+//! Primals may advertise both JSON-RPC and tarpc endpoints. Callers choose
+//! the protocol based on locality and performance needs:
+//! - **JSON-RPC** (`endpoint`): universal, browser-compatible, cross-gate
+//! - **tarpc** (`tarpc_endpoint`): binary framing, intra-gate, sub-ms
 
 use crate::error::PrimalError;
 use crate::identity::Did;
 use serde::{Deserialize, Serialize};
+
+/// Which protocols a primal supports for IPC.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ProtocolSupport {
+    /// JSON-RPC only (legacy or browser-facing primals).
+    JsonRpcOnly,
+    /// tarpc only (internal-only high-throughput primals).
+    TarpcOnly,
+    /// Both JSON-RPC and tarpc (cephalization-era default).
+    #[default]
+    DualProtocol,
+}
 
 /// Service registration for discovery services.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -15,8 +34,15 @@ pub struct ServiceRegistration {
     pub name: String,
     /// Service version (semver).
     pub version: String,
-    /// Service endpoint URL.
+    /// JSON-RPC endpoint (bootstrap, discovery, diagnostics).
     pub endpoint: String,
+    /// tarpc binary endpoint (intra-gate composition, sub-ms).
+    /// `None` for primals that only expose JSON-RPC.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tarpc_endpoint: Option<String>,
+    /// Which protocols this primal supports.
+    #[serde(default)]
+    pub protocol_support: ProtocolSupport,
     /// Service capabilities.
     pub capabilities: Vec<UpaCapability>,
     /// Service metadata.
@@ -26,7 +52,7 @@ pub struct ServiceRegistration {
 }
 
 impl ServiceRegistration {
-    /// Create a new service registration.
+    /// Create a new service registration (JSON-RPC endpoint).
     #[must_use]
     pub fn new(
         name: impl Into<String>,
@@ -37,10 +63,20 @@ impl ServiceRegistration {
             name: name.into(),
             version: version.into(),
             endpoint: endpoint.into(),
+            tarpc_endpoint: None,
+            protocol_support: ProtocolSupport::JsonRpcOnly,
             capabilities: Vec::new(),
             metadata: std::collections::HashMap::new(),
             health_endpoint: None,
         }
+    }
+
+    /// Set the tarpc binary endpoint (enables dual-protocol).
+    #[must_use]
+    pub fn with_tarpc_endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.tarpc_endpoint = Some(endpoint.into());
+        self.protocol_support = ProtocolSupport::DualProtocol;
+        self
     }
 
     /// Add a capability.
@@ -62,6 +98,12 @@ impl ServiceRegistration {
     pub fn with_health_endpoint(mut self, endpoint: impl Into<String>) -> Self {
         self.health_endpoint = Some(endpoint.into());
         self
+    }
+
+    /// Whether this registration includes a tarpc endpoint.
+    #[must_use]
+    pub const fn has_tarpc(&self) -> bool {
+        self.tarpc_endpoint.is_some()
     }
 }
 
@@ -188,14 +230,36 @@ pub struct ServiceInfo {
     pub name: String,
     /// Service version.
     pub version: String,
-    /// Service endpoint.
+    /// JSON-RPC endpoint (always present).
     pub endpoint: String,
+    /// tarpc binary endpoint (present for cephalization-era primals).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tarpc_endpoint: Option<String>,
+    /// Which protocols this service supports.
+    #[serde(default)]
+    pub protocol_support: ProtocolSupport,
     /// Service DID.
     pub did: Did,
     /// Service capabilities.
     pub capabilities: Vec<String>,
     /// Whether this service is in our lineage.
     pub is_family: bool,
+}
+
+impl ServiceInfo {
+    /// Get the best endpoint for high-performance intra-gate calls.
+    ///
+    /// Returns the tarpc endpoint if available, falls back to JSON-RPC.
+    #[must_use]
+    pub fn best_endpoint(&self) -> &str {
+        self.tarpc_endpoint.as_deref().unwrap_or(&self.endpoint)
+    }
+
+    /// Whether this service supports tarpc binary protocol.
+    #[must_use]
+    pub const fn supports_tarpc(&self) -> bool {
+        self.tarpc_endpoint.is_some()
+    }
 }
 
 #[cfg(test)]
@@ -258,6 +322,8 @@ mod tests {
             name: "test".to_string(),
             version: "1.0.0".to_string(),
             endpoint: "http://test".to_string(),
+            tarpc_endpoint: None,
+            protocol_support: ProtocolSupport::JsonRpcOnly,
             did: Did::new("did:key:test123"),
             capabilities: vec!["storage".to_string()],
             is_family: true,
@@ -268,6 +334,64 @@ mod tests {
 
         assert_eq!(info.name, parsed.name);
         assert_eq!(info.is_family, parsed.is_family);
+        assert!(!parsed.supports_tarpc());
+        assert_eq!(parsed.best_endpoint(), "http://test");
+    }
+
+    #[test]
+    fn service_info_dual_protocol() {
+        let info = ServiceInfo {
+            name: "fast-primal".to_string(),
+            version: "2.0.0".to_string(),
+            endpoint: "unix:///run/user/1000/biomeos/fast-primal.sock".to_string(),
+            tarpc_endpoint: Some(
+                "unix:///run/user/1000/biomeos/fast-primal.tarpc.sock".to_string(),
+            ),
+            protocol_support: ProtocolSupport::DualProtocol,
+            did: Did::new("did:key:fast123"),
+            capabilities: vec!["compute".to_string()],
+            is_family: true,
+        };
+
+        assert!(info.supports_tarpc());
+        assert_eq!(
+            info.best_endpoint(),
+            "unix:///run/user/1000/biomeos/fast-primal.tarpc.sock"
+        );
+
+        let json = serde_json::to_string(&info).unwrap();
+        let parsed: ServiceInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.protocol_support, ProtocolSupport::DualProtocol);
+        assert!(parsed.supports_tarpc());
+    }
+
+    #[test]
+    fn service_registration_tarpc_builder() {
+        let reg = ServiceRegistration::new("myprimal", "1.0.0", "unix:///tmp/myprimal.sock")
+            .with_tarpc_endpoint("unix:///tmp/myprimal.tarpc.sock")
+            .with_capability(UpaCapability::new("health", "1.0", "jsonrpc"));
+
+        assert!(reg.has_tarpc());
+        assert_eq!(reg.protocol_support, ProtocolSupport::DualProtocol);
+        assert_eq!(
+            reg.tarpc_endpoint.as_deref(),
+            Some("unix:///tmp/myprimal.tarpc.sock")
+        );
+    }
+
+    #[test]
+    fn protocol_support_default_is_dual() {
+        assert_eq!(ProtocolSupport::default(), ProtocolSupport::DualProtocol);
+    }
+
+    #[test]
+    fn service_info_backward_compat_deserialization() {
+        let legacy_json = r#"{"name":"old","version":"0.1.0","endpoint":"unix:///tmp/old.sock","did":"did:key:old","capabilities":["health"],"is_family":false}"#;
+        let info: ServiceInfo = serde_json::from_str(legacy_json).unwrap();
+        assert_eq!(info.tarpc_endpoint, None);
+        assert_eq!(info.protocol_support, ProtocolSupport::default());
+        assert!(!info.supports_tarpc());
+        assert_eq!(info.best_endpoint(), "unix:///tmp/old.sock");
     }
 
     #[test]
@@ -365,5 +489,96 @@ mod tests {
 
         let services = primal.discover_by_capability("storage").await.unwrap();
         assert!(services.is_empty());
+    }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        fn arb_service_registration() -> impl Strategy<Value = ServiceRegistration> {
+            (
+                "[a-z][a-z0-9-]{2,20}",
+                "[0-9]+\\.[0-9]+\\.[0-9]+",
+                "unix:///tmp/[a-z]+\\.sock",
+            )
+                .prop_map(|(name, version, endpoint)| {
+                    ServiceRegistration::new(name, version, endpoint)
+                })
+        }
+
+        fn arb_service_info() -> impl Strategy<Value = ServiceInfo> {
+            (
+                "[a-z][a-z0-9-]{2,20}",
+                "[0-9]+\\.[0-9]+\\.[0-9]+",
+                "unix:///tmp/[a-z]+\\.sock",
+                proptest::option::of("unix:///tmp/[a-z]+\\.tarpc\\.sock"),
+                prop::collection::vec("[a-z]+", 0..5),
+                any::<bool>(),
+            )
+                .prop_map(|(name, version, endpoint, tarpc_ep, caps, is_family)| {
+                    let protocol_support = if tarpc_ep.is_some() {
+                        ProtocolSupport::DualProtocol
+                    } else {
+                        ProtocolSupport::JsonRpcOnly
+                    };
+                    ServiceInfo {
+                        name,
+                        version,
+                        endpoint,
+                        tarpc_endpoint: tarpc_ep,
+                        protocol_support,
+                        did: Did::new("did:key:test"),
+                        capabilities: caps,
+                        is_family,
+                    }
+                })
+        }
+
+        proptest! {
+            #[test]
+            fn service_registration_json_roundtrip(reg in arb_service_registration()) {
+                let json = serde_json::to_string(&reg).unwrap();
+                let back: ServiceRegistration = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(&reg.name, &back.name);
+                prop_assert_eq!(&reg.version, &back.version);
+                prop_assert_eq!(&reg.endpoint, &back.endpoint);
+            }
+
+            #[test]
+            fn service_info_json_roundtrip(info in arb_service_info()) {
+                let json = serde_json::to_string(&info).unwrap();
+                let back: ServiceInfo = serde_json::from_str(&json).unwrap();
+                prop_assert_eq!(&info.name, &back.name);
+                prop_assert_eq!(&info.version, &back.version);
+                prop_assert_eq!(&info.endpoint, &back.endpoint);
+                prop_assert_eq!(&info.tarpc_endpoint, &back.tarpc_endpoint);
+                prop_assert_eq!(&info.protocol_support, &back.protocol_support);
+                prop_assert_eq!(info.is_family, back.is_family);
+            }
+
+            #[test]
+            fn service_info_best_endpoint_prefers_tarpc(info in arb_service_info()) {
+                let best = info.best_endpoint();
+                if let Some(tarpc) = &info.tarpc_endpoint {
+                    prop_assert_eq!(best, tarpc.as_str());
+                } else {
+                    prop_assert_eq!(best, info.endpoint.as_str());
+                }
+            }
+
+            #[test]
+            fn service_registration_tarpc_builder_sets_dual(
+                name in "[a-z]{3,10}",
+                version in "[0-9]+\\.[0-9]+\\.[0-9]+",
+                endpoint in "unix:///tmp/[a-z]+\\.sock",
+                tarpc_ep in "unix:///tmp/[a-z]+\\.tarpc\\.sock",
+            ) {
+                let reg = ServiceRegistration::new(name, version, endpoint)
+                    .with_tarpc_endpoint(&tarpc_ep);
+                prop_assert!(reg.has_tarpc());
+                prop_assert_eq!(reg.protocol_support, ProtocolSupport::DualProtocol);
+                prop_assert_eq!(reg.tarpc_endpoint.as_deref(), Some(tarpc_ep.as_str()));
+            }
+        }
     }
 }

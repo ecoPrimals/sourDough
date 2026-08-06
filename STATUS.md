@@ -28,7 +28,7 @@
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
 - [x] Dual-protocol scaffold (G64 Cephalization): JSON-RPC + tarpc service trait
-- [x] 502 tests, zero ignored
+- [x] 510 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -43,7 +43,7 @@
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 287 | 502 (rpc.rs) |
+| sourdough-core | 295 | 502 (rpc.rs) |
 | sourdough (CLI) | 36 (2 e2e + 34 integration) | 608 (ribocipher.rs) |
 | sourdough-genomebin | 75 + 92 | 599 (platform.rs) |
 | doctests | 12 | — |
@@ -58,7 +58,11 @@
 - Server `main.rs` starts tarpc as background task, JSON-RPC as lifecycle anchor
 - `--disable-tarpc` CLI flag for JSON-RPC-only mode
 - Clippy deep debt: raw string hashes, byte_char_slices, io_other_error, case_sensitive_extension
-- 502 tests, all 3 cross-targets green, clippy clean
+- `validate tarpc` subcommand — audit primals for G64 dual-protocol compliance
+- Discovery types evolved: `ServiceInfo` + `ServiceRegistration` carry tarpc endpoints
+- `ProtocolSupport` enum (JsonRpcOnly / TarpcOnly / DualProtocol) for capability-based routing
+- Property-based tests for discovery type roundtrips
+- 510 tests, all 3 cross-targets green, clippy clean
 
 ### Wave 142b (July 16, 2026 — Type-System Evolution + Android Parity)
 - `Did::try_new()` — validated DID construction (rejects malformed input)
