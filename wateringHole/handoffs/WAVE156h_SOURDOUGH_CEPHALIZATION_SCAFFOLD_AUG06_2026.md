@@ -92,7 +92,7 @@ These are in the workspace template only — sourDough's own `Cargo.toml` is unc
 
 ## Verification
 
-- 502 tests passing
+- 518 tests passing
 - Clippy clean (zero warnings)
 - `cargo fmt` clean
 - `cargo check --target x86_64-pc-windows-gnu` ✓
@@ -101,14 +101,27 @@ These are in the workspace template only — sourDough's own `Cargo.toml` is unc
 
 ---
 
+## Completed (Post-Initial Scaffold)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| tarpc client template | **DONE** | Core template emits `connect()` function for primal-to-primal calls |
+| `sourdough validate tarpc` | **DONE** | Audits primals for G64 dual-protocol compliance |
+| Dual-socket health probe | **DONE** | `sourdough doctor` reports [dual]/[jsonrpc]/[tarpc-only] per socket |
+| `TransportEndpoint::tarpc_endpoint()` | **DONE** | Derives `.tarpc.sock` from `.sock` endpoint |
+| `IpcClient::tarpc_path()` | **DONE** | Resolves tarpc socket path for any connected primal |
+| `ProtocolSupport` Display impl | **DONE** | Renders as "jsonrpc"/"tarpc"/"dual" for diagnostics |
+| clap 4.5 → 4.6 | **DONE** | Latest CLI framework |
+
+---
+
 ## Remaining Work
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| tarpc client template | P3 | Generate tarpc client code for primal-to-primal calls |
-| `sourdough validate tarpc` | P3 | Audit primals for tarpc service compliance |
-| Dual-socket health probe | P3 | `sourdough doctor` checks both `.sock` and `.tarpc.sock` |
+| tarpc live health probe | P3 | Doctor could attempt tarpc handshake (requires tarpc dep in CLI) |
+| `sourdough validate tarpc --fleet` | P3 | Batch validate all primals in a directory |
 
 ---
 
-**sourDough role in G64**: scaffold the pattern. Other primals evolve to it independently (convergent evolution). The scaffold ensures new primals start at the convergence target.
+**sourDough role in G64**: scaffold the pattern. Other primals evolve to it independently (convergent evolution). The scaffold ensures new primals start at the convergence target. sourDough itself provides the tooling to validate compliance and the transport primitives to derive tarpc endpoints from JSON-RPC endpoints.

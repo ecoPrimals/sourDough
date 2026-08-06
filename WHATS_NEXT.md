@@ -2,7 +2,7 @@
 
 **Version**: 0.4.0
 **Date**: August 6, 2026
-**Status**: G64 Cephalization scaffold shipped. Dual-protocol primals (JSON-RPC + tarpc). 502 tests. Deep debt zero. Zero P0/P1/P2.
+**Status**: G64 Cephalization scaffold complete. Dual-protocol primals (JSON-RPC + tarpc). 518 tests. Deep debt zero. Zero P0/P1/P2.
 
 ---
 
@@ -10,13 +10,19 @@
 
 ### Wave 156h (August 6 — G64 Cephalization Scaffold)
 - [x] Scaffold emits dual-protocol primals: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
-- [x] `tarpc_service.rs` core template (`#[tarpc::service]` trait + response types)
+- [x] `tarpc_service.rs` core template (`#[tarpc::service]` trait + response types + client `connect()`)
 - [x] `tarpc_server.rs` server template (UDS listener, `BaseChannel`, handler bridge)
 - [x] Workspace deps: tarpc 0.37 (`serde-transport-bincode` + `unix`) + tokio-serde + futures
 - [x] `--disable-tarpc` CLI flag for JSON-RPC-only mode
+- [x] `validate tarpc` subcommand — audit primals for G64 dual-protocol compliance
+- [x] `TransportEndpoint::tarpc_endpoint()` — derive tarpc socket from JSON-RPC endpoint
+- [x] `IpcClient::tarpc_path()` — resolve tarpc socket for connected primals
+- [x] Doctor reports dual-protocol socket status ([dual]/[jsonrpc]/[tarpc-only])
+- [x] `ProtocolSupport` enum with `Display` for diagnostics
 - [x] Clippy debt cleared: raw string hashes, byte_char_slices, io_other_error, case_sensitive_extension
+- [x] clap 4.5 → 4.6
 - [x] All 3 cross-targets green (native, Windows, Android)
-- [x] 502 tests, clippy clean
+- [x] 518 tests, clippy clean
 
 ### Wave 142b (July 16 — Type-System Evolution + Android Parity)
 - [x] `Did::try_new()` validated DID construction (rejects malformed input)
@@ -105,7 +111,7 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 502 | All passing |
+| Tests | 518 | All passing |
 | Clippy | zero warnings | zero |
 | Unsafe | zero (forbid on all roots) | zero |
 | C deps | zero | zero |
@@ -132,4 +138,4 @@
 ---
 
 **Date**: August 6, 2026
-**Status**: G64 Cephalization scaffold shipped. Dual-protocol primals born ready. All 4 depot architectures green. Zero development debt. Phase 2 abstraction: sourDough scaffolds the abstraction for other primals.
+**Status**: G64 Cephalization scaffold complete. tarpc client + server templates. TransportEndpoint + IpcClient tarpc-aware. Doctor dual-protocol. 518 tests, zero deep debt. Phase 2 abstraction: sourDough scaffolds the abstraction for other primals.
