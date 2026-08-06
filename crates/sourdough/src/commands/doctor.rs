@@ -146,18 +146,57 @@ fn check_biomeos_socket_dir() {
 
     let path = std::path::Path::new(&socket_dir);
     if path.exists() {
-        let sockets: Vec<_> = std::fs::read_dir(path)
+        let entries: Vec<_> = std::fs::read_dir(path)
             .into_iter()
             .flatten()
             .flatten()
-            .filter(|e| e.path().extension().is_some_and(|ext| ext == "sock"))
             .collect();
-        if sockets.is_empty() {
-            println!("  ⚠ {socket_dir} exists but no .sock files found");
+
+        let jsonrpc_sockets: Vec<_> = entries
+            .iter()
+            .filter(|e| {
+                let name = e.file_name();
+                let name = name.to_string_lossy();
+                name.ends_with(".sock") && !name.ends_with(".tarpc.sock")
+            })
+            .collect();
+
+        let tarpc_sockets: Vec<_> = entries
+            .iter()
+            .filter(|e| e.file_name().to_string_lossy().ends_with(".tarpc.sock"))
+            .collect();
+
+        if jsonrpc_sockets.is_empty() && tarpc_sockets.is_empty() {
+            println!("  ⚠ {socket_dir} exists but no sockets found");
         } else {
-            println!("  ✓ {socket_dir} ({} socket(s) found)", sockets.len());
-            for sock in &sockets {
-                println!("    • {}", sock.file_name().to_string_lossy());
+            println!(
+                "  ✓ {socket_dir} ({} JSON-RPC, {} tarpc)",
+                jsonrpc_sockets.len(),
+                tarpc_sockets.len()
+            );
+
+            for sock in &jsonrpc_sockets {
+                let name = sock.file_name();
+                let name = name.to_string_lossy();
+                let base = name.strip_suffix(".sock").unwrap_or(&name);
+                let has_tarpc = tarpc_sockets
+                    .iter()
+                    .any(|t| t.file_name().to_string_lossy().starts_with(base));
+                let protocol_tag = if has_tarpc { "dual" } else { "jsonrpc" };
+                println!("    • {name} [{protocol_tag}]");
+            }
+
+            for sock in &tarpc_sockets {
+                let name = sock.file_name();
+                let name = name.to_string_lossy();
+                let has_jsonrpc = jsonrpc_sockets.iter().any(|j| {
+                    let jname = j.file_name();
+                    let jname = jname.to_string_lossy();
+                    name.starts_with(jname.strip_suffix(".sock").unwrap_or(&jname))
+                });
+                if !has_jsonrpc {
+                    println!("    • {name} [tarpc-only]");
+                }
             }
         }
     } else {

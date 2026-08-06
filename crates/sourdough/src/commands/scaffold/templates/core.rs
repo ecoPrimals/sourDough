@@ -25,6 +25,7 @@ serde_json = {{ workspace = true }}
 thiserror = {{ workspace = true }}
 tracing = {{ workspace = true }}
 tarpc = {{ workspace = true }}
+tokio-serde = {{ workspace = true }}
 
 [dev-dependencies]
 tokio = {{ workspace = true, features = ["test-util"] }}

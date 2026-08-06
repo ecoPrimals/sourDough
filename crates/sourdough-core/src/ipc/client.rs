@@ -35,6 +35,18 @@ impl IpcClient {
         &self.endpoint
     }
 
+    /// Derive the tarpc socket path from this client's JSON-RPC endpoint.
+    ///
+    /// Convention: `{name}.sock` → `{name}.tarpc.sock`
+    /// Returns `None` for TCP or `MeshRelay` endpoints (tarpc over TCP not yet supported).
+    #[must_use]
+    pub fn tarpc_path(&self) -> Option<String> {
+        self.endpoint.uds_path().and_then(|p| {
+            p.strip_suffix(".sock")
+                .map(|base| format!("{base}.tarpc.sock"))
+        })
+    }
+
     /// Send a JSON-RPC request and return the response.
     ///
     /// For UDS/TCP endpoints: opens a connection, writes the request as a
@@ -294,6 +306,33 @@ mod tests {
         let path = client.endpoint().uds_path().unwrap();
         assert!(path.contains("testprimal"));
         assert!(path.contains("family1"));
+    }
+
+    #[test]
+    fn tarpc_path_derives_from_uds() {
+        let client = IpcClient::from_primal("beardog", None);
+        let tarpc = client.tarpc_path().unwrap();
+        assert!(tarpc.ends_with("beardog.tarpc.sock"));
+        assert!(!tarpc.ends_with("beardog.sock.tarpc.sock"));
+    }
+
+    #[test]
+    fn tarpc_path_with_family_id() {
+        let client = IpcClient::from_primal("beardog", Some("abc"));
+        let tarpc = client.tarpc_path().unwrap();
+        assert!(tarpc.contains("beardog-abc.tarpc.sock"));
+    }
+
+    #[test]
+    fn tarpc_path_returns_none_for_tcp() {
+        let client = IpcClient::new(TransportEndpoint::tcp("10.0.0.1", 7700));
+        assert!(client.tarpc_path().is_none());
+    }
+
+    #[test]
+    fn tarpc_path_returns_none_for_mesh_relay() {
+        let client = IpcClient::new(TransportEndpoint::mesh_relay("peer1", "cap1"));
+        assert!(client.tarpc_path().is_none());
     }
 
     #[test]

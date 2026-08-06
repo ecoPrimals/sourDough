@@ -7,7 +7,7 @@
 pub(in crate::commands::scaffold) fn tarpc_service_rs(name: &str) -> String {
     let type_name = super::super::primal_rust_type_name(name);
     format!(
-        r"//! tarpc service definition for high-performance binary IPC.
+        r#"//! tarpc service definition for high-performance binary IPC.
 //!
 //! Dual-protocol architecture (G64 Cephalization):
 //! - JSON-RPC on `{{name}}.sock` — bootstrap, discovery, diagnostics, browser
@@ -50,7 +50,32 @@ pub struct CapabilitiesResponse {{
     pub version: String,
     pub methods: Vec<String>,
 }}
-",
+
+/// Connect to a remote {name} primal via its tarpc socket.
+///
+/// Returns a tarpc client stub ready for sub-ms binary RPC calls.
+/// Falls back to `$XDG_RUNTIME_DIR/biomeos/{{name}}.tarpc.sock` if no path given.
+///
+/// # Errors
+///
+/// Returns an error if the socket doesn't exist or connection fails.
+pub async fn connect(socket_path: Option<&str>) -> Result<{type_name}ServiceClient, std::io::Error> {{
+    let default_path = {{
+        let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".to_owned());
+        format!("{{runtime_dir}}/biomeos/{name_lower}.tarpc.sock")
+    }};
+    let path = socket_path.unwrap_or(&default_path);
+
+    let transport = tarpc::serde_transport::unix::connect(
+        path,
+        tokio_serde::formats::Bincode::default,
+    )
+    .await?;
+
+    Ok({type_name}ServiceClient::new(tarpc::client::Config::default(), transport).spawn())
+}}
+"#,
+        name_lower = name.to_lowercase(),
     )
 }
 
