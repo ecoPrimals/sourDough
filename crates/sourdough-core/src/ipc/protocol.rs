@@ -409,7 +409,7 @@ mod tests {
         let variants: Vec<PrimalError> = vec![
             PrimalError::Config("bad config".into()),
             PrimalError::Internal("oops".into()),
-            std::io::Error::new(std::io::ErrorKind::Other, "read failed").into(),
+            std::io::Error::other("read failed").into(),
         ];
         for pe in variants {
             let rpc_err: JsonRpcError = pe.into();

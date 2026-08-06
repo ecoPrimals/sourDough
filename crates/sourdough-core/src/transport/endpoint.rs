@@ -242,7 +242,12 @@ mod tests {
         assert!(matches!(ep, TransportEndpoint::Uds { .. }));
         let path = ep.uds_path().unwrap();
         assert!(path.contains("beardog"));
-        assert!(path.ends_with(".sock"));
+        assert_eq!(
+            std::path::Path::new(path)
+                .extension()
+                .and_then(|e| e.to_str()),
+            Some("sock")
+        );
     }
 
     #[test]

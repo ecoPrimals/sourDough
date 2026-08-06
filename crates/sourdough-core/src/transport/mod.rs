@@ -253,7 +253,7 @@ mod tests {
 
         let mut buf = Vec::new();
         stream.read_to_end(&mut buf).await.unwrap();
-        assert_eq!(buf, &[b'{', b'"', b'j', b's']);
+        assert_eq!(buf, b"{\"js");
     }
 
     #[tokio::test]

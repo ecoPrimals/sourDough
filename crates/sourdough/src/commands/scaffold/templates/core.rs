@@ -24,6 +24,7 @@ serde = {{ workspace = true }}
 serde_json = {{ workspace = true }}
 thiserror = {{ workspace = true }}
 tracing = {{ workspace = true }}
+tarpc = {{ workspace = true }}
 
 [dev-dependencies]
 tokio = {{ workspace = true, features = ["test-util"] }}
@@ -41,11 +42,13 @@ pub(in crate::commands::scaffold) fn lib_rs(name: &str) -> String {
 //!
 //! Self-contained: all primal DNA (traits, types, patterns) is defined here.
 //! This primal discovers other primals at runtime via JSON-RPC 2.0 IPC.
+//! High-performance intra-gate callers use the tarpc service (G64 cephalization).
 
 pub mod env_keys;
 pub mod error;
 pub mod health;
 pub mod lifecycle;
+pub mod tarpc_service;
 
 pub use error::{{PrimalError, PrimalResult}};
 pub use health::{{HealthReport, HealthStatus, PrimalHealth}};

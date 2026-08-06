@@ -280,7 +280,12 @@ mod tests {
         let client = IpcClient::from_primal("testprimal", None);
         let path = client.endpoint().uds_path().unwrap();
         assert!(path.contains("testprimal"));
-        assert!(path.ends_with(".sock"));
+        assert_eq!(
+            std::path::Path::new(path)
+                .extension()
+                .and_then(|e| e.to_str()),
+            Some("sock")
+        );
     }
 
     #[test]
@@ -315,7 +320,7 @@ mod tests {
         // Either transport error (no hub running) or a response (hub is running)
         match result {
             Err(e) => {
-                assert!(e.kind == IpcErrorKind::Transport || e.kind == IpcErrorKind::Timeout,)
+                assert!(e.kind == IpcErrorKind::Transport || e.kind == IpcErrorKind::Timeout);
             }
             Ok(resp) => {
                 // If hub responded, it's a valid JSON-RPC response (possibly error)

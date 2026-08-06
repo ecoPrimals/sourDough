@@ -9,6 +9,7 @@
 //! - [`server`] — `{name}-server` crate templates (Cargo.toml, main, server)
 //! - [`dispatch`] — JSON-RPC method dispatch template
 //! - [`method_gate`] — JH-0/JH-2 pre-dispatch capability gate template
+//! - [`tarpc_service`] — tarpc binary RPC service definition (G64 cephalization)
 //! - [`announce`] — Ecosystem announcement template
 //! - [`infra`] — CI workflows and deny.toml
 
@@ -18,6 +19,7 @@ mod dispatch;
 mod infra;
 mod method_gate;
 mod server;
+mod tarpc_service;
 
 pub(super) use self::announce::announce_rs;
 pub(super) use self::core::{
@@ -29,3 +31,4 @@ pub(super) use self::infra::{
 };
 pub(super) use self::method_gate::method_gate_rs;
 pub(super) use self::server::{server_cargo_toml, server_main_rs, server_rs};
+pub(super) use self::tarpc_service::{tarpc_server_section, tarpc_service_rs};

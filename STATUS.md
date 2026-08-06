@@ -9,6 +9,7 @@
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC
 - `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
+- **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
 ## Compliance
 
@@ -26,6 +27,7 @@
 - [x] Binary RPC secondary high-throughput path with `bytes::Bytes` zero-copy
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
+- [x] Dual-protocol scaffold (G64 Cephalization): JSON-RPC + tarpc service trait
 - [x] 502 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
@@ -46,7 +48,17 @@
 | sourdough-genomebin | 75 + 92 | 599 (platform.rs) |
 | doctests | 12 | — |
 
-## v0.4.0 (June–July 2026 — Transport Ecosystem + riboCipher + Cross-Arch)
+## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156h (August 6, 2026 — G64 Cephalization Scaffold)
+- Scaffold templates emit dual-protocol primals: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
+- New `tarpc_service.rs` template in core crate (service trait + response types)
+- New `tarpc_server.rs` template in server crate (UDS listener + handler bridge)
+- Workspace deps template includes tarpc 0.37 + tokio-serde + futures
+- Server `main.rs` starts tarpc as background task, JSON-RPC as lifecycle anchor
+- `--disable-tarpc` CLI flag for JSON-RPC-only mode
+- Clippy deep debt: raw string hashes, byte_char_slices, io_other_error, case_sensitive_extension
+- 502 tests, all 3 cross-targets green, clippy clean
 
 ### Wave 142b (July 16, 2026 — Type-System Evolution + Android Parity)
 - `Did::try_new()` — validated DID construction (rejects malformed input)

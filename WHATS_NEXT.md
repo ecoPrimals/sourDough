@@ -1,12 +1,22 @@
 # What's Next for sourDough
 
 **Version**: 0.4.0
-**Date**: July 16, 2026
-**Status**: Type-system evolution complete. Android parity achieved. 502 tests. Deep debt zero. Zero P1.
+**Date**: August 6, 2026
+**Status**: G64 Cephalization scaffold shipped. Dual-protocol primals (JSON-RPC + tarpc). 502 tests. Deep debt zero. Zero P0/P1/P2.
 
 ---
 
-## Shipped (v0.4.0 — June–July 2026, Transport + riboCipher + Cross-Arch)
+## Shipped (v0.4.0 — June–Aug 2026, Transport + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156h (August 6 — G64 Cephalization Scaffold)
+- [x] Scaffold emits dual-protocol primals: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
+- [x] `tarpc_service.rs` core template (`#[tarpc::service]` trait + response types)
+- [x] `tarpc_server.rs` server template (UDS listener, `BaseChannel`, handler bridge)
+- [x] Workspace deps: tarpc 0.37 (`serde-transport-bincode` + `unix`) + tokio-serde + futures
+- [x] `--disable-tarpc` CLI flag for JSON-RPC-only mode
+- [x] Clippy debt cleared: raw string hashes, byte_char_slices, io_other_error, case_sensitive_extension
+- [x] All 3 cross-targets green (native, Windows, Android)
+- [x] 502 tests, clippy clean
 
 ### Wave 142b (July 16 — Type-System Evolution + Android Parity)
 - [x] `Did::try_new()` validated DID construction (rejects malformed input)
@@ -121,5 +131,5 @@
 
 ---
 
-**Date**: July 16, 2026
-**Status**: Zero development debt. All 4 depot architectures green. Type-system evolved (Did validation, Platform helpers). Phase 2 abstraction N/A (CLI tool, no transport to abstract).
+**Date**: August 6, 2026
+**Status**: G64 Cephalization scaffold shipped. Dual-protocol primals born ready. All 4 depot architectures green. Zero development debt. Phase 2 abstraction: sourDough scaffolds the abstraction for other primals.

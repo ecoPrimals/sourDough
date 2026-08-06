@@ -13,7 +13,7 @@ pub(in crate::commands::scaffold) fn server_cargo_toml(
     format!(
         r#"[package]
 name = "{server_crate_name}"
-description = "JSON-RPC server for {name}"
+description = "Dual-protocol server for {name} (JSON-RPC + tarpc)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -36,6 +36,9 @@ anyhow = {{ workspace = true }}
 tracing = {{ workspace = true }}
 tracing-subscriber = {{ workspace = true }}
 clap = {{ workspace = true }}
+tarpc = {{ workspace = true }}
+tokio-serde = {{ workspace = true }}
+futures = {{ workspace = true }}
 "#,
         name_lower = name.to_lowercase(),
     )
@@ -49,13 +52,17 @@ pub(in crate::commands::scaffold) fn server_main_rs(name: &str) -> String {
     format!(
         r#"//! {name} server binary.
 //!
-//! JSON-RPC 2.0 server with transport injection — the primal does not choose
-//! its transport. The launcher or Songbird provides it.
+//! Dual-protocol server (G64 Cephalization):
+//! - JSON-RPC on `.sock` — bootstrap, discovery, diagnostics, browser
+//! - tarpc on `.tarpc.sock` — intra-gate composition, sub-ms binary framing
+//!
+//! The primal does not choose its transport. The launcher or Songbird provides it.
 
 mod announce;
 mod dispatch;
 mod method_gate;
 mod server;
+mod tarpc_server;
 
 use anyhow::Result;
 use clap::Parser;
@@ -71,6 +78,10 @@ struct Cli {{
     /// When set, the primal binds to this endpoint instead of deriving from socket conventions.
     #[arg(long, env = "TRANSPORT_ENDPOINT")]
     transport_endpoint: Option<String>,
+
+    /// Disable tarpc binary listener (JSON-RPC only mode).
+    #[arg(long, env = "DISABLE_TARPC")]
+    disable_tarpc: bool,
 }}
 
 #[tokio::main]
@@ -91,6 +102,18 @@ async fn main() -> Result<()> {{
 
     tracing::info!("{name} started");
 
+    let primal_arc = std::sync::Arc::new(primal);
+
+    // Start tarpc binary listener (intra-gate composition)
+    if !cli.disable_tarpc {{
+        tarpc_server::start_tarpc_listener(
+            "{name_lower}",
+            cli.family_id.as_deref(),
+            primal_arc.clone(),
+        )
+        .await?;
+    }}
+
     let endpoint: Option<server::TransportEndpoint> = cli
         .transport_endpoint
         .as_deref()
@@ -98,7 +121,14 @@ async fn main() -> Result<()> {{
         .transpose()
         .map_err(|e| anyhow::anyhow!("invalid TRANSPORT_ENDPOINT: {{e}}"))?;
 
-    server::run("{name_lower}", cli.family_id.as_deref(), endpoint.as_ref(), &primal).await
+    // JSON-RPC is the lifecycle anchor — blocks until shutdown
+    server::run(
+        "{name_lower}",
+        cli.family_id.as_deref(),
+        endpoint.as_ref(),
+        &*primal_arc,
+    )
+    .await
 }}
 "#,
     )

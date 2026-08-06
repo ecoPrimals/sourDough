@@ -53,6 +53,11 @@ serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 toml = "0.8"
 
+# Binary RPC (G64 cephalization — dual-protocol composition)
+tarpc = {{ version = "0.37", features = ["tokio1", "serde-transport", "serde-transport-bincode", "unix"] }}
+tokio-serde = {{ version = "0.9", features = ["bincode"] }}
+futures = "0.3"
+
 # Error handling
 thiserror = "2.0"
 anyhow = "1.0"
@@ -87,6 +92,10 @@ pub(super) fn create_server_crate(crates_dir: &Path, name: &str) -> Result<()> {
     std::fs::write(src_dir.join("dispatch.rs"), templates::dispatch_rs(name))?;
     std::fs::write(src_dir.join("method_gate.rs"), templates::method_gate_rs())?;
     std::fs::write(src_dir.join("announce.rs"), templates::announce_rs(name))?;
+    std::fs::write(
+        src_dir.join("tarpc_server.rs"),
+        templates::tarpc_server_section(name),
+    )?;
 
     Ok(())
 }
@@ -128,6 +137,10 @@ pub(super) fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
     std::fs::write(src_dir.join("env_keys.rs"), templates::ENV_KEYS_RS)?;
     std::fs::write(src_dir.join("lifecycle.rs"), templates::LIFECYCLE_RS)?;
     std::fs::write(src_dir.join("health.rs"), templates::HEALTH_RS)?;
+    std::fs::write(
+        src_dir.join("tarpc_service.rs"),
+        templates::tarpc_service_rs(name),
+    )?;
     std::fs::write(src_dir.join("lib.rs"), templates::lib_rs(name))?;
 
     Ok(())
@@ -199,15 +212,15 @@ cargo build --release
 {name}/
 ├── .github/workflows/     CI + release + plasmidBin notification
 ├── crates/
-│   ├── {name_lower}-core/        Core traits (lifecycle, health)
-│   └── {name_lower}-server/      JSON-RPC server + capability wire
+│   ├── {name_lower}-core/        Core traits (lifecycle, health, tarpc service)
+│   └── {name_lower}-server/      Dual-protocol server (JSON-RPC + tarpc)
 ├── deny.toml              Supply chain auditing
 └── specs/
 ```
 
-## Capability Wire
+## Capability Wire (Dual-Protocol)
 
-The server exposes these JSON-RPC 2.0 methods on `$XDG_RUNTIME_DIR/biomeos/{name_lower}.sock`:
+**JSON-RPC** on `$XDG_RUNTIME_DIR/biomeos/{name_lower}.sock` (discovery, diagnostics, browser):
 
 | Method | Description |
 |--------|-------------|
@@ -215,6 +228,8 @@ The server exposes these JSON-RPC 2.0 methods on `$XDG_RUNTIME_DIR/biomeos/{name
 | `health.readiness` | Readiness + capabilities |
 | `health.check` | Full diagnostic report |
 | `capabilities.list` | Primal name, version, methods |
+
+**tarpc** on `$XDG_RUNTIME_DIR/biomeos/{name_lower}.tarpc.sock` (intra-gate composition, sub-ms):
 
 ## Deployment
 

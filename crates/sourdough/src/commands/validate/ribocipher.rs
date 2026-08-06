@@ -480,7 +480,7 @@ async fn connect_to_peer(mut stream: TcpStream) {
             "partial",
             &[(
                 "src/main.rs",
-                r#"
+                r"
 use sourdough_core::transport::detect_signal;
 
 async fn accept(mut stream: TcpStream) {
@@ -490,7 +490,7 @@ async fn accept(mut stream: TcpStream) {
         _ => {}
     }
 }
-"#,
+",
             )],
         );
 
@@ -524,14 +524,14 @@ fn main() {
             "testonly",
             &[(
                 "src/tests/ribocipher_test.rs",
-                r#"
+                r"
 // All riboCipher patterns here should be ignored
 use sourdough_core::transport::{detect_signal, send_clear_signal, SIGNAL_CLEAR};
 let mut byte = [0u8; 1];
 0xEC
 0xED
 0xEE
-"#,
+",
             )],
         );
 
@@ -546,7 +546,7 @@ let mut byte = [0u8; 1];
             "nowarn",
             &[(
                 "src/server.rs",
-                r#"
+                r"
 use sourdough_core::transport::{detect_signal, SIGNAL_CLEAR};
 let mut byte = [0u8; 1];
 stream.read(&mut byte).await?;
@@ -558,7 +558,7 @@ match byte[0] {
 async fn connect(s: &mut S) {
     send_clear_signal(s, ProtocolType::NdjsonRpc).await;
 }
-"#,
+",
             )],
         );
 
