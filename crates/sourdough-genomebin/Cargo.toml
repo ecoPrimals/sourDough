@@ -49,6 +49,7 @@ workspace = true
 [dev-dependencies]
 anyhow = { workspace = true }
 tempfile = { workspace = true }
+tokio = { workspace = true, features = ["io-util", "fs", "rt", "rt-multi-thread", "macros", "test-util"] }
 tokio-test = "0.4"
 proptest = { workspace = true }
 

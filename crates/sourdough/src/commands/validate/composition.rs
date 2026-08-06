@@ -167,10 +167,10 @@ mod tests {
     }
 
     #[test]
-    fn resolve_full_has_13_primals() {
+    fn resolve_full_has_14_primals() {
         let m = default_manifest();
         let primals = resolve("full", &m);
-        assert_eq!(primals.len(), 13);
+        assert_eq!(primals.len(), 14);
     }
 
     #[test]
