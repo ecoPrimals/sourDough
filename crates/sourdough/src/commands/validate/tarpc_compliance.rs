@@ -16,6 +16,14 @@ const SERVICE_PATTERNS: &[&str] = &[
     "BaseChannel::with_defaults",
 ];
 
+/// Baseline methods from `sourdough_core::tarpc_service::PrimalService`.
+const BASELINE_METHODS: &[&str] = &[
+    "health_liveness",
+    "health_readiness",
+    "health_check",
+    "capabilities_list",
+];
+
 /// Patterns indicating tarpc transport wiring.
 const TRANSPORT_PATTERNS: &[&str] = &[
     "tarpc::serde_transport",
@@ -39,6 +47,7 @@ struct TarpcAudit {
     has_service_trait: bool,
     has_transport_wiring: bool,
     has_dual_socket: bool,
+    has_baseline_methods: bool,
     issues: Vec<String>,
 }
 
@@ -86,6 +95,7 @@ fn run_audit(path: &Path, primal_name: &str) -> Result<TarpcAudit> {
         has_service_trait: false,
         has_transport_wiring: false,
         has_dual_socket: false,
+        has_baseline_methods: false,
         issues: Vec::new(),
     };
 
@@ -156,6 +166,10 @@ fn check_source_patterns(path: &Path, audit: &mut TarpcAudit) -> Result<()> {
                 audit.has_dual_socket = true;
             }
         }
+
+        if BASELINE_METHODS.iter().all(|m| content.contains(m)) {
+            audit.has_baseline_methods = true;
+        }
     }
 
     if !audit.has_service_trait && audit.has_tarpc_dep {
@@ -171,6 +185,12 @@ fn check_source_patterns(path: &Path, audit: &mut TarpcAudit) -> Result<()> {
     if audit.has_transport_wiring && !audit.has_dual_socket {
         audit.issues.push(
             "Transport wired but no `.tarpc.sock` convention found (expected dual-socket)"
+                .to_owned(),
+        );
+    }
+    if audit.has_service_trait && !audit.has_baseline_methods {
+        audit.issues.push(
+            "Service trait defined but missing baseline PrimalService methods (health_liveness, health_readiness, health_check, capabilities_list)"
                 .to_owned(),
         );
     }
@@ -241,6 +261,10 @@ fn print_report(audit: &TarpcAudit) {
     check("tarpc dependency in Cargo.toml", audit.has_tarpc_dep);
     check("#[tarpc::service] trait defined", audit.has_service_trait);
     check(
+        "Baseline PrimalService methods present",
+        audit.has_baseline_methods,
+    );
+    check(
         "serde_transport wiring (listener/connect)",
         audit.has_transport_wiring,
     );
@@ -274,6 +298,7 @@ fn print_json(audit: &TarpcAudit) {
         "compliance_level": audit.compliance_level(),
         "has_tarpc_dep": audit.has_tarpc_dep,
         "has_service_trait": audit.has_service_trait,
+        "has_baseline_methods": audit.has_baseline_methods,
         "has_transport_wiring": audit.has_transport_wiring,
         "has_dual_socket": audit.has_dual_socket,
         "issues": audit.issues,

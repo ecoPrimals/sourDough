@@ -78,6 +78,7 @@ pub mod ipc;
 pub mod lifecycle;
 pub mod methods;
 pub mod rpc;
+pub mod tarpc_service;
 pub mod transport;
 pub mod types;
 
@@ -94,6 +95,12 @@ pub use ipc::{
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
 pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};
+pub use tarpc_service::{
+    HealthResponse, IdentityResponse, PrimalService, PrimalServiceClient, TarpcCapability,
+    default_tarpc_socket_path,
+};
+#[cfg(unix)]
+pub use tarpc_service::{connect_primal, connect_primal_by_name};
 pub use transport::{
     PeekedStream, Protocol, TransportEndpoint, TransportStream, connect_transport, peek_protocol,
     resolve_socket_path, socket_path_in,

@@ -30,6 +30,10 @@ chrono = { workspace = true }
 # Cryptography
 blake3 = { workspace = true }
 
+# Binary RPC (G64 Cephalization — canonical tarpc service trait)
+tarpc = { workspace = true }
+tokio-serde = { workspace = true }
+
 [lints]
 workspace = true
 

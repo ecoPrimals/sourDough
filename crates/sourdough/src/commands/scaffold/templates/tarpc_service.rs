@@ -15,10 +15,14 @@ pub(in crate::commands::scaffold) fn tarpc_service_rs(name: &str) -> String {
 //!
 //! The tarpc service mirrors the JSON-RPC capability surface but eliminates
 //! serde roundtrips for high-frequency callers within the same NUCLEUS.
+//!
+//! The baseline methods (`health_liveness`, `health_readiness`, `health_check`,
+//! `capabilities_list`) align with `sourdough_core::tarpc_service::PrimalService`.
+//! This trait adds domain-specific methods for {name}.
 
 /// tarpc service trait for {name}.
 ///
-/// This is the binary-framed equivalent of the JSON-RPC dispatch.
+/// Extends the baseline `PrimalService` contract with domain-specific methods.
 /// High-frequency intra-gate callers use this for zero-serde composition.
 #[tarpc::service]
 pub trait {type_name}Service {{
