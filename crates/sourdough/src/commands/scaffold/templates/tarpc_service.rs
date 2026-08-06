@@ -2,6 +2,8 @@
 //!
 //! Generates the high-performance binary RPC service definition that
 //! complements JSON-RPC for intra-gate composition (G64 convergence).
+//! Phase 3 (G65) enables protocol negotiation on a single socket via
+//! `sourdough_core::protocol_negotiation`.
 
 /// Generate the tarpc service module (`tarpc_service.rs`) for the core crate.
 pub(in crate::commands::scaffold) fn tarpc_service_rs(name: &str) -> String {
@@ -163,6 +165,18 @@ pub async fn start_tarpc_listener(
     }});
 
     Ok(())
+}}
+
+/// G65: Handle a pre-negotiated tarpc stream (single-socket mode).
+///
+/// Called when protocol negotiation selected tarpc on the shared socket.
+pub async fn handle_tarpc_stream<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static>(
+    _stream: S,
+) {{
+    // In Phase 3, the negotiated stream is wrapped as a tarpc transport.
+    // Full implementation wires through tarpc::serde_transport on the raw stream.
+    // Placeholder: tarpc framing on pre-connected stream requires transport adaptation.
+    tracing::debug!("G65 tarpc stream handoff (stub — full wiring in convergence)");
 }}
 
 /// tarpc service handler — bridges the tarpc trait to the primal implementation.

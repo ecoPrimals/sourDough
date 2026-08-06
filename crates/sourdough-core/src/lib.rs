@@ -77,6 +77,7 @@ pub mod identity;
 pub mod ipc;
 pub mod lifecycle;
 pub mod methods;
+pub mod protocol_negotiation;
 pub mod rpc;
 pub mod tarpc_service;
 pub mod transport;
@@ -94,6 +95,10 @@ pub use ipc::{
     JsonRpcRequest, JsonRpcResponse,
 };
 pub use lifecycle::{PrimalLifecycle, PrimalState};
+pub use protocol_negotiation::{
+    IpcProtocol, NegotiationError, NegotiationRequest, NegotiationResponse, negotiate_client,
+    negotiate_server, select_protocol,
+};
 pub use rpc::{PrimalRpc, RpcRequest, RpcResponse};
 pub use tarpc_service::{
     HealthResponse, IdentityResponse, PrimalService, PrimalServiceClient, TarpcCapability,

@@ -6,7 +6,7 @@
 
 ## Current State
 
-- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC
+- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation
 - `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
@@ -29,7 +29,8 @@
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
 - [x] Dual-protocol scaffold (G64 Cephalization): JSON-RPC + tarpc service trait
 - [x] Canonical `PrimalService` tarpc trait (C6 reference implementation)
-- [x] 523 tests, zero ignored
+- [x] G65 Protocol Negotiation module (C7 reference implementation)
+- [x] 541 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -50,6 +51,19 @@
 | doctests | 12 | — |
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156l (August 6, 2026 — C7 G65 Protocol Negotiation)
+- **C7 DONE**: `sourdough_core::protocol_negotiation` — canonical single-socket negotiation module
+- `IpcProtocol` enum (JsonRpc, Tarpc) with wire format, serde, Display, parse
+- `NegotiationRequest` / `NegotiationResponse` — wire-format types (`PROTOCOLS: tarpc,jsonrpc\n`)
+- `negotiate_client()` / `negotiate_server()` — async duplex negotiation functions
+- `select_protocol()` — preference-ordered protocol selection with JSON-RPC fallback
+- `NegotiationError` — typed error enum (InvalidRequest, NoValidProtocols, Timeout, Io)
+- Scaffold templates emit G65-ready primals with `--negotiate` CLI flag
+- Generated servers support both Phase 2 (dual-socket) and Phase 3 (single-socket negotiation)
+- `validate tarpc` detects G65 compliance level (NONE → DEP_ONLY → PARTIAL → FULL → G65)
+- 15 new tests covering wire format, roundtrips, duplex negotiation, backward compat
+- 541 tests total, all cross-targets green (Linux, Windows, Android), clippy clean
 
 ### Wave 156j (August 6, 2026 — C6 Reference Implementation)
 - **C6 DONE**: `sourdough_core::tarpc_service::PrimalService` — canonical tarpc trait for all primals

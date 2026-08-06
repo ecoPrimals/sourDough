@@ -1,9 +1,10 @@
-//! tarpc service compliance validator (G64 Cephalization).
+//! tarpc service compliance validator (G64 + G65 Cephalization).
 //!
-//! Audits a primal's source code for dual-protocol readiness:
+//! Audits a primal's source code for protocol evolution readiness:
 //! - tarpc service trait defined in core crate
 //! - tarpc listener in server crate
-//! - Dual-socket endpoint convention (`.sock` + `.tarpc.sock`)
+//! - Phase 2: Dual-socket endpoint convention (`.sock` + `.tarpc.sock`)
+//! - Phase 3 (G65): Protocol negotiation (`negotiate_server` / `PROTOCOLS:`)
 
 use anyhow::{Context, Result};
 use std::path::Path;
@@ -32,6 +33,15 @@ const TRANSPORT_PATTERNS: &[&str] = &[
     ".tarpc.sock",
 ];
 
+/// Patterns indicating G65 protocol negotiation support.
+const NEGOTIATION_PATTERNS: &[&str] = &[
+    "negotiate_server",
+    "negotiate_client",
+    "protocol_negotiation",
+    "PROTOCOLS: ",
+    "IpcProtocol",
+];
+
 /// Patterns indicating tarpc dependency declaration.
 const CARGO_PATTERNS: &[&str] = &["tarpc", "tokio-serde"];
 
@@ -48,13 +58,16 @@ struct TarpcAudit {
     has_transport_wiring: bool,
     has_dual_socket: bool,
     has_baseline_methods: bool,
+    has_protocol_negotiation: bool,
     issues: Vec<String>,
 }
 
 impl TarpcAudit {
     /// Overall compliance level.
     const fn compliance_level(&self) -> &'static str {
-        if self.has_service_trait && self.has_transport_wiring && self.has_dual_socket {
+        if self.has_protocol_negotiation {
+            "G65"
+        } else if self.has_service_trait && self.has_transport_wiring && self.has_dual_socket {
             "FULL"
         } else if self.has_tarpc_dep && self.has_service_trait {
             "PARTIAL"
@@ -96,6 +109,7 @@ fn run_audit(path: &Path, primal_name: &str) -> Result<TarpcAudit> {
         has_transport_wiring: false,
         has_dual_socket: false,
         has_baseline_methods: false,
+        has_protocol_negotiation: false,
         issues: Vec::new(),
     };
 
@@ -169,6 +183,13 @@ fn check_source_patterns(path: &Path, audit: &mut TarpcAudit) -> Result<()> {
 
         if BASELINE_METHODS.iter().all(|m| content.contains(m)) {
             audit.has_baseline_methods = true;
+        }
+
+        for pattern in NEGOTIATION_PATTERNS {
+            if content.contains(pattern) {
+                audit.has_protocol_negotiation = true;
+                break;
+            }
         }
     }
 
@@ -272,6 +293,10 @@ fn print_report(audit: &TarpcAudit) {
         "Dual-socket convention (.tarpc.sock)",
         audit.has_dual_socket,
     );
+    check(
+        "G65 protocol negotiation support",
+        audit.has_protocol_negotiation,
+    );
 
     if !audit.issues.is_empty() {
         println!();
@@ -283,6 +308,7 @@ fn print_report(audit: &TarpcAudit) {
 
     println!();
     match audit.compliance_level() {
+        "G65" => crate::success("G65 compliant — protocol negotiation on single socket (Phase 3)"),
         "FULL" => crate::success("Fully compliant with G64 cephalization dual-protocol pattern"),
         "PARTIAL" => crate::info("Partially compliant — transport wiring or dual-socket missing"),
         "DEP_ONLY" => {
@@ -301,6 +327,7 @@ fn print_json(audit: &TarpcAudit) {
         "has_baseline_methods": audit.has_baseline_methods,
         "has_transport_wiring": audit.has_transport_wiring,
         "has_dual_socket": audit.has_dual_socket,
+        "has_protocol_negotiation": audit.has_protocol_negotiation,
         "issues": audit.issues,
     });
     println!(

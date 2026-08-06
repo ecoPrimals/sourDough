@@ -2,7 +2,7 @@
 
 **Version**: 0.4.0
 **Date**: August 6, 2026
-**Type**: Reference Implementation (Nascent Budding Primal, G64 Cephalization Standards Holder)
+**Type**: Reference Implementation (Nascent Budding Primal, G64+G65 Cephalization Standards Holder)
 
 ---
 
@@ -10,7 +10,7 @@
 
 sourDough is both a library and a tool:
 
-- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + zero-copy RPC
+- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + G65 Protocol Negotiation (C7) + zero-copy RPC
 - **Tool** (`sourdough` UniBin): Primal scaffolding, validation, genomeBin, diagnostics
 - **Library** (`sourdough-genomebin`): Pure Rust genomeBin operations
 
@@ -34,6 +34,7 @@ sourDough/
       discovery.rs                      PrimalDiscovery + ProtocolSupport + ServiceInfo
       config.rs                         PrimalConfig trait
       tarpc_service.rs                  Canonical PrimalService tarpc trait (C6)
+      protocol_negotiation.rs           G65 single-socket protocol negotiation (C7)
       ipc/                              JSON-RPC 2.0 IPC (client, protocol, error, capability)
       rpc.rs                            Binary RPC, zero-copy wire format
       transport/                        TransportEndpoint, stream, socket, riboCipher, peek

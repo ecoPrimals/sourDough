@@ -2,11 +2,24 @@
 
 **Version**: 0.4.0
 **Date**: August 6, 2026
-**Status**: C6 Reference Implementation DONE. Canonical `PrimalService` tarpc trait shipped. 523 tests. Deep debt zero. Zero P0/P1/P2.
+**Status**: C7 G65 Protocol Negotiation DONE. Single-socket negotiation reference impl shipped. 541 tests. Deep debt zero. Zero P0/P1/P2.
 
 ---
 
 ## Shipped (v0.4.0 — June–Aug 2026, Transport + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156l (August 6 — C7 G65 Protocol Negotiation)
+- [x] **C7 DONE**: `sourdough_core::protocol_negotiation` — canonical negotiation module
+- [x] `IpcProtocol` enum (JsonRpc, Tarpc) with wire format, serde, Display, parse
+- [x] `NegotiationRequest` / `NegotiationResponse` wire-format types
+- [x] `negotiate_client()` / `negotiate_server()` async duplex functions
+- [x] `select_protocol()` preference-ordered selection with JSON-RPC fallback
+- [x] `NegotiationError` typed error enum
+- [x] Scaffold emits G65-ready primals with `--negotiate` CLI flag
+- [x] Generated servers support Phase 2 (dual-socket) AND Phase 3 (single-socket negotiation)
+- [x] `validate tarpc` detects G65 compliance (NONE → DEP_ONLY → PARTIAL → FULL → G65)
+- [x] 15 new tests (wire format, roundtrips, duplex negotiation, backward compat)
+- [x] 541 tests, all cross-targets green (Linux, Windows, Android), clippy clean
 
 ### Wave 156j (August 6 — C6 Reference Implementation)
 - [x] **C6 DONE**: `sourdough_core::tarpc_service::PrimalService` canonical tarpc trait
@@ -122,7 +135,7 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 523 | All passing |
+| Tests | 541 | All passing |
 | Clippy | zero warnings | zero |
 | Unsafe | zero (forbid on all roots) | zero |
 | C deps | zero | zero |
@@ -149,4 +162,4 @@
 ---
 
 **Date**: August 6, 2026
-**Status**: C6 Reference Implementation DONE. sourDough defines the canonical `PrimalService` tarpc trait that all primals implement. 523 tests, zero deep debt. sourDough is both the standards holder and the tooling authority for G64 cephalization.
+**Status**: C7 G65 Protocol Negotiation DONE. sourDough defines both the canonical `PrimalService` tarpc trait (C6) and the protocol negotiation standard (C7). 541 tests, zero deep debt. sourDough is the standards holder, reference implementation, and tooling authority for G64+G65 cephalization.

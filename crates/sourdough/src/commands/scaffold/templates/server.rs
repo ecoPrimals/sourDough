@@ -52,9 +52,9 @@ pub(in crate::commands::scaffold) fn server_main_rs(name: &str) -> String {
     format!(
         r#"//! {name} server binary.
 //!
-//! Dual-protocol server (G64 Cephalization):
-//! - JSON-RPC on `.sock` — bootstrap, discovery, diagnostics, browser
-//! - tarpc on `.tarpc.sock` — intra-gate composition, sub-ms binary framing
+//! Protocol evolution (G64 → G65 Cephalization):
+//! - **Phase 2**: Dual-socket (`.sock` + `.tarpc.sock`) — current default
+//! - **Phase 3 (G65)**: Single-socket with protocol negotiation — `--negotiate`
 //!
 //! The primal does not choose its transport. The launcher or Songbird provides it.
 
@@ -82,6 +82,12 @@ struct Cli {{
     /// Disable tarpc binary listener (JSON-RPC only mode).
     #[arg(long, env = "DISABLE_TARPC")]
     disable_tarpc: bool,
+
+    /// G65: Enable protocol negotiation on a single socket.
+    /// When set, the primal exposes one socket and negotiates tarpc vs JSON-RPC
+    /// at connection time (Phase 3 replaces dual-socket).
+    #[arg(long, env = "NEGOTIATE_PROTOCOL")]
+    negotiate: bool,
 }}
 
 #[tokio::main]
@@ -104,8 +110,8 @@ async fn main() -> Result<()> {{
 
     let primal_arc = std::sync::Arc::new(primal);
 
-    // Start tarpc binary listener (intra-gate composition)
-    if !cli.disable_tarpc {{
+    // Phase 2 (dual-socket): start tarpc binary listener unless disabled or G65 negotiate mode
+    if !cli.disable_tarpc && !cli.negotiate {{
         tarpc_server::start_tarpc_listener(
             "{name_lower}",
             cli.family_id.as_deref(),
@@ -121,12 +127,13 @@ async fn main() -> Result<()> {{
         .transpose()
         .map_err(|e| anyhow::anyhow!("invalid TRANSPORT_ENDPOINT: {{e}}"))?;
 
-    // JSON-RPC is the lifecycle anchor — blocks until shutdown
+    // Main server — blocks until shutdown
     server::run(
         "{name_lower}",
         cli.family_id.as_deref(),
         endpoint.as_ref(),
         &*primal_arc,
+        cli.negotiate,
     )
     .await
 }}
@@ -142,11 +149,13 @@ pub(in crate::commands::scaffold) fn server_rs(name: &str) -> String {
     format!(
         r#"//! Transport-injected server with first-byte protocol detection.
 //!
-//! The primal does not choose its transport — the launcher or Songbird
-//! provides a `TransportEndpoint`. Defaults to UDS from socket conventions.
+//! Supports two modes:
+//! - **Phase 2 (C2)**: First-byte riboCipher detection on JSON-RPC socket
+//! - **Phase 3 (G65)**: Protocol negotiation on single socket (tarpc or JSON-RPC)
 
 use anyhow::Result;
 use serde::{{Deserialize, Serialize}};
+use {core_ident}::protocol_negotiation::{{IpcProtocol, negotiate_server}};
 use tokio::io::{{AsyncBufReadExt, AsyncWriteExt, BufReader}};
 use tracing::{{error, info, warn}};
 
@@ -196,12 +205,16 @@ fn default_endpoint(primal_name: &str, family_id: Option<&str>) -> TransportEndp
     }}
 }}
 
-/// Run the JSON-RPC server on the given (or default) transport endpoint.
+/// Run the server on the given (or default) transport endpoint.
+///
+/// When `negotiate` is true, uses G65 protocol negotiation to multiplex
+/// tarpc and JSON-RPC on a single socket. Otherwise runs Phase 2 (JSON-RPC only).
 pub async fn run(
     primal_name: &str,
     family_id: Option<&str>,
     injected_endpoint: Option<&TransportEndpoint>,
     primal: &{core_ident}::{type_name}Primal,
+    negotiate: bool,
 ) -> Result<()> {{
     let endpoint = injected_endpoint
         .cloned()
@@ -218,7 +231,11 @@ pub async fn run(
             let _ = tokio::fs::remove_file(&socket_path).await;
 
             let listener = tokio::net::UnixListener::bind(&socket_path)?;
-            info!("Listening on unix://{{path}}");
+            if negotiate {{
+                info!("Listening on unix://{{path}} [G65 protocol negotiation]");
+            }} else {{
+                info!("Listening on unix://{{path}}");
+            }}
 
             let announce_socket = socket_path.clone();
             let announce_family = family_id.unwrap_or("ecoPrimal").to_owned();
@@ -241,7 +258,11 @@ pub async fn run(
 
             loop {{
                 let (stream, _) = listener.accept().await?;
-                handle_connection(stream, primal, &gate).await;
+                if negotiate {{
+                    handle_negotiated_connection(stream, primal, &gate).await;
+                }} else {{
+                    handle_connection(stream, primal, &gate).await;
+                }}
             }}
         }}
         TransportEndpoint::Tcp {{ host, port }} => {{
@@ -251,7 +272,11 @@ pub async fn run(
 
             loop {{
                 let (stream, _) = listener.accept().await?;
-                handle_connection(stream, primal, &gate).await;
+                if negotiate {{
+                    handle_negotiated_connection(stream, primal, &gate).await;
+                }} else {{
+                    handle_connection(stream, primal, &gate).await;
+                }}
             }}
         }}
         TransportEndpoint::MeshRelay {{ .. }} => {{
@@ -396,6 +421,33 @@ async fn handle_jsonrpc_legacy<S: tokio::io::AsyncRead + tokio::io::AsyncWrite +
 
     // Subsequent lines: normal loop
     handle_jsonrpc(reader, primal, gate).await;
+}}
+
+/// G65 Protocol Negotiation handler.
+///
+/// Reads the client's `PROTOCOLS:` line, selects the best match,
+/// then routes the connection to the appropriate handler.
+/// If no negotiation header arrives (legacy client), falls back to JSON-RPC.
+async fn handle_negotiated_connection<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static>(
+    mut stream: S,
+    primal: &{core_ident}::{type_name}Primal,
+    gate: &crate::method_gate::MethodGate,
+) {{
+    let server_supported = IpcProtocol::all_supported();
+
+    match negotiate_server(&mut stream, &server_supported, 100).await {{
+        Ok(Some(IpcProtocol::Tarpc)) => {{
+            info!("G65: tarpc selected — handing off to tarpc handler");
+            crate::tarpc_server::handle_tarpc_stream(stream).await;
+        }}
+        Ok(Some(IpcProtocol::JsonRpc)) | Ok(None) => {{
+            handle_jsonrpc(BufReader::new(stream), primal, gate).await;
+        }}
+        Err(e) => {{
+            warn!("Protocol negotiation error: {{e}} — falling back to JSON-RPC");
+            handle_jsonrpc(BufReader::new(stream), primal, gate).await;
+        }}
+    }}
 }}
 "#,
     )
