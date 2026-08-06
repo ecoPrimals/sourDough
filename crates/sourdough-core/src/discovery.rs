@@ -27,6 +27,16 @@ pub enum ProtocolSupport {
     DualProtocol,
 }
 
+impl std::fmt::Display for ProtocolSupport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::JsonRpcOnly => f.write_str("jsonrpc"),
+            Self::TarpcOnly => f.write_str("tarpc"),
+            Self::DualProtocol => f.write_str("dual"),
+        }
+    }
+}
+
 /// Service registration for discovery services.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ServiceRegistration {
@@ -382,6 +392,13 @@ mod tests {
     #[test]
     fn protocol_support_default_is_dual() {
         assert_eq!(ProtocolSupport::default(), ProtocolSupport::DualProtocol);
+    }
+
+    #[test]
+    fn protocol_support_display() {
+        assert_eq!(ProtocolSupport::JsonRpcOnly.to_string(), "jsonrpc");
+        assert_eq!(ProtocolSupport::TarpcOnly.to_string(), "tarpc");
+        assert_eq!(ProtocolSupport::DualProtocol.to_string(), "dual");
     }
 
     #[test]
