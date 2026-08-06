@@ -1,8 +1,8 @@
 # sourDough Roadmap
 
 **Version**: 0.4.0
-**Date**: July 15, 2026
-**Vision**: The nascent budding primal for ecoPrimals
+**Date**: August 6, 2026
+**Vision**: The nascent budding primal + G64 Cephalization standards holder
 
 ---
 

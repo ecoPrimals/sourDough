@@ -6,11 +6,12 @@ New to sourDough? This guide gets you oriented.
 
 ## What is sourDough?
 
-sourDough is the **nascent primal** for ecoPrimals. It has three jobs:
+sourDough is the **nascent primal** for ecoPrimals. It has four jobs:
 
-1. **Scaffold new primals** that are self-contained and independent
-2. **Define the transport standard** (TransportEndpoint wire format, IPC patterns)
-3. **Provide ecosystem tooling** for validation, migration, and depot management
+1. **Scaffold new primals** that are self-contained, dual-protocol, and independent
+2. **Define the transport standard** (TransportEndpoint wire format, JSON-RPC + tarpc IPC)
+3. **Define the canonical `PrimalService` tarpc trait** (G64 Cephalization C6 reference)
+4. **Provide ecosystem tooling** for validation, migration, and depot management
 
 ---
 

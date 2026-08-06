@@ -36,7 +36,7 @@ primals = [
     "beardog", "songbird", "skunkbat",
     "toadstool", "barracuda", "coralreef",
     "nestgate", "rhizocrypt", "loamspine", "sweetgrass",
-    "biomeos", "squirrel", "petaltongue",
+    "biomeos", "squirrel", "petaltongue", "bingocube",
 ]
 
 # Per-spring niche compositions

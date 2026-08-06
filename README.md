@@ -21,8 +21,8 @@ sourDough also serves as:
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker |
-| `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, depot, composition), sign, migrate, doctor |
+| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker |
+| `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, tarpc, depot, composition), sign, migrate, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
 ## Quick Start
@@ -38,6 +38,7 @@ sourdough scaffold transport-kit myPrimal
 sourdough validate primal ../myPrimal
 sourdough validate transport ../myPrimal
 sourdough validate ribocipher ../myPrimal
+sourdough validate tarpc ../myPrimal
 
 # Ecosystem-wide transport audit (JSON output for CI)
 sourdough validate transport-report --primals-dir ../
@@ -60,14 +61,14 @@ cargo build --release
 
 | Metric | Value |
 |--------|-------|
-| Tests | 502 passing (zero ignored) |
+| Tests | 526 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`#![forbid(unsafe_code)]` on all crate roots) |
 | C deps | zero (Pure Rust entire dependency tree) |
 | Max file | 608 lines (production code) |
 | unwrap/expect | zero in library production code |
 | Mocks | zero in production (test-only) |
-| Cross-arch | `cargo check --target x86_64-pc-windows-gnu` passing |
+| Cross-arch | Windows + Android cross-check passing |
 
 ## Standards Compliance
 
@@ -75,6 +76,8 @@ cargo build --release
 - **ecoBin**: Pure Rust, zero C dependencies, static linking, cross-compilation (4 targets)
 - **genomeBin**: Pure Rust platform detection, metadata, archive operations
 - **JSON-RPC 2.0**: primary IPC with semantic `domain.verb` method naming
+- **tarpc `PrimalService`**: canonical binary RPC trait (G64 Cephalization C6)
+- **Dual-protocol scaffold**: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 - **riboCipher**: transport signal standard (Wave 111) — signal-first detection, legacy deprecation
 - **TransportEndpoint**: canonical wire format (serde tagged: uds/tcp/mesh_relay)
 - **MethodGate (JH-0)**: pre-dispatch capability gate on all scaffolded primals
@@ -116,7 +119,8 @@ cargo doc --workspace --no-deps
 - **Scaffold independence**: generated primals are complete and self-sufficient
 - **Pure Rust**: no C dependencies, no shell scripts, no external tooling
 - **Modern idiomatic Rust**: edition 2024, `#[expect(reason)]`, `#![forbid(unsafe_code)]`
-- **Cross-architecture**: Windows target parity via `#[cfg(unix)]` guards (Wave 141a)
+- **Cross-architecture**: Windows + Android parity via `#[cfg(unix)]` guards
+- **G64 Cephalization**: canonical `PrimalService` tarpc trait, validator, scaffold dual-protocol
 
 ## Documentation
 

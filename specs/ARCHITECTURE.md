@@ -1,8 +1,8 @@
 # sourDough Architecture
 
 **Version**: 0.4.0
-**Date**: June 13, 2026
-**Type**: Reference Implementation (Nascent Budding Primal)
+**Date**: August 6, 2026
+**Type**: Reference Implementation (Nascent Budding Primal, G64 Cephalization Standards Holder)
 
 ---
 
@@ -10,7 +10,7 @@
 
 sourDough is both a library and a tool:
 
-- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + zero-copy RPC
+- **Library** (`sourdough-core`): Core primal traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + zero-copy RPC
 - **Tool** (`sourdough` UniBin): Primal scaffolding, validation, genomeBin, diagnostics
 - **Library** (`sourdough-genomebin`): Pure Rust genomeBin operations
 
@@ -27,17 +27,22 @@ sourDough/
   Cargo.toml                            Workspace manifest + lints + release profile
   crates/
     sourdough-core/src/
-      lib.rs                            Re-exports (59 lines)
-      lifecycle.rs                      PrimalLifecycle trait (305 lines)
-      health.rs                         PrimalHealth trait (371 lines)
-      identity.rs                       PrimalIdentity trait (414 lines)
-      discovery.rs                      PrimalDiscovery trait (369 lines)
-      config.rs                         PrimalConfig trait (290 lines)
-      ipc.rs                            JSON-RPC 2.0 IPC, primary (637 lines)
-      rpc.rs                            Binary RPC, secondary (425 lines)
-      transport.rs                      PeekedStream, peek_protocol, socket_path (233 lines)
-      error.rs                          Common error types (244 lines)
-      types.rs                          Common types: ContentHash, Timestamp (444 lines)
+      lib.rs                            Re-exports + module declarations
+      lifecycle.rs                      PrimalLifecycle trait
+      health.rs                         PrimalHealth trait
+      identity.rs                       PrimalIdentity trait
+      discovery.rs                      PrimalDiscovery + ProtocolSupport + ServiceInfo
+      config.rs                         PrimalConfig trait
+      tarpc_service.rs                  Canonical PrimalService tarpc trait (C6)
+      ipc/                              JSON-RPC 2.0 IPC (client, protocol, error, capability)
+      rpc.rs                            Binary RPC, zero-copy wire format
+      transport/                        TransportEndpoint, stream, socket, riboCipher, peek
+      error.rs                          Common error types
+      types.rs                          Common types: ContentHash, Timestamp
+      methods.rs                        Standard method name constants
+      env_keys.rs                       Environment variable constants
+      bind_mode.rs                      Socket bind mode policy
+      circuit_breaker.rs                CircuitBreaker resilience pattern
     sourdough/src/
       main.rs                           CLI entry point (121 lines)
       commands/
@@ -323,6 +328,6 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`.
 
 ---
 
-**Date**: June 13, 2026
+**Date**: August 6, 2026
 **Version**: 0.4.0
-**Status**: Reference Implementation
+**Status**: Reference Implementation + G64 Cephalization Standards Holder (C6)
