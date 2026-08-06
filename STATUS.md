@@ -28,7 +28,8 @@
 - [x] Edition 2024
 - [x] scyBorg triple license (AGPL-3.0-or-later, ORC, CC-BY-SA-4.0)
 - [x] Dual-protocol scaffold (G64 Cephalization): JSON-RPC + tarpc service trait
-- [x] 518 tests, zero ignored
+- [x] Canonical `PrimalService` tarpc trait (C6 reference implementation)
+- [x] 523 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -43,12 +44,24 @@
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 303 | 601 (discovery.rs) |
+| sourdough-core | 308 | 601 (discovery.rs) |
 | sourdough (CLI) | 36 (2 e2e + 34 integration) | 608 (ribocipher.rs) |
 | sourdough-genomebin | 75 + 92 | 599 (platform.rs) |
 | doctests | 12 | — |
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156j (August 6, 2026 — C6 Reference Implementation)
+- **C6 DONE**: `sourdough_core::tarpc_service::PrimalService` — canonical tarpc trait for all primals
+- 8 baseline methods: health_liveness, health_readiness, health_check, capabilities_list,
+  identity_did, system_ping, system_version, lifecycle_state
+- Response types: `HealthResponse`, `TarpcCapability`, `IdentityResponse`
+- Client helpers: `connect_primal()`, `connect_primal_by_name()` (unix-gated)
+- `default_tarpc_socket_path()` convention helper
+- tarpc 0.37 + tokio-serde 0.9 in sourdough-core (not just scaffold templates)
+- `validate tarpc` checks for baseline `PrimalService` method presence
+- sourDough self-validates as FULL G64 compliance
+- 523 tests, all 3 cross-targets green, clippy clean
 
 ### Wave 156h (August 6, 2026 — G64 Cephalization Scaffold)
 - Scaffold templates emit dual-protocol primals: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`

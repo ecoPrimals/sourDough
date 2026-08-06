@@ -1,19 +1,27 @@
-# Wave 156h — sourDough Cephalization Scaffold
+# Wave 156h→156j — sourDough Cephalization Reference Implementation (C6)
 
 **Date**: August 6, 2026
 **From**: eastGate (sourDough team)
-**Theme**: G64 Cephalization — scaffolded primals born dual-protocol
+**Theme**: G64 Cephalization — C6 reference implementation DONE. Canonical `PrimalService` trait shipped.
 
 ---
 
 ## Summary
 
-sourDough scaffold templates now emit **dual-protocol primals** aligned with the G64 Cephalization convergence goal. New primals are born with:
+sourDough is now the **C6 reference implementation** for G64 Cephalization. Two layers:
 
+1. **Canonical `PrimalService` tarpc trait** (`sourdough_core::tarpc_service`) — the standard contract all primals implement. 8 baseline methods covering health, capabilities, identity, system, and lifecycle.
+
+2. **Scaffold templates** — new primals are born dual-protocol with both JSON-RPC and tarpc ready.
+
+Other primals can:
+- Import `sourdough_core::PrimalService` to validate their trait alignment
+- Use `sourdough_core::connect_primal()` / `connect_primal_by_name()` as client helpers
+- Run `sourdough validate tarpc .` to check compliance
+
+### Dual-Protocol Architecture
 - **JSON-RPC on `{name}.sock`** — bootstrap, discovery, diagnostics, browser
 - **tarpc on `{name}.tarpc.sock`** — intra-gate composition, sub-ms binary framing
-
-This means every newly scaffolded primal is immediately ready for tarpc composition without any manual wiring.
 
 ---
 
@@ -92,12 +100,13 @@ These are in the workspace template only — sourDough's own `Cargo.toml` is unc
 
 ## Verification
 
-- 518 tests passing
+- 523 tests passing
 - Clippy clean (zero warnings)
 - `cargo fmt` clean
 - `cargo check --target x86_64-pc-windows-gnu` ✓
 - `cargo check --target aarch64-linux-android` ✓
 - E2E scaffold tests: `scaffold_build_test_validate` + `scaffold_add_crate_build` ✓
+- `sourdough validate tarpc .` → FULL compliance ✓
 
 ---
 
@@ -119,9 +128,10 @@ These are in the workspace template only — sourDough's own `Cargo.toml` is unc
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| tarpc live health probe | P3 | Doctor could attempt tarpc handshake (requires tarpc dep in CLI) |
+| tarpc live health probe | P3 | Doctor could attempt tarpc `health_liveness()` call |
 | `sourdough validate tarpc --fleet` | P3 | Batch validate all primals in a directory |
+| Generate `impl PrimalService` scaffold | P3 | Scaffold server template could pre-wire baseline impl |
 
 ---
 
-**sourDough role in G64**: scaffold the pattern. Other primals evolve to it independently (convergent evolution). The scaffold ensures new primals start at the convergence target. sourDough itself provides the tooling to validate compliance and the transport primitives to derive tarpc endpoints from JSON-RPC endpoints.
+**sourDough role in G64**: Define the standard. Scaffold the pattern. Validate compliance. Other primals evolve to the `PrimalService` trait independently (convergent evolution). sourDough is the standards holder, scaffolding authority, and compliance auditor for G64 cephalization.

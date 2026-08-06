@@ -2,11 +2,22 @@
 
 **Version**: 0.4.0
 **Date**: August 6, 2026
-**Status**: G64 Cephalization scaffold complete. Dual-protocol primals (JSON-RPC + tarpc). 518 tests. Deep debt zero. Zero P0/P1/P2.
+**Status**: C6 Reference Implementation DONE. Canonical `PrimalService` tarpc trait shipped. 523 tests. Deep debt zero. Zero P0/P1/P2.
 
 ---
 
 ## Shipped (v0.4.0 — June–Aug 2026, Transport + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156j (August 6 — C6 Reference Implementation)
+- [x] **C6 DONE**: `sourdough_core::tarpc_service::PrimalService` canonical tarpc trait
+- [x] 8 baseline methods (health_liveness, health_readiness, health_check, capabilities_list, identity_did, system_ping, system_version, lifecycle_state)
+- [x] Response types: `HealthResponse`, `TarpcCapability`, `IdentityResponse`
+- [x] Client helpers: `connect_primal()`, `connect_primal_by_name()` (unix-gated)
+- [x] `default_tarpc_socket_path()` convention helper
+- [x] tarpc 0.37 + tokio-serde 0.9 in sourdough-core (production dep)
+- [x] `validate tarpc` checks baseline `PrimalService` method presence
+- [x] sourDough self-validates as FULL G64 compliance
+- [x] 523 tests, all 3 cross-targets green, clippy clean
 
 ### Wave 156h (August 6 — G64 Cephalization Scaffold)
 - [x] Scaffold emits dual-protocol primals: JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
@@ -111,7 +122,7 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Tests | 518 | All passing |
+| Tests | 523 | All passing |
 | Clippy | zero warnings | zero |
 | Unsafe | zero (forbid on all roots) | zero |
 | C deps | zero | zero |
@@ -138,4 +149,4 @@
 ---
 
 **Date**: August 6, 2026
-**Status**: G64 Cephalization scaffold complete. tarpc client + server templates. TransportEndpoint + IpcClient tarpc-aware. Doctor dual-protocol. 518 tests, zero deep debt. Phase 2 abstraction: sourDough scaffolds the abstraction for other primals.
+**Status**: C6 Reference Implementation DONE. sourDough defines the canonical `PrimalService` tarpc trait that all primals implement. 523 tests, zero deep debt. sourDough is both the standards holder and the tooling authority for G64 cephalization.
