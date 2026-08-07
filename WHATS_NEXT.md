@@ -1,12 +1,24 @@
 # What's Next for sourDough
 
 **Version**: 0.4.0
-**Date**: August 6, 2026
-**Status**: C7 G65 Protocol Negotiation DONE. Single-socket negotiation reference impl shipped. 541 tests. Deep debt zero. Zero P0/P1/P2.
+**Date**: August 7, 2026
+**Status**: G68 Platform Substrate DONE. L1 links + L2 permissions reference impl + validator. 563 tests. Deep debt zero. Zero P0/P1/P2.
 
 ---
 
 ## Shipped (v0.4.0 — June–Aug 2026, Transport + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 157a (August 7 — G68 Platform Substrate Abstraction)
+- [x] **G68 reference implementation**: `sourdough_core::platform_substrate` module
+- [x] `platform_link()` — symlink on Unix, junction/hard-link on Windows, hard-link elsewhere
+- [x] `PlatformAccess` enum (OwnerReadWrite/OwnerFull/PublicRead/PublicExecute/Readonly/Custom)
+- [x] `PlatformAccess::apply()` / `query_access()` — platform-aware permission set/get
+- [x] `ensure_dir_with_access()` / `ensure_secure_parent()` — secure directory helpers
+- [x] `is_symlink()` — cross-platform symlink detection
+- [x] `sourdough validate platform-substrate` subcommand (L1/L2/L3 detection, JSON output)
+- [x] Scaffold templates emit `platform_substrate.rs` in generated primals
+- [x] `specs/PLATFORM_SUBSTRATE_SPEC.md` written
+- [x] 563 tests (18 new), all cross-targets green (Linux, Windows, Android), clippy clean
 
 ### Wave 156l (August 6 — C7 G65 Protocol Negotiation)
 - [x] **C7 DONE**: `sourdough_core::protocol_negotiation` — canonical negotiation module

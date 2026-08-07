@@ -21,8 +21,8 @@ sourDough also serves as:
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + G65 Protocol Negotiation (C7) + G66 Transport Abstraction + IpcClient + riboCipher + CircuitBreaker |
-| `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, tarpc, depot, composition), sign, migrate, doctor |
+| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + G65 Protocol Negotiation (C7) + G66 Transport + G68 Platform Substrate + IpcClient + riboCipher + CircuitBreaker |
+| `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, tarpc, depot, composition, platform-substrate), sign, migrate, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
 ## Quick Start

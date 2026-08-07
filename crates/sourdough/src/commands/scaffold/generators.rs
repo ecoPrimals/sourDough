@@ -138,6 +138,10 @@ pub(super) fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
     std::fs::write(src_dir.join("lifecycle.rs"), templates::LIFECYCLE_RS)?;
     std::fs::write(src_dir.join("health.rs"), templates::HEALTH_RS)?;
     std::fs::write(
+        src_dir.join("platform_substrate.rs"),
+        templates::PLATFORM_SUBSTRATE_RS,
+    )?;
+    std::fs::write(
         src_dir.join("protocol_negotiation.rs"),
         templates::PROTOCOL_NEGOTIATION_RS,
     )?;

@@ -23,8 +23,8 @@ mod tarpc_service;
 
 pub(super) use self::announce::announce_rs;
 pub(super) use self::core::{
-    ENV_KEYS_RS, ERROR_RS, HEALTH_RS, LIFECYCLE_RS, PROTOCOL_NEGOTIATION_RS, TRANSPORT_RS,
-    core_cargo_toml, lib_rs,
+    ENV_KEYS_RS, ERROR_RS, HEALTH_RS, LIFECYCLE_RS, PLATFORM_SUBSTRATE_RS,
+    PROTOCOL_NEGOTIATION_RS, TRANSPORT_RS, core_cargo_toml, lib_rs,
 };
 pub(super) use self::dispatch::dispatch_rs;
 pub(super) use self::infra::{

@@ -6,8 +6,8 @@
 
 ## Current State
 
-- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition], sign, migrate, doctor)
+- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -31,7 +31,8 @@
 - [x] Canonical `PrimalService` tarpc trait (C6 reference implementation)
 - [x] G65 Protocol Negotiation module (C7 reference implementation)
 - [x] G66 Transport Abstraction: `TransportListener` + `bind_transport()` + silicon deism validator
-- [x] 545 tests, zero ignored
+- [x] G68 Platform Substrate: `platform_link()` + `PlatformAccess` + L1/L2/L3 validator
+- [x] 563 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -52,6 +53,18 @@
 | doctests | 12 | — |
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 157a (August 7, 2026 — G68 Platform Substrate Abstraction)
+- **G68 reference implementation**: `sourdough_core::platform_substrate` module
+- **L1 Links**: `platform_link()` — symlink on Unix, junction/hard-link on Windows, hard-link elsewhere
+- **L2 Permissions**: `PlatformAccess` enum (OwnerReadWrite/OwnerFull/PublicRead/PublicExecute/Readonly/Custom)
+- `PlatformAccess::apply()` / `query_access()` — platform-aware permission set/get
+- `ensure_dir_with_access()` / `ensure_secure_parent()` — secure directory helpers
+- `is_symlink()` — cross-platform symlink detection
+- `sourdough validate platform-substrate` subcommand — L1/L2/L3 silicon deism detector
+- Scaffold templates emit `platform_substrate.rs` in generated primals' core crates
+- Spec: `specs/PLATFORM_SUBSTRATE_SPEC.md`
+- 563 tests (18 new), all cross-targets green (Linux, Windows, Android), clippy clean
 
 ### Wave 156s (August 6, 2026 — G66 Transport Abstraction)
 - **G66 server-side**: `TransportListener` enum (Unix/Tcp) + `bind_transport()`

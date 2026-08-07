@@ -80,6 +80,7 @@ pub mod methods;
 pub mod protocol_negotiation;
 pub mod rpc;
 pub mod tarpc_service;
+pub mod platform_substrate;
 pub mod transport;
 pub mod types;
 
@@ -109,5 +110,9 @@ pub use tarpc_service::{connect_primal, connect_primal_by_name};
 pub use transport::{
     PeekedStream, Protocol, TransportEndpoint, TransportStream, connect_transport, peek_protocol,
     resolve_socket_path, socket_path_in,
+};
+pub use platform_substrate::{
+    PlatformAccess, ensure_dir_with_access, ensure_secure_parent, is_symlink, platform_link,
+    query_access,
 };
 pub use types::{ContentHash, Timestamp};
