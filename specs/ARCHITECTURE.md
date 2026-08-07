@@ -35,6 +35,7 @@ sourDough/
       config.rs                         PrimalConfig trait
       tarpc_service.rs                  Canonical PrimalService tarpc trait (C6)
       protocol_negotiation.rs           G65 single-socket protocol negotiation (C7)
+      transport/listener.rs             G66 TransportListener server-side abstraction
       ipc/                              JSON-RPC 2.0 IPC (client, protocol, error, capability)
       rpc.rs                            Binary RPC, zero-copy wire format
       transport/                        TransportEndpoint, stream, socket, riboCipher, peek

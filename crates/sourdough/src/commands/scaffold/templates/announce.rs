@@ -15,18 +15,30 @@ pub(in crate::commands::scaffold) fn announce_rs(name: &str) -> String {
 //! the primal operates normally without routing intelligence.
 
 use std::path::{{Path, PathBuf}};
-use tokio::io::{{AsyncBufReadExt, AsyncWriteExt, BufReader}};
-use tokio::net::UnixStream;
 use tracing::{{info, warn}};
+
+#[cfg(unix)]
+use tokio::io::{{AsyncBufReadExt, AsyncWriteExt, BufReader}};
+#[cfg(unix)]
+use tokio::net::UnixStream;
 
 const PRIMAL_NAME: &str = "{name_lower}";
 const PRIMAL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Announce this primal to biomeOS's Neural API socket.
 ///
+/// On non-Unix platforms, this is a no-op (Neural API uses UDS).
+#[cfg(not(unix))]
+pub async fn announce_to_biomeos(_primal_name: &str, _socket: &Path, _family: &str) {{
+    info!("biomeOS announce not available on this platform (UDS-only)");
+}}
+
+/// Announce this primal to biomeOS's Neural API socket.
+///
 /// Discovers the neural-api socket via tiered lookup, connects, and sends
 /// a `primal.announce` JSON-RPC call. Logs a warning and returns gracefully
 /// if biomeOS is unreachable.
+#[cfg(unix)]
 pub async fn announce_to_biomeos(primal_name: &str, socket: &Path, family: &str) {{
     let Some(neural_socket) = discover_neural_api_socket(family) else {{
         info!("biomeOS neural-api socket not found — skipping announce");
@@ -73,6 +85,7 @@ pub async fn announce_to_biomeos(primal_name: &str, socket: &Path, family: &str)
 }}
 
 /// Discover biomeOS neural-api socket via tiered lookup.
+#[cfg(unix)]
 fn discover_neural_api_socket(family: &str) -> Option<PathBuf> {{
     // Tier 1: explicit env override
     if let Ok(path) = std::env::var("NEURAL_API_SOCKET") {{
@@ -98,8 +111,17 @@ fn discover_neural_api_socket(family: &str) -> Option<PathBuf> {{
 
 /// Register capabilities with Songbird for discovery by other primals.
 ///
+/// Register with songBird for capability routing (non-Unix no-op).
+#[cfg(not(unix))]
+pub async fn register_with_songbird(_primal_name: &str, _endpoint_json: &serde_json::Value) {{
+    info!("songBird registration not available on this platform (UDS-only)");
+}}
+
+/// Register with songBird for capability routing.
+///
 /// This enables `ipc.resolve` — when another primal needs to find us,
 /// songbird will return our endpoint.
+#[cfg(unix)]
 pub async fn register_with_songbird(primal_name: &str, endpoint_json: &serde_json::Value) {{
     let Some(songbird_socket) = discover_songbird_socket() else {{
         info!("Songbird socket not found — skipping ipc.register");
@@ -140,6 +162,7 @@ pub async fn register_with_songbird(primal_name: &str, endpoint_json: &serde_jso
 }}
 
 /// Discover songbird socket via standard biomeOS resolution.
+#[cfg(unix)]
 fn discover_songbird_socket() -> Option<PathBuf> {{
     if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {{
         let p = PathBuf::from(format!("{{runtime_dir}}/biomeos/songbird.sock"));

@@ -21,10 +21,33 @@ pub(super) const SELF_BIND_PATTERNS: &[(&str, &str)] = &[
 pub(super) const INJECTION_PATTERNS: &[(&str, &str)] = &[
     ("TransportEndpoint", "uses TransportEndpoint enum"),
     ("connect_transport", "uses connect_transport()"),
+    ("TransportListener", "uses G66 TransportListener"),
+    ("bind_transport", "uses G66 bind_transport()"),
+    ("TransportStream", "uses G66 TransportStream"),
     ("TRANSPORT_ENDPOINT", "accepts injected endpoint env var"),
     ("PRIMAL_BIND_MODE", "respects bind mode (Android/SELinux)"),
-    ("ipc.resolve", "resolves endpoints via Songbird"),
-    ("ipc.register", "registers capabilities with Songbird"),
+    ("platform_default", "uses platform_default() resolution"),
+    (
+        "from_env_or_default",
+        "uses from_env_or_default() injection",
+    ),
+];
+
+/// Patterns indicating silicon deism (unconditional Unix assumptions).
+const SILICON_DEISM_PATTERNS: &[(&str, &str)] = &[
+    (
+        "use tokio::net::UnixStream",
+        "unconditional UnixStream import",
+    ),
+    (
+        "use tokio::net::UnixListener",
+        "unconditional UnixListener import",
+    ),
+    ("use std::os::unix", "unconditional std::os::unix import"),
+    (
+        "use rustix::",
+        "unconditional rustix import outside transport",
+    ),
 ];
 
 pub(crate) fn validate(path: &Path) -> Result<()> {
@@ -110,12 +133,66 @@ pub(crate) fn validate(path: &Path) -> Result<()> {
     check_platform_guards(&rs_files, path, &mut compliant, &mut warnings);
 
     println!();
+    check_silicon_deism(&rs_files, path, &mut compliant, &mut warnings);
+
+    println!();
     for c in &compliant {
         crate::success(c);
     }
 
     println!();
     super::report_results(&errors, &warnings)
+}
+
+fn check_silicon_deism(
+    rs_files: &[std::path::PathBuf],
+    base_path: &Path,
+    compliant: &mut Vec<String>,
+    warnings: &mut Vec<String>,
+) {
+    crate::info("Checking for silicon deism (G66)...");
+    let mut deism_issues = Vec::new();
+
+    for file in rs_files {
+        let content = std::fs::read_to_string(file).unwrap_or_default();
+        let rel = file.strip_prefix(base_path).unwrap_or(file);
+        let rel_str = rel.to_string_lossy();
+
+        let in_transport = rel_str.contains("transport")
+            || rel_str.contains("socket")
+            || rel_str.contains("stream");
+        let in_test = rel_str.contains("/tests/")
+            || rel_str.starts_with("tests/")
+            || content.contains("#[cfg(test)]");
+        let has_cfg_guard = content.contains("#[cfg(unix)]") || content.contains("cfg!(unix)");
+
+        if in_test || in_transport {
+            continue;
+        }
+
+        for &(pattern, description) in SILICON_DEISM_PATTERNS {
+            if content.contains(pattern) && !has_cfg_guard {
+                deism_issues.push(format!(
+                    "  {}: {description} (move to transport layer)",
+                    rel.display()
+                ));
+            }
+        }
+    }
+
+    if deism_issues.is_empty() {
+        compliant
+            .push("No silicon deism detected — Unix APIs confined to transport layer".to_owned());
+    } else {
+        crate::warning(
+            "Silicon deism detected (G66 violation — Unix APIs outside transport layer):",
+        );
+        for issue in &deism_issues {
+            println!("{issue}");
+        }
+        let n = deism_issues.len();
+        warnings.push(format!("{n} silicon deism violation(s)"));
+    }
 }
 
 fn check_platform_guards(

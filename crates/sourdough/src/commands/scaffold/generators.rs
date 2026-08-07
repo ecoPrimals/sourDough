@@ -141,6 +141,7 @@ pub(super) fn create_core_crate(crates_dir: &Path, name: &str) -> Result<()> {
         src_dir.join("protocol_negotiation.rs"),
         templates::PROTOCOL_NEGOTIATION_RS,
     )?;
+    std::fs::write(src_dir.join("transport.rs"), templates::TRANSPORT_RS)?;
     std::fs::write(
         src_dir.join("tarpc_service.rs"),
         templates::tarpc_service_rs(name),

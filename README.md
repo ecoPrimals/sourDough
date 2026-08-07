@@ -21,7 +21,7 @@ sourDough also serves as:
 
 | Crate | Role |
 |-------|------|
-| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + G65 Protocol Negotiation (C7) + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker |
+| `sourdough-core` | Core traits + JSON-RPC 2.0 IPC + tarpc `PrimalService` (C6) + G65 Protocol Negotiation (C7) + G66 Transport Abstraction + IpcClient + riboCipher + CircuitBreaker |
 | `sourdough` | UniBin CLI: scaffold, validate (transport, ribocipher, tarpc, depot, composition), sign, migrate, doctor |
 | `sourdough-genomebin` | Pure Rust genomeBin: platform detection, metadata, archive, validation, Ed25519 signing |
 
@@ -61,7 +61,7 @@ cargo build --release
 
 | Metric | Value |
 |--------|-------|
-| Tests | 541 passing (zero ignored) |
+| Tests | 545 passing (zero ignored) |
 | Clippy | zero warnings (workspace-level pedantic + nursery) |
 | Unsafe | zero (`#![forbid(unsafe_code)]` on all crate roots) |
 | C deps | zero (Pure Rust entire dependency tree) |
@@ -78,6 +78,7 @@ cargo build --release
 - **JSON-RPC 2.0**: primary IPC with semantic `domain.verb` method naming
 - **tarpc `PrimalService`**: canonical binary RPC trait (G64 Cephalization C6)
 - **G65 Protocol Negotiation**: single-socket protocol selection (C7 reference impl)
+- **G66 Transport Abstraction**: silicon-agnostic IPC (`TransportListener` + `TransportStream` + `bind_transport`)
 - **Dual-protocol scaffold**: JSON-RPC on `.sock` + tarpc on `.tarpc.sock` (Phase 2 → Phase 3)
 - **riboCipher**: transport signal standard (Wave 111) — signal-first detection, legacy deprecation
 - **TransportEndpoint**: canonical wire format (serde tagged: uds/tcp/mesh_relay)

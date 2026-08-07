@@ -30,7 +30,8 @@
 - [x] Dual-protocol scaffold (G64 Cephalization): JSON-RPC + tarpc service trait
 - [x] Canonical `PrimalService` tarpc trait (C6 reference implementation)
 - [x] G65 Protocol Negotiation module (C7 reference implementation)
-- [x] 541 tests, zero ignored
+- [x] G66 Transport Abstraction: `TransportListener` + `bind_transport()` + silicon deism validator
+- [x] 545 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -51,6 +52,15 @@
 | doctests | 12 | — |
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 156s (August 6, 2026 — G66 Transport Abstraction)
+- **G66 server-side**: `TransportListener` enum (Unix/Tcp) + `bind_transport()`
+- `TransportListener::accept()` returns `TransportStream` — business logic never touches raw listeners
+- `TransportListener::is_local()` / `local_endpoint()` for trust decisions
+- Scaffold templates emit full G66 transport module (`transport.rs`) with all components
+- Scaffold announce template fixed for silicon deism (cfg-guarded Unix-only code)
+- `validate transport` enhanced: silicon deism detection (Unix APIs outside transport layer)
+- 545 tests, all cross-targets green (Linux, Windows, Android), clippy clean
 
 ### Wave 156l (August 6, 2026 — C7 G65 Protocol Negotiation)
 - **C7 DONE**: `sourdough_core::protocol_negotiation` — canonical single-socket negotiation module

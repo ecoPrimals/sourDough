@@ -25,6 +25,7 @@
 //! ```
 
 mod endpoint;
+mod listener;
 mod peek;
 pub mod ribocipher;
 pub mod ribocipher_server;
@@ -32,6 +33,7 @@ mod socket;
 mod stream;
 
 pub use endpoint::TransportEndpoint;
+pub use listener::{TransportListener, bind_transport};
 pub use peek::{PeekedStream, Protocol, peek_protocol};
 pub use ribocipher::{
     ProtocolType, SIGNAL_CLEAR, SIGNAL_MITO, SIGNAL_NUCLEAR, SignalResult, SignalTier,
