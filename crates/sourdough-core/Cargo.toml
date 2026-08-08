@@ -9,7 +9,7 @@ authors.workspace = true
 
 [dependencies]
 # Async
-tokio = { workspace = true, features = ["io-util", "net", "time", "rt"] }
+tokio = { workspace = true, features = ["io-util", "net", "time", "rt", "signal"] }
 
 # Serialization
 serde = { workspace = true }

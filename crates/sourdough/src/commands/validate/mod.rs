@@ -3,6 +3,7 @@
 mod composition;
 mod depot;
 mod ecobin;
+mod platform_paths;
 mod platform_substrate;
 pub(crate) mod ribocipher;
 mod tarpc_compliance;
@@ -114,6 +115,17 @@ pub(crate) enum ValidateCommand {
         json: bool,
     },
 
+    /// Validate platform paths compliance (detect hardcoded path assumptions)
+    #[command(name = "platform-paths")]
+    PlatformPaths {
+        /// Path to the primal directory to audit
+        path: PathBuf,
+
+        /// Output as JSON (machine-readable)
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Run transport compliance audit across all primals in a directory
     #[command(name = "transport-report")]
     TransportReport {
@@ -160,6 +172,9 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
         ValidateCommand::Tarpc { path, json } => tarpc_compliance::validate(&path, json),
         ValidateCommand::PlatformSubstrate { path, json } => {
             platform_substrate::validate(&path, json)
+        }
+        ValidateCommand::PlatformPaths { path, json } => {
+            platform_paths::validate(&path, json)
         }
         ValidateCommand::Depot {
             depot_dir,

@@ -257,11 +257,19 @@ pub async fn run(
             }});
 
             loop {{
-                let (stream, _) = listener.accept().await?;
-                if negotiate {{
-                    handle_negotiated_connection(stream, primal, &gate).await;
-                }} else {{
-                    handle_connection(stream, primal, &gate).await;
+                tokio::select! {{
+                    accept = listener.accept() => {{
+                        let (stream, _) = accept?;
+                        if negotiate {{
+                            handle_negotiated_connection(stream, primal, &gate).await;
+                        }} else {{
+                            handle_connection(stream, primal, &gate).await;
+                        }}
+                    }}
+                    _ = {core_ident}::platform_signal::shutdown_signal() => {{
+                        info!("graceful shutdown initiated");
+                        return Ok(());
+                    }}
                 }}
             }}
         }}
@@ -271,11 +279,19 @@ pub async fn run(
             info!("Listening on tcp://{{addr}}");
 
             loop {{
-                let (stream, _) = listener.accept().await?;
-                if negotiate {{
-                    handle_negotiated_connection(stream, primal, &gate).await;
-                }} else {{
-                    handle_connection(stream, primal, &gate).await;
+                tokio::select! {{
+                    accept = listener.accept() => {{
+                        let (stream, _) = accept?;
+                        if negotiate {{
+                            handle_negotiated_connection(stream, primal, &gate).await;
+                        }} else {{
+                            handle_connection(stream, primal, &gate).await;
+                        }}
+                    }}
+                    _ = {core_ident}::platform_signal::shutdown_signal() => {{
+                        info!("graceful shutdown initiated");
+                        return Ok(());
+                    }}
                 }}
             }}
         }}

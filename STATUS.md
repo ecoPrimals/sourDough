@@ -6,8 +6,8 @@
 
 ## Current State
 
-- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate], sign, migrate, doctor)
+- `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -32,7 +32,9 @@
 - [x] G65 Protocol Negotiation module (C7 reference implementation)
 - [x] G66 Transport Abstraction: `TransportListener` + `bind_transport()` + silicon deism validator
 - [x] G68 Platform Substrate: `platform_link()` + `PlatformAccess` + L1/L2/L3 validator
-- [x] 579 tests, zero ignored
+- [x] G68+ Platform Paths: `PrimalDirs` cross-platform directory resolution + paths validator
+- [x] G68+ Platform Signal: `shutdown_signal()` cross-platform graceful shutdown
+- [x] 600 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -47,12 +49,31 @@
 
 | Crate | Tests | Max Lines |
 |-------|-------|-----------|
-| sourdough-core | 308 | 601 (discovery.rs) |
-| sourdough (CLI) | 36 (2 e2e + 34 integration) | 608 (ribocipher.rs) |
-| sourdough-genomebin | 75 + 92 | 599 (platform.rs) |
-| doctests | 12 | — |
+| sourdough-core | 352 | 601 (discovery.rs) |
+| sourdough (CLI) | 34 + 2 e2e | 608 (ribocipher.rs) |
+| sourdough-genomebin | 95 + 104 | 599 (platform.rs) |
+| doctests | 13 | — |
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
+
+### Wave 157b (August 7, 2026 — Platform Paths + Platform Signal Abstraction)
+- **Platform Paths**: `sourdough_core::platform_paths::PrimalDirs` — cross-platform directory resolution
+  - Config/data/runtime/cache/logs resolved per-platform (XDG, ~/Library, %APPDATA%, sandbox)
+  - `BIOMEOS_*_DIR` environment overrides (test harness / launcher injection)
+  - `PrimalDirs::ensure()` creates dirs with G68-compliant permissions
+  - `socket_path()` / `pid_path()` helpers for runtime state
+- **Platform Signal**: `sourdough_core::platform_signal` — cross-platform graceful shutdown
+  - `shutdown_signal()` — waits for SIGTERM/SIGINT (Unix) or Ctrl+C (Windows)
+  - `shutdown_signal_named()` — returns signal name for diagnostics
+  - `on_shutdown(cleanup)` — register cleanup hook
+  - Scaffold server templates use `tokio::select!` with `shutdown_signal()` for graceful exit
+- **Validator**: `sourdough validate platform-paths` — detects hardcoded path silicon deism
+  - Scans for `/tmp`, `/var`, `/run` hardcoding and raw XDG env reads
+  - Exempts transport/announce/platform_paths modules and doc comments
+  - Reports compliance: G68-paths / G68-paths-prod / partial
+  - sourDough self-validates: G68-paths-prod (zero production violations)
+- Scaffold templates emit `platform_paths.rs` + `platform_signal.rs` in generated primals
+- 600 tests, all cross-targets green, clippy clean
 
 ### Wave 157a (August 7, 2026 — G68 Platform Substrate + Cross-Arch Expansion)
 - **G68 reference implementation**: `sourdough_core::platform_substrate` module

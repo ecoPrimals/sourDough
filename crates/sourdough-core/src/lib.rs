@@ -80,6 +80,8 @@ pub mod methods;
 pub mod protocol_negotiation;
 pub mod rpc;
 pub mod tarpc_service;
+pub mod platform_paths;
+pub mod platform_signal;
 pub mod platform_substrate;
 pub mod transport;
 pub mod types;
@@ -111,6 +113,8 @@ pub use transport::{
     PeekedStream, Protocol, TransportEndpoint, TransportStream, connect_transport, peek_protocol,
     resolve_socket_path, socket_path_in,
 };
+pub use platform_paths::PrimalDirs;
+pub use platform_signal::{on_shutdown, shutdown_signal, shutdown_signal_named};
 pub use platform_substrate::{
     PlatformAccess, ensure_dir_with_access, ensure_secure_parent, is_symlink, platform_link,
     query_access,
