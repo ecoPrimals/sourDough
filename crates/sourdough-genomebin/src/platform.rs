@@ -38,6 +38,8 @@ pub enum Os {
     Android,
     /// macOS (Darwin)
     MacOs,
+    /// iOS (Darwin, mobile)
+    Ios,
     /// Windows
     Windows,
     /// FreeBSD
@@ -65,6 +67,9 @@ impl Os {
         #[cfg(target_os = "macos")]
         return Self::MacOs;
 
+        #[cfg(target_os = "ios")]
+        return Self::Ios;
+
         #[cfg(target_os = "windows")]
         return Self::Windows;
 
@@ -88,6 +93,7 @@ impl fmt::Display for Os {
             Self::Linux => write!(f, "linux"),
             Self::Android => write!(f, "android"),
             Self::MacOs => write!(f, "macos"),
+            Self::Ios => write!(f, "ios"),
             Self::Windows => write!(f, "windows"),
             Self::FreeBsd => write!(f, "freebsd"),
             Self::OpenBsd => write!(f, "openbsd"),
@@ -198,6 +204,9 @@ impl LibC {
         #[cfg(target_os = "macos")]
         return Self::Darwin;
 
+        #[cfg(target_os = "ios")]
+        return Self::Darwin;
+
         #[expect(unreachable_code, reason = "cfg fallback for unsupported platforms")]
         Self::Unknown
     }
@@ -282,6 +291,7 @@ impl Platform {
             Os::Linux => format!("{}-{vendor}-linux-{}", self.arch, self.libc),
             Os::Android => format!("{}-linux-android", self.arch),
             Os::MacOs => format!("{}-apple-{}", self.arch, self.libc),
+            Os::Ios => format!("{}-apple-ios", self.arch),
             Os::Windows => format!("{}-pc-windows-{}", self.arch, self.libc),
             Os::FreeBsd => format!("{}-{vendor}-freebsd", self.arch),
             Os::OpenBsd => format!("{}-{vendor}-openbsd", self.arch),
@@ -297,6 +307,7 @@ impl Platform {
     pub fn simple_target(&self) -> String {
         match self.os {
             Os::Linux | Os::MacOs => format!("{}-{}", self.arch, self.libc),
+            Os::Ios => format!("{}-ios", self.arch),
             Os::Android => format!("{}-android", self.arch),
             Os::Windows => format!("{}-windows", self.arch),
             _ => format!("{}-{}", self.arch, self.os),
@@ -350,8 +361,14 @@ impl Platform {
     pub const fn is_unix(&self) -> bool {
         matches!(
             self.os,
-            Os::Linux | Os::MacOs | Os::FreeBsd | Os::OpenBsd | Os::NetBsd | Os::Android
+            Os::Linux | Os::MacOs | Os::Ios | Os::FreeBsd | Os::OpenBsd | Os::NetBsd | Os::Android
         )
+    }
+
+    /// Check if this platform is iOS.
+    #[must_use]
+    pub const fn is_ios(&self) -> bool {
+        matches!(self.os, Os::Ios)
     }
 
     /// Get fallback targets for binary selection.
@@ -451,6 +468,7 @@ mod tests {
         assert_eq!(Os::Linux.to_string(), "linux");
         assert_eq!(Os::Android.to_string(), "android");
         assert_eq!(Os::MacOs.to_string(), "macos");
+        assert_eq!(Os::Ios.to_string(), "ios");
         assert_eq!(Os::Windows.to_string(), "windows");
         assert_eq!(Os::FreeBsd.to_string(), "freebsd");
         assert_eq!(Os::OpenBsd.to_string(), "openbsd");
@@ -685,5 +703,35 @@ mod tests {
         assert!(p.is_arm());
         assert!(p.is_unix());
         assert!(!p.is_musl());
+    }
+
+    #[test]
+    fn iphone_platform() {
+        let p = Platform::new(Os::Ios, Arch::Aarch64, LibC::Darwin);
+        assert_eq!(p.target_triple(), "aarch64-apple-ios");
+        assert_eq!(p.simple_target(), "aarch64-ios");
+        assert!(p.is_ios());
+        assert!(p.is_arm());
+        assert!(p.is_unix());
+        assert!(!p.is_macos());
+        assert!(!p.is_android());
+    }
+
+    #[test]
+    fn grapheneos_pixel_platform() {
+        let p = Platform::new(Os::Android, Arch::Aarch64, LibC::Bionic);
+        assert_eq!(p.target_triple(), "aarch64-linux-android");
+        assert_eq!(p.simple_target(), "aarch64-android");
+        assert!(p.is_android());
+        assert!(p.is_arm());
+        assert!(p.is_unix());
+        assert!(!p.is_ios());
+        assert!(!p.is_linux());
+    }
+
+    #[test]
+    fn target_triple_ios() {
+        let p = Platform::new(Os::Ios, Arch::Aarch64, LibC::Darwin);
+        assert_eq!(p.target_triple(), "aarch64-apple-ios");
     }
 }
