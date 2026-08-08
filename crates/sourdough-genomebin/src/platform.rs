@@ -333,6 +333,27 @@ impl Platform {
         matches!(self.libc, LibC::Musl)
     }
 
+    /// Check if this platform uses RISC-V architecture.
+    #[must_use]
+    pub const fn is_riscv(&self) -> bool {
+        matches!(self.arch, Arch::Riscv64)
+    }
+
+    /// Check if this platform uses ARM architecture (32 or 64-bit).
+    #[must_use]
+    pub const fn is_arm(&self) -> bool {
+        matches!(self.arch, Arch::Aarch64 | Arch::Arm)
+    }
+
+    /// Check if this platform is Unix-like (supports UDS, POSIX permissions).
+    #[must_use]
+    pub const fn is_unix(&self) -> bool {
+        matches!(
+            self.os,
+            Os::Linux | Os::MacOs | Os::FreeBsd | Os::OpenBsd | Os::NetBsd | Os::Android
+        )
+    }
+
     /// Get fallback targets for binary selection.
     ///
     /// This implements the universal compatibility strategy:
@@ -595,5 +616,74 @@ mod tests {
     fn platform_unknown_detection_fails() {
         let result = Platform::new(Os::Unknown, Arch::Unknown, LibC::Unknown);
         assert_eq!(result.os(), Os::Unknown);
+    }
+
+    #[test]
+    fn is_riscv_true() {
+        let p = Platform::new(Os::Linux, Arch::Riscv64, LibC::Musl);
+        assert!(p.is_riscv());
+        assert!(!p.is_arm());
+        assert!(p.is_unix());
+    }
+
+    #[test]
+    fn is_arm_true() {
+        let p = Platform::new(Os::Linux, Arch::Aarch64, LibC::Gnu);
+        assert!(p.is_arm());
+        assert!(!p.is_riscv());
+    }
+
+    #[test]
+    fn is_arm_includes_armv7() {
+        let p = Platform::new(Os::Linux, Arch::Arm, LibC::Musl);
+        assert!(p.is_arm());
+    }
+
+    #[test]
+    fn is_unix_true_for_macos() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        assert!(p.is_unix());
+    }
+
+    #[test]
+    fn is_unix_false_for_windows() {
+        let p = Platform::new(Os::Windows, Arch::X86_64, LibC::Msvc);
+        assert!(!p.is_unix());
+    }
+
+    #[test]
+    fn target_triple_riscv() {
+        let p = Platform::new(Os::Linux, Arch::Riscv64, LibC::Musl);
+        assert_eq!(p.target_triple(), "riscv64-unknown-linux-musl");
+    }
+
+    #[test]
+    fn mac_mini_m4_platform() {
+        let p = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
+        assert_eq!(p.target_triple(), "aarch64-apple-darwin");
+        assert!(p.is_macos());
+        assert!(p.is_arm());
+        assert!(p.is_unix());
+        assert!(!p.is_riscv());
+    }
+
+    #[test]
+    fn milkv_jupiter_platform() {
+        let p = Platform::new(Os::Linux, Arch::Riscv64, LibC::Musl);
+        assert_eq!(p.target_triple(), "riscv64-unknown-linux-musl");
+        assert!(p.is_linux());
+        assert!(p.is_riscv());
+        assert!(p.is_unix());
+        assert!(p.is_musl());
+    }
+
+    #[test]
+    fn raspberry_pi_platform() {
+        let p = Platform::new(Os::Linux, Arch::Aarch64, LibC::Gnu);
+        assert_eq!(p.target_triple(), "aarch64-unknown-linux-gnu");
+        assert!(p.is_linux());
+        assert!(p.is_arm());
+        assert!(p.is_unix());
+        assert!(!p.is_musl());
     }
 }

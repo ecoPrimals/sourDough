@@ -29,7 +29,14 @@ jobs:
           - target: aarch64-linux-android
             arch: aarch64-android
             ndk: true
-    runs-on: ubuntu-latest
+          - target: riscv64gc-unknown-linux-musl
+            arch: riscv64
+            packages: musl-tools gcc-riscv64-linux-gnu
+            linker_env: CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER=riscv64-linux-gnu-gcc
+          - target: aarch64-apple-darwin
+            arch: aarch64-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

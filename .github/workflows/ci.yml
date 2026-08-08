@@ -39,3 +39,26 @@ jobs:
 
       - name: Doc
         run: cargo doc --workspace --no-deps
+
+  cross-check:
+    name: Cross-arch check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+          - aarch64-apple-darwin
+          - aarch64-unknown-linux-gnu
+          - aarch64-linux-android
+          - riscv64gc-unknown-linux-gnu
+          - armv7-unknown-linux-musleabihf
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: cross-${{ matrix.target }}
+      - name: Check (${{ matrix.target }})
+        run: cargo check --workspace --target ${{ matrix.target }}

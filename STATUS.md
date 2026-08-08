@@ -32,16 +32,16 @@
 - [x] G65 Protocol Negotiation module (C7 reference implementation)
 - [x] G66 Transport Abstraction: `TransportListener` + `bind_transport()` + silicon deism validator
 - [x] G68 Platform Substrate: `platform_link()` + `PlatformAccess` + L1/L2/L3 validator
-- [x] 563 tests, zero ignored
+- [x] 579 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
 - [x] All production files under 608 lines
 - [x] `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced)
 - [x] Per-crate tokio feature selection (minimal compile footprint)
-- [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android
-- [x] Cross-arch proven (Pixel 8 / GrapheneOS deployment validated)
-- [x] Windows cross-check passing (`cargo check --target x86_64-pc-windows-gnu`)
+- [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android, riscv64-musl, aarch64-apple-darwin
+- [x] Cross-arch proven: Pixel 8 (Android), Mac Mini M4 (Darwin), Milk-V Jupiter 2 (RISC-V), Raspberry Pi (aarch64)
+- [x] 8 cross-targets verified: Windows, Darwin, GNU, Android, RISC-V (gnu+musl), ARMv7, aarch64-musl
 
 ## Crate Health
 
@@ -54,7 +54,7 @@
 
 ## v0.4.0 (June–Aug 2026 — Transport Ecosystem + riboCipher + Cross-Arch + Cephalization)
 
-### Wave 157a (August 7, 2026 — G68 Platform Substrate Abstraction)
+### Wave 157a (August 7, 2026 — G68 Platform Substrate + Cross-Arch Expansion)
 - **G68 reference implementation**: `sourdough_core::platform_substrate` module
 - **L1 Links**: `platform_link()` — symlink on Unix, junction/hard-link on Windows, hard-link elsewhere
 - **L2 Permissions**: `PlatformAccess` enum (OwnerReadWrite/OwnerFull/PublicRead/PublicExecute/Readonly/Custom)
@@ -62,9 +62,12 @@
 - `ensure_dir_with_access()` / `ensure_secure_parent()` — secure directory helpers
 - `is_symlink()` — cross-platform symlink detection
 - `sourdough validate platform-substrate` subcommand — L1/L2/L3 silicon deism detector
+- **Scanner refinement**: prod/test split, contextual `set_mode`, 3 compliance levels (G68/G68-prod/partial)
 - Scaffold templates emit `platform_substrate.rs` in generated primals' core crates
-- Spec: `specs/PLATFORM_SUBSTRATE_SPEC.md`
-- 563 tests (18 new), all cross-targets green (Linux, Windows, Android), clippy clean
+- **Cross-arch expansion**: Darwin (Mac Mini M4), RISC-V (Milk-V Jupiter 2), Raspberry Pi
+- CI: 6 cross-check targets in CI, 6 release architectures
+- Platform: `is_riscv()`, `is_arm()`, `is_unix()` helpers added to genomebin
+- 579 tests, all 8 cross-targets green, clippy clean
 
 ### Wave 156s (August 6, 2026 — G66 Transport Abstraction)
 - **G66 server-side**: `TransportListener` enum (Unix/Tcp) + `bind_transport()`
