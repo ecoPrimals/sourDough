@@ -66,3 +66,31 @@ pub mod primal {
     /// Graceful shutdown.
     pub const SHUTDOWN: &str = "primal.shutdown";
 }
+
+/// Convergence domain methods (braid provenance).
+pub mod convergence {
+    /// Check convergence state of a single braid.
+    pub const CHECK: &str = "convergence.check";
+    /// Batch convergence check across multiple braids.
+    pub const BATCH_CHECK: &str = "convergence.batch_check";
+}
+
+/// Braid domain methods (provenance chain operations).
+pub mod braid {
+    /// List braids (filtered by criteria).
+    pub const LIST: &str = "braid.list";
+    /// Query braids by metadata.
+    pub const QUERY: &str = "braid.query";
+    /// Get a braid by content hash.
+    pub const GET_BY_HASH: &str = "braid.get_by_hash";
+    /// Create a single braid entry.
+    pub const CREATE: &str = "braid.create";
+    /// Batch create braid entries.
+    pub const BATCH_CREATE: &str = "braid.batch_create";
+    /// Commit a braid (finalize provenance).
+    pub const COMMIT: &str = "braid.commit";
+    /// Batch commit braids.
+    pub const BATCH_COMMIT: &str = "braid.batch_commit";
+    /// Delete a braid entry.
+    pub const DELETE: &str = "braid.delete";
+}

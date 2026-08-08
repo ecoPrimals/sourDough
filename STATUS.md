@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths], sign, migrate, doctor)
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -73,7 +73,22 @@
   - Reports compliance: G68-paths / G68-paths-prod / partial
   - sourDough self-validates: G68-paths-prod (zero production violations)
 - Scaffold templates emit `platform_paths.rs` + `platform_signal.rs` in generated primals
-- 600 tests, all cross-targets green, clippy clean
+- 604 tests, all cross-targets green, clippy clean
+
+### Wave 157b+ (August 8, 2026 — Neural API Routing Validator)
+- **`sourdough validate neural-api`** — replaces archived `convergence_check.py` (jelly)
+- Audits primals for Neural API atomic routing compliance:
+  - `primal.announce` in dispatch + startup call
+  - Wire format fields (primal, socket, pid, capabilities, methods, version)
+  - Enhanced routing fields (signal_tiers, cost_hints, latency_estimates)
+  - `ipc.register` with songBird for discovery
+  - Capability domain declarations
+- Compliance levels: FULL / ROUTABLE / PARTIAL / NONE
+- **Canonical method constants**: `convergence.*` and `braid.*` domains added to `methods.rs`
+  - `convergence.check`, `convergence.batch_check`
+  - `braid.list`, `braid.query`, `braid.get_by_hash`, `braid.create`, `braid.batch_create`, `braid.commit`, `braid.batch_commit`, `braid.delete`
+- sourDough scaffold templates self-validate: ROUTABLE
+- 604 tests, clippy clean
 
 ### Wave 157a (August 7, 2026 — G68 Platform Substrate + Cross-Arch Expansion)
 - **G68 reference implementation**: `sourdough_core::platform_substrate` module
