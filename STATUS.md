@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api], sign, migrate, doctor)
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -34,7 +34,7 @@
 - [x] G68 Platform Substrate: `platform_link()` + `PlatformAccess` + L1/L2/L3 validator
 - [x] G68+ Platform Paths: `PrimalDirs` cross-platform directory resolution + paths validator
 - [x] G68+ Platform Signal: `shutdown_signal()` cross-platform graceful shutdown
-- [x] 600 tests, zero ignored
+- [x] 612 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -88,7 +88,12 @@
   - `convergence.check`, `convergence.batch_check`
   - `braid.list`, `braid.query`, `braid.get_by_hash`, `braid.create`, `braid.batch_create`, `braid.commit`, `braid.batch_commit`, `braid.delete`
 - sourDough scaffold templates self-validate: ROUTABLE
-- 604 tests, clippy clean
+- **`sourdough validate convergence`** — live runtime convergence check (replaces `convergence_check.py`)
+  - Connects to running primals via sockets, probes health/capabilities/version
+  - Reports: CONVERGED / PARTIAL / DRIFT / NO_PRIMALS
+  - Configurable timeout, auto-discovers `$XDG_RUNTIME_DIR/biomeos` or `--socket-dir`
+  - Tested live: 8 sockets found, 1/8 alive (beardog), 7 degraded
+- 612 tests, clippy clean
 
 ### Wave 157a (August 7, 2026 — G68 Platform Substrate + Cross-Arch Expansion)
 - **G68 reference implementation**: `sourdough_core::platform_substrate` module

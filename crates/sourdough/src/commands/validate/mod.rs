@@ -1,6 +1,7 @@
 //! Validation commands for checking primal compliance.
 
 mod composition;
+mod convergence;
 mod depot;
 mod ecobin;
 mod neural_api;
@@ -138,6 +139,22 @@ pub(crate) enum ValidateCommand {
         json: bool,
     },
 
+    /// Live convergence check — probe running primals via sockets
+    #[command(name = "convergence")]
+    Convergence {
+        /// Socket directory to scan for running primals
+        #[arg(long)]
+        socket_dir: Option<PathBuf>,
+
+        /// Per-primal probe timeout in milliseconds
+        #[arg(long, default_value = "2000")]
+        timeout_ms: u64,
+
+        /// Output as JSON (machine-readable)
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Run transport compliance audit across all primals in a directory
     #[command(name = "transport-report")]
     TransportReport {
@@ -189,6 +206,14 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             platform_paths::validate(&path, json)
         }
         ValidateCommand::NeuralApi { path, json } => neural_api::validate(&path, json),
+        ValidateCommand::Convergence {
+            socket_dir,
+            timeout_ms,
+            json,
+        } => {
+            let dir = socket_dir.unwrap_or_else(default_socket_dir);
+            convergence::validate(&dir, json, timeout_ms)
+        }
         ValidateCommand::Depot {
             depot_dir,
             source,
@@ -202,6 +227,15 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             exempt,
         } => transport_report::run(&primals_dir, output.as_deref(), json, &exempt),
     }
+}
+
+fn default_socket_dir() -> PathBuf {
+    let runtime_dir = std::env::var("BIOMEOS_SOCKET_DIR")
+        .or_else(|_| {
+            std::env::var("XDG_RUNTIME_DIR").map(|d| format!("{d}/biomeos"))
+        })
+        .unwrap_or_else(|_| "/tmp/biomeos".to_owned());
+    PathBuf::from(runtime_dir)
 }
 
 // --- Shared validation functions ---
