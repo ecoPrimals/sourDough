@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence], sign, migrate, doctor)
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence, rpc-surface], sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -34,7 +34,7 @@
 - [x] G68 Platform Substrate: `platform_link()` + `PlatformAccess` + L1/L2/L3 validator
 - [x] G68+ Platform Paths: `PrimalDirs` cross-platform directory resolution + paths validator
 - [x] G68+ Platform Signal: `shutdown_signal()` cross-platform graceful shutdown
-- [x] 612 tests, zero ignored
+- [x] 619 tests, zero ignored
 - [x] Zero unwrap/expect in library production code
 - [x] Scaffold independence: scaffolded primals are self-contained (no sourdough-core dependency)
 - [x] Transport injection: primals accept `TRANSPORT_ENDPOINT` env var
@@ -93,7 +93,14 @@
   - Reports: CONVERGED / PARTIAL / DRIFT / NO_PRIMALS
   - Configurable timeout, auto-discovers `$XDG_RUNTIME_DIR/biomeos` or `--socket-dir`
   - Tested live: 8 sockets found, 1/8 alive (beardog), 7 degraded
-- 612 tests, clippy clean
+- **`sourdough validate rpc-surface`** — live RPC method surface audit
+  - Detects P0-A (health fallback stub): sends canary unknown method, catches silent success
+  - Detects P0-B (API divergence): declared methods returning -32601
+  - Fresh connection per probe (handles one-shot primals)
+  - Compares method responses to canary to detect identical stub responses
+  - Compliance levels: VERIFIED / STUB / DIVERGED / BROKEN
+  - Tested live: beardog correctly flagged STUB, sweetgrass correctly flagged VERIFIED
+- 619 tests, clippy clean
 
 ### Wave 157a (August 7, 2026 — G68 Platform Substrate + Cross-Arch Expansion)
 - **G68 reference implementation**: `sourdough_core::platform_substrate` module

@@ -8,6 +8,7 @@ mod neural_api;
 mod platform_paths;
 mod platform_substrate;
 pub(crate) mod ribocipher;
+mod rpc_surface;
 mod tarpc_compliance;
 mod transport_compliance;
 mod transport_report;
@@ -139,6 +140,26 @@ pub(crate) enum ValidateCommand {
         json: bool,
     },
 
+    /// Live RPC surface audit — detect API divergence (P0-A/P0-B patterns)
+    #[command(name = "rpc-surface")]
+    RpcSurface {
+        /// Socket path of the primal to audit
+        #[arg(long)]
+        socket: PathBuf,
+
+        /// Methods to probe (comma-separated). Defaults to core health/caps/version.
+        #[arg(long, value_delimiter = ',')]
+        methods: Vec<String>,
+
+        /// Per-method probe timeout in milliseconds
+        #[arg(long, default_value = "2000")]
+        timeout_ms: u64,
+
+        /// Output as JSON (machine-readable)
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Live convergence check — probe running primals via sockets
     #[command(name = "convergence")]
     Convergence {
@@ -206,6 +227,12 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             platform_paths::validate(&path, json)
         }
         ValidateCommand::NeuralApi { path, json } => neural_api::validate(&path, json),
+        ValidateCommand::RpcSurface {
+            socket,
+            methods,
+            timeout_ms,
+            json,
+        } => rpc_surface::validate(&socket, &methods, timeout_ms, json),
         ValidateCommand::Convergence {
             socket_dir,
             timeout_ms,
