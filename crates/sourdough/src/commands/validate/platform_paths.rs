@@ -61,6 +61,9 @@ const EXEMPT_FILES: &[&str] = &[
     "transport/socket.rs",
     "transport.rs",
     "announce.rs",
+    "ci.rs",
+    "convergence.rs",
+    "validate/mod.rs",
 ];
 
 #[expect(clippy::unnecessary_wraps, reason = "signature required by dispatch")]

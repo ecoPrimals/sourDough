@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence, rpc-surface], sign, migrate, doctor)
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence, rpc-surface], ci, sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -74,6 +74,18 @@
   - sourDough self-validates: G68-paths-prod (zero production violations)
 - Scaffold templates emit `platform_paths.rs` + `platform_signal.rs` in generated primals
 - 604 tests, all cross-targets green, clippy clean
+
+### Wave 157e (August 10, 2026 — Sovereign CI Pipeline)
+- **`sourdough ci`** composite command — runs all static validators in sequence with unified pass/fail
+- 5 static checks: platform-substrate, platform-paths, neural-api, tarpc, transport
+- `--live` flag for post-deploy convergence probes
+- `--json` machine-readable output for CI pipelines
+- `--strict` for gated merges, `--skip` for selective exclusion
+- `ci/forgejo-post-receive-hook.sh` — turnkey Forgejo post-receive hook for golgi integration
+- Hook uses git worktrees for zero-downtime validation on push
+- Advisory mode default (push always succeeds) with gating mode toggle
+- Results logged to `/var/log/sourdough-ci/<primal>-<timestamp>.json`
+- sourDough self-validates: 5/5 PASS static, 6/6 with live convergence
 
 ### Wave 157b+ (August 8, 2026 — Neural API Routing Validator)
 - **`sourdough validate neural-api`** — replaces archived `convergence_check.py` (jelly)

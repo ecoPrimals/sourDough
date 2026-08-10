@@ -5,6 +5,7 @@
     reason = "pub(crate) is explicit about intent in binary crate modules"
 )]
 
+pub(crate) mod ci;
 pub(crate) mod doctor;
 pub(crate) mod genomebin;
 pub(crate) mod layout;

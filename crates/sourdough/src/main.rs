@@ -100,6 +100,9 @@ enum Commands {
         #[arg(long)]
         comprehensive: bool,
     },
+
+    /// Run sovereign CI pipeline (all validators in sequence)
+    Ci(commands::ci::CiArgs),
 }
 
 #[tokio::main]
@@ -149,6 +152,9 @@ async fn main() -> Result<()> {
         }
         Commands::Doctor { comprehensive } => {
             commands::doctor::run(comprehensive)?;
+        }
+        Commands::Ci(args) => {
+            commands::ci::run(&args)?;
         }
     }
 
