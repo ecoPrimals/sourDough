@@ -12,7 +12,6 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use owo_colors::OwoColorize;
 
 pub(crate) mod commands;
 
@@ -163,20 +162,20 @@ async fn main() -> Result<()> {
 
 /// Print success message
 pub(crate) fn success(msg: &str) {
-    println!("{} {}", "✓".green().bold(), msg);
+    println!("\x1b[1;32m✓\x1b[0m {msg}");
 }
 
 /// Print error message
 pub(crate) fn error(msg: &str) {
-    eprintln!("{} {}", "✗".red().bold(), msg);
+    eprintln!("\x1b[1;31m✗\x1b[0m {msg}");
 }
 
 /// Print warning message
 pub(crate) fn warning(msg: &str) {
-    println!("{} {}", "⚠".yellow().bold(), msg);
+    println!("\x1b[1;33m⚠\x1b[0m {msg}");
 }
 
 /// Print info message
 pub(crate) fn info(msg: &str) {
-    println!("{} {}", "ℹ".blue().bold(), msg);
+    println!("\x1b[1;34mℹ\x1b[0m {msg}");
 }

@@ -119,4 +119,4 @@ pub use platform_substrate::{
     PlatformAccess, ensure_dir_with_access, ensure_secure_parent, is_symlink, platform_link,
     query_access,
 };
-pub use types::{ContentHash, Timestamp};
+pub use types::{epoch_secs_to_utc, ContentHash, Timestamp};

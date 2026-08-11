@@ -144,15 +144,42 @@ impl std::fmt::Debug for Timestamp {
 
 impl std::fmt::Display for Timestamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let dt = chrono::DateTime::from_timestamp(
-            i64::try_from(self.secs).unwrap_or(i64::MAX),
-            self.nanos,
-        );
-        match dt {
-            Some(dt) => write!(f, "{}", dt.format("%Y-%m-%dT%H:%M:%S%.3fZ")),
-            None => write!(f, "Timestamp({}.{:09})", self.secs, self.nanos),
-        }
+        // Pure arithmetic ISO 8601 formatting — no chrono dependency.
+        let (year, month, day, hour, min, sec) = epoch_secs_to_utc(self.secs);
+        let millis = self.nanos / 1_000_000;
+        write!(f, "{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}.{millis:03}Z")
     }
+}
+
+/// Convert epoch seconds to UTC date/time components (civil calendar).
+///
+/// Returns `(year, month, day, hour, minute, second)`.
+#[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "days-from-epoch fits u32 until year ~11.7M"
+)]
+pub const fn epoch_secs_to_utc(secs: u64) -> (u32, u32, u32, u32, u32, u32) {
+    let sec = (secs % 60) as u32;
+    let total_min = secs / 60;
+    let min = (total_min % 60) as u32;
+    let total_hr = total_min / 60;
+    let hour = (total_hr % 24) as u32;
+    let mut days = (total_hr / 24) as u32;
+
+    // Days since 1970-01-01 → civil date (Euclidean affine algorithm)
+    days += 719_468; // shift epoch to 0000-03-01
+    let era = days / 146_097;
+    let doe = days - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = if month <= 2 { y + 1 } else { y };
+
+    (year, month, day, hour, min, sec)
 }
 
 impl Default for Timestamp {

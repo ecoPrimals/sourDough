@@ -6,6 +6,7 @@ use crate::error::{GenomeBinError, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 /// genomeBin metadata.
 ///
@@ -59,7 +60,7 @@ impl Metadata {
         }
 
         let architecture_count = architectures.len();
-        let created = chrono::Utc::now().to_rfc3339();
+        let created = rfc3339_now();
 
         Ok(Self {
             genome: GenomeInfo {
@@ -136,6 +137,34 @@ impl Metadata {
     pub fn find_ecobin(&self, target: &str) -> Option<&Path> {
         self.architectures.get(target).map(PathBuf::as_path)
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "days-from-epoch fits u32 until year ~11.7M"
+)]
+fn rfc3339_now() -> String {
+    let dur = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default();
+    let secs = dur.as_secs();
+    let sec = secs % 60;
+    let min = (secs / 60) % 60;
+    let hour = (secs / 3600) % 24;
+    let mut days = (secs / 86400) as u32;
+
+    days += 719_468;
+    let era = days / 146_097;
+    let doe = days - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = if month <= 2 { y + 1 } else { y };
+
+    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}Z")
 }
 
 #[cfg(test)]

@@ -6,6 +6,22 @@
 use super::templates;
 use anyhow::{Context, Result};
 use std::path::Path;
+use std::time::SystemTime;
+
+const MONTH_NAMES: [&str; 12] = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+];
+
+fn format_scaffold_date() -> String {
+    let secs = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let (y, mo, d, _, _, _) = sourdough_core::types::epoch_secs_to_utc(secs);
+    let month_name = MONTH_NAMES.get(mo.wrapping_sub(1) as usize).unwrap_or(&"Unknown");
+    format!("{month_name} {d:02}, {y}")
+}
 
 pub(super) fn write_workspace_cargo_toml(dir: &Path, name: &str) -> Result<()> {
     let name_lower = name.to_lowercase();
@@ -167,7 +183,7 @@ pub(super) fn write_specs_directory(dir: &Path, name: &str, description: &str) -
     let specs_dir = dir.join("specs");
     std::fs::create_dir_all(&specs_dir)?;
 
-    let date = chrono::Local::now().format("%B %d, %Y");
+    let date = format_scaffold_date();
     std::fs::write(
         specs_dir.join(format!("{}_SPECIFICATION.md", name.to_uppercase())),
         format!(

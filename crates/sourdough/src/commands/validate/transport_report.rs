@@ -5,6 +5,7 @@
 
 use anyhow::{Context, Result};
 use std::path::Path;
+use std::time::SystemTime;
 
 /// Result of a single primal's transport audit.
 #[derive(Debug)]
@@ -256,7 +257,7 @@ fn format_report(audits: &[PrimalAudit]) -> String {
     let _ = writeln!(
         out,
         "Generated: {}\n",
-        chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")
+        format_utc_now()
     );
     out.push_str("| Primal | Status | Self-bind | Injection | Platform | Dep |\n");
     out.push_str("|--------|--------|-----------|-----------|----------|-----|\n");
@@ -318,6 +319,15 @@ fn format_report(audits: &[PrimalAudit]) -> String {
     }
 
     out
+}
+
+fn format_utc_now() -> String {
+    let secs = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let (y, mo, d, h, mi, _) = sourdough_core::types::epoch_secs_to_utc(secs);
+    format!("{y:04}-{mo:02}-{d:02} {h:02}:{mi:02} UTC")
 }
 
 #[cfg(test)]

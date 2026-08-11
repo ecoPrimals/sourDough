@@ -24,9 +24,6 @@ thiserror = { workspace = true }
 # Logging
 tracing = { workspace = true }
 
-# Time
-chrono = { workspace = true }
-
 # Cryptography
 blake3 = { workspace = true }
 

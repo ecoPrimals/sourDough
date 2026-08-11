@@ -41,6 +41,8 @@
 - [x] All production files under 608 lines
 - [x] `#![forbid(unsafe_code)]` on all 3 crate roots (compiler-enforced)
 - [x] Per-crate tokio feature selection (minimal compile footprint)
+- [x] Zero `chrono` dependency — pure arithmetic timestamp formatting (std::time only)
+- [x] Zero terminal color dependency — ANSI escapes inlined (no owo-colors/colored)
 - [x] Release CI: x86_64-musl, aarch64-musl, armv7-musleabihf, aarch64-linux-android, riscv64-musl, aarch64-apple-darwin
 - [x] Cross-arch proven: Pixel 8 (Android), Mac Mini M4 (Darwin), Milk-V Jupiter 2 (RISC-V), Raspberry Pi (aarch64)
 - [x] 8 cross-targets verified: Windows, Darwin, GNU, Android, RISC-V (gnu+musl), ARMv7, aarch64-musl
@@ -75,7 +77,24 @@
 - Scaffold templates emit `platform_paths.rs` + `platform_signal.rs` in generated primals
 - 604 tests, all cross-targets green, clippy clean
 
-### Wave 157g (August 10, 2026 — G72 Dependency Pandemic Validator)
+### Wave 157i (August 11, 2026 — G72 Self-Practice + CI Hardening)
+- **chrono excised** — all timestamp formatting uses pure arithmetic `epoch_secs_to_utc()` (const fn)
+  - `Timestamp::Display` → Euclidean civil calendar algorithm
+  - `rfc3339_now()` → zero-dep RFC 3339 in genomebin metadata
+  - `format_scaffold_date()` → month-name formatting via static array
+  - `format_utc_now()` → transport report timestamps
+- **owo-colors excised** — terminal coloring via inline ANSI escapes (4 call sites)
+- **tokio-test removed** from genomebin dev-deps (unused)
+- **tokio `rt-multi-thread` → `rt` only** in genomebin production deps (library doesn't own runtime)
+- **CI refactored**: table-driven static checks via `STATIC_CHECKS` const array
+  - `rpc-surface` wired as live check (alongside convergence) under `--live`
+  - Deduped `sourdough_exe()` helper
+  - Unified `run_live_check()` for both convergence and rpc-surface
+  - `contains_live_failures()` for live check JSON parsing
+- **Net dep reduction**: chrono chain (iana-time-zone, windows-targets, etc.) + owo-colors fully gone
+- 619 tests, clippy clean, `sourdough ci` 6/6 PASS
+
+
 - **`sourdough validate deps`** — G72 Dependency Pandemic audit tool
   - Detects `tokio = { features = ["full"] }` bloat (Tier 1 excision target)
   - Flags excisable crates (pollster, reqwest, hyper, actix-web, warp, rocket)
