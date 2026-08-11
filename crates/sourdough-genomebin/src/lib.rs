@@ -60,6 +60,7 @@ pub mod builder;
 pub mod error;
 pub mod metadata;
 pub mod platform;
+pub mod service;
 pub mod signing;
 pub mod validator;
 
