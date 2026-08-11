@@ -78,6 +78,9 @@ pub(crate) fn run(args: &CiArgs) -> Result<()> {
     if !args.skip.contains(&"transport".to_owned()) {
         results.push(run_check("transport", path));
     }
+    if !args.skip.contains(&"deps".to_owned()) {
+        results.push(run_check("deps", path));
+    }
 
     // Live checks
     if args.live {
@@ -106,7 +109,7 @@ pub(crate) fn run(args: &CiArgs) -> Result<()> {
 fn run_check(name: &'static str, path: &Path) -> CheckResult {
     let supports_json = matches!(
         name,
-        "platform-substrate" | "platform-paths" | "neural-api" | "tarpc" | "depot" | "ribocipher"
+        "platform-substrate" | "platform-paths" | "neural-api" | "tarpc" | "depot" | "ribocipher" | "deps"
     );
 
     let mut cmd = std::process::Command::new(

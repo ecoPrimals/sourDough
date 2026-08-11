@@ -7,7 +7,7 @@
 ## Current State
 
 - `sourdough-core`: Core traits + JSON-RPC 2.0 IPC + TransportEndpoint + IpcClient + riboCipher + CircuitBreaker + zero-copy RPC + G65 Protocol Negotiation + G68 Platform Substrate + Platform Paths + Platform Signal
-- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence, rpc-surface], ci, sign, migrate, doctor)
+- `sourdough`: CLI binary (scaffold, validate [transport, ribocipher, depot, composition, platform-substrate, platform-paths, neural-api, convergence, rpc-surface, deps], ci, sign, migrate, doctor)
 - `sourdough-genomebin`: Pure Rust genomeBin operations
 - **Scaffold produces dual-protocol primals** (G64 Cephalization): JSON-RPC on `.sock` + tarpc on `.tarpc.sock`
 
@@ -75,9 +75,20 @@
 - Scaffold templates emit `platform_paths.rs` + `platform_signal.rs` in generated primals
 - 604 tests, all cross-targets green, clippy clean
 
+### Wave 157g (August 10, 2026 — G72 Dependency Pandemic Validator)
+- **`sourdough validate deps`** — G72 Dependency Pandemic audit tool
+  - Detects `tokio = { features = ["full"] }` bloat (Tier 1 excision target)
+  - Flags excisable crates (pollster, reqwest, hyper, actix-web, warp, rocket)
+  - Reports version misalignment across workspace members
+  - Identifies duplicate-functionality pairs (chrono/time, reqwest/ureq, log/tracing)
+  - Compliance levels: G72 / G72-prod / partial
+  - Wired into `sourdough ci` (6 static checks total)
+- Ecosystem audit: 12 errors (tokio "full"), 88 warnings across all 16 primals
+- sourDough self-validates: G72 (zero deps issues)
+
 ### Wave 157e (August 10, 2026 — Sovereign CI Pipeline)
 - **`sourdough ci`** composite command — runs all static validators in sequence with unified pass/fail
-- 5 static checks: platform-substrate, platform-paths, neural-api, tarpc, transport
+- 6 static checks: platform-substrate, platform-paths, neural-api, tarpc, transport, deps
 - `--live` flag for post-deploy convergence probes
 - `--json` machine-readable output for CI pipelines
 - `--strict` for gated merges, `--skip` for selective exclusion
@@ -85,7 +96,7 @@
 - Hook uses git worktrees for zero-downtime validation on push
 - Advisory mode default (push always succeeds) with gating mode toggle
 - Results logged to `/var/log/sourdough-ci/<primal>-<timestamp>.json`
-- sourDough self-validates: 5/5 PASS static, 6/6 with live convergence
+- sourDough self-validates: 6/6 PASS static, 7/7 with live convergence
 
 ### Wave 157b+ (August 8, 2026 — Neural API Routing Validator)
 - **`sourdough validate neural-api`** — replaces archived `convergence_check.py` (jelly)

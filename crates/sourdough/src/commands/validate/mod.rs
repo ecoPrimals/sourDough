@@ -2,6 +2,7 @@
 
 mod composition;
 mod convergence;
+mod deps;
 mod depot;
 mod ecobin;
 mod neural_api;
@@ -176,6 +177,18 @@ pub(crate) enum ValidateCommand {
         json: bool,
     },
 
+    /// G72 Dependency Pandemic audit (bloated features, excisable crates, version drift)
+    #[command(name = "deps")]
+    Deps {
+        /// Path to the primal directory to audit
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output as JSON (machine-readable)
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Run transport compliance audit across all primals in a directory
     #[command(name = "transport-report")]
     TransportReport {
@@ -241,6 +254,7 @@ pub(crate) fn run(cmd: ValidateCommand) -> Result<()> {
             let dir = socket_dir.unwrap_or_else(default_socket_dir);
             convergence::validate(&dir, json, timeout_ms)
         }
+        ValidateCommand::Deps { path, json } => deps::validate(&path, json),
         ValidateCommand::Depot {
             depot_dir,
             source,
