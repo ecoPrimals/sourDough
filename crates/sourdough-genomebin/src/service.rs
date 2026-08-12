@@ -357,12 +357,16 @@ WantedBy=multi-user.target
 }
 
 /// Generate service templates for all Tower Atomic primals.
+///
+/// Tower Atomic = bearDog + songBird + skunkBat + swarmVine (shared
+/// electron cloud — present in ALL compositions via bonding model).
 #[must_use]
 pub fn tower_atomic_templates(platform: &Platform, bin_dir: &str) -> Vec<ServiceTemplate> {
     let primals = [
         ("beardog", "Trust — crypto, BTSP, FIDO2, Ed25519 signing"),
         ("songbird", "Discovery — mesh, IPC, relay, drawbridge"),
         ("skunkbat", "Defense — anomaly detection, protocol audit"),
+        ("swarmvine", "Gossip — epidemic protocol, ant colony, cascade"),
     ];
 
     primals
@@ -376,12 +380,18 @@ pub fn tower_atomic_templates(platform: &Platform, bin_dir: &str) -> Vec<Service
 }
 
 /// Generate service templates for all NUCLEUS primals.
+///
+/// NUCLEUS = Tower (bearDog + songBird + skunkBat + swarmVine) +
+/// Nest (nestGate + rhizoCrypt + loamSpine + sweetGrass) +
+/// Node (toadStool + barraCuda + coralReef) +
+/// biomeOS + petalTongue + squirrel + cellMembrane.
 #[must_use]
 pub fn nucleus_templates(platform: &Platform, bin_dir: &str) -> Vec<ServiceTemplate> {
     let primals = [
         ("beardog", "Trust — crypto, BTSP, FIDO2, Ed25519 signing"),
         ("songbird", "Discovery — mesh, IPC, relay, drawbridge"),
         ("skunkbat", "Defense — anomaly detection, protocol audit"),
+        ("swarmvine", "Gossip — epidemic protocol, ant colony, cascade"),
         ("nestgate", "Content-addressed storage — CAS, provenance"),
         ("rhizocrypt", "Lineage DAG — content identity, federation"),
         ("loamspine", "Certificate ledger — lifecycle, verification"),
@@ -392,7 +402,7 @@ pub fn nucleus_templates(platform: &Platform, bin_dir: &str) -> Vec<ServiceTempl
         ("biomeos", "Orchestrator — Neural API, signal graphs, NUCLEUS"),
         ("squirrel", "AI assistant — MCP, ML"),
         ("petaltongue", "Visualization — WASM, WebGL, rendering"),
-        ("swarmvine", "Gossip — epidemic protocol, ant colony"),
+        ("cellmembrane", "Sovereignty — topology, depot, cascade validation"),
         ("sourdough", "Factory — standards validator"),
     ];
 
@@ -486,18 +496,22 @@ mod tests {
     }
 
     #[test]
-    fn tower_atomic_generates_three() {
+    fn tower_atomic_generates_four() {
         let platform = Platform::new(Os::Linux, Arch::X86_64, LibC::Musl);
         let templates = tower_atomic_templates(&platform, "/usr/local/bin");
-        assert_eq!(templates.len(), 3);
+        assert_eq!(templates.len(), 4);
+        let names: Vec<_> = templates.iter().map(|t| t.filename()).collect();
+        assert!(names.contains(&"eco-swarmvine.service"));
     }
 
     #[test]
-    fn nucleus_generates_fifteen() {
+    fn nucleus_generates_sixteen() {
         let platform = Platform::new(Os::MacOs, Arch::Aarch64, LibC::Darwin);
         let templates = nucleus_templates(&platform, "/usr/local/bin");
-        assert_eq!(templates.len(), 15);
+        assert_eq!(templates.len(), 16);
         assert!(templates.iter().all(|t| t.filename().ends_with(".plist")));
+        let names: Vec<_> = templates.iter().map(|t| t.filename()).collect();
+        assert!(names.contains(&"eco.primals.cellmembrane.plist"));
     }
 
     #[test]
